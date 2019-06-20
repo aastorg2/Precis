@@ -7,28 +7,28 @@ class Datapoint:
         self.checkVarType(varType)
 
         if varType.upper() == 'INT':
-            self.var = Int(var)
+            self.varZ3 = Int(var)
         elif varType.upper() == 'FLOAT':
-            self.var = Real(var)
+            self.varZ3 = Real(var)
         elif varType.upper() == 'BOOL':
-            self.var = Bool(var)
+            self.varZ3 = Bool(var)
         
-        self.values = []
+        self.valuesZ3 = []
 
     # values (list of string): list of values 
     def addValues(self, values):
         for value in values:
-            self.checkValueType(self.var, value)
+            self.checkValueType(self.varZ3, value)
             
-            if is_int(self.var):
-                self.values.append(IntVal(value))
-            elif is_real(self.var):
-                self.values.append(RealVal(value))
-            elif is_bool(self.var):
-                self.values.append(BoolVal(value))
+            if is_int(self.varZ3):
+                self.valuesZ3.append(IntVal(value))
+            elif is_real(self.varZ3):
+                self.valuesZ3.append(RealVal(value))
+            elif is_bool(self.varZ3):
+                self.valuesZ3.append(BoolVal(value))
 
     def clearValues(self):
-        self.values = []
+        self.valuesZ3 = []
 
     def checkVarType(self, varType):
         assert(varType.upper() == 'INT' or varType.upper() == 'FLOAT' or varType.upper() == 'BOOL')
@@ -46,8 +46,8 @@ if __name__ == '__main__':
     b = ['1', '2', '3']
     
     dp = Datapoint(a, 'Int')
-    print(len(dp.values))
+    print(len(dp.valuesZ3))
     dp.addValues(b)
-    print(len(dp.values))
+    print(len(dp.valuesZ3))
     dp.clearValues()
-    print(len(dp.values))
+    print(len(dp.valuesZ3))
