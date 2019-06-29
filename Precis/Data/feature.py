@@ -12,7 +12,7 @@ class Feature:
         self.valuesZ3 = tuple()
 
     # values (list of string): list of values 
-    def addValues(self, values):
+    def AddValues(self, values):
         for value in values:
             self.values += (value,)
 
@@ -24,12 +24,12 @@ class Feature:
             elif is_bool(self.pVar.varZ3):
                 self.valuesZ3 += (BoolVal(value),)
 
-    def clearValues(self):
+    def ClearValues(self):
         self.values = tuple()
         self.valuesZ3 = tuple()
 
     # DEBUG method
-    def checkValueType(self, var, value):
+    def CheckValueType(self, var, value):
         # Check int
         assert((type(eval(value)) == int) == is_int(self.pVar.varZ3))
         # Check float
