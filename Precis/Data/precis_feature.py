@@ -3,7 +3,7 @@ from z3 import *
 class PrecisFeature:
     def __init__(self, varName, varType, isNew):
         # Check variable type
-        self.checkVarType(varType)
+        self.CheckVarType(varType)
 
         self.varName = varName  # string version of var
         self.isNew = isNew

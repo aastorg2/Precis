@@ -16,7 +16,7 @@ class Feature:
         for value in values:
             self.values += (value,)
 
-            self.checkValueType(self.pVar.varZ3, value)
+            self.CheckValueType(self.pVar.varZ3, value)
             if is_int(self.pVar.varZ3):
                 self.valuesZ3 += (IntVal(value),)
             elif is_real(self.pVar.varZ3):
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     pVar = PrecisFeature(a, 'int', a.startswith('New_'))
     dp = Feature(pVar)
     print(len(dp.valuesZ3))
-    dp.addValues(b)
+    dp.AddValues(b)
     print(len(dp.valuesZ3))
-    dp.clearValues()
+    dp.ClearValues()
     print(len(dp.valuesZ3))
