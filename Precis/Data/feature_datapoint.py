@@ -1,7 +1,7 @@
 from z3 import *
 from precis_feature import *
 
-class Feature:
+class FeatureDatapoint:
     def __init__(self, pVar):
         # feature
         self.pVar = pVar
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     a = 'New_s1Count'
     b = ['1', '2', '3']
     pVar = PrecisFeature(a, 'int', a.startswith('New_'))
-    dp = Feature(pVar)
+    dp = FeatureDatapoint(pVar)
     print(len(dp.valuesZ3))
     dp.AddValues(b)
     print(len(dp.valuesZ3))
