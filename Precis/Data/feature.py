@@ -1,32 +1,32 @@
 from z3 import *
 from precis_var import *
 
-class Datapoint:
+class Feature:
     def __init__(self, pVar):
         # feature
         self.pVar = pVar
         
         # values of feature
         # in 2d matrix representation of feature vectors, this is a column.
-        self.values = []
-        self.valuesZ3 = []
+        self.values = tuple()
+        self.valuesZ3 = tuple()
 
     # values (list of string): list of values 
     def addValues(self, values):
         for value in values:
-            self.values.append(value)
+            self.values += (value,)
 
             self.checkValueType(self.pVar.varZ3, value)
             if is_int(self.pVar.varZ3):
-                self.valuesZ3.append(IntVal(value))
+                self.valuesZ3 += (IntVal(value),)
             elif is_real(self.pVar.varZ3):
-                self.valuesZ3.append(RealVal(value))
+                self.valuesZ3 += (RealVal(value),)
             elif is_bool(self.pVar.varZ3):
-                self.valuesZ3.append(BoolVal(value))
+                self.valuesZ3 += (BoolVal(value),)
 
     def clearValues(self):
-        self.values = []
-        self.valuesZ3 = []
+        self.values = tuple()
+        self.valuesZ3 = tuple()
 
     # DEBUG method
     def checkValueType(self, var, value):
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     a = 'New_s1Count'
     b = ['1', '2', '3']
     pVar = PrecisVar(a, 'int', a.startswith('New_'))
-    dp = Datapoint(pVar)
+    dp = Feature(pVar)
     print(len(dp.valuesZ3))
     dp.addValues(b)
     print(len(dp.valuesZ3))
