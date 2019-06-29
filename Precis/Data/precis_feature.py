@@ -1,11 +1,11 @@
 from z3 import *
 
-class PrecisVar:
+class PrecisFeature:
     def __init__(self, varName, varType, isNew):
         # Check variable type
         self.checkVarType(varType)
 
-        self.varName = varName
+        self.varName = varName  # string version of var
         self.isNew = isNew
 
         if varType.upper() == 'INT':
@@ -20,7 +20,7 @@ class PrecisVar:
 
     # DEBUG method
     def checkVarType(self, varType):
-        assert(varType.upper() == 'INT' or varType.upper() == 'FLOAT' or varType.upper() == 'BOOL')
+        assert varType.upper() == 'INT' or varType.upper() == 'FLOAT' or varType.upper() == 'BOOL', 'Only variables with type int, float and bool are supported!!!'
     
 if __name__ == '__main__':
     print(0)

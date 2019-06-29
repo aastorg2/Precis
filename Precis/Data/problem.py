@@ -1,6 +1,6 @@
 import itertools
 import os
-from precis_var import PrecisVar
+from precis_feature import PrecisFeature
 from z3 import *
 
 class Problem:
@@ -26,7 +26,7 @@ class Problem:
             line = line.strip().split()
             varName = line[0]
             varType = line[1]
-            pvarList.append(PrecisVar(varName, varType, varName.startswith("New_")))
+            pvarList.append(PrecisFeature(varName, varType, varName.startswith("New_")))
         return pvarList
 
 if __name__ == '__main__':
