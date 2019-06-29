@@ -1,7 +1,7 @@
 from z3 import *
-from precis_var import *
+from precis_feature import *
 
-class Feature:
+class FeatureDatapoint:
     def __init__(self, pVar):
         # feature
         self.pVar = pVar
@@ -12,11 +12,11 @@ class Feature:
         self.valuesZ3 = tuple()
 
     # values (list of string): list of values 
-    def addValues(self, values):
+    def AddValues(self, values):
         for value in values:
             self.values += (value,)
 
-            self.checkValueType(self.pVar.varZ3, value)
+            self.CheckValueType(self.pVar.varZ3, value)
             if is_int(self.pVar.varZ3):
                 self.valuesZ3 += (IntVal(value),)
             elif is_real(self.pVar.varZ3):
@@ -24,12 +24,12 @@ class Feature:
             elif is_bool(self.pVar.varZ3):
                 self.valuesZ3 += (BoolVal(value),)
 
-    def clearValues(self):
+    def ClearValues(self):
         self.values = tuple()
         self.valuesZ3 = tuple()
 
     # DEBUG method
-    def checkValueType(self, var, value):
+    def CheckValueType(self, var, value):
         # Check int
         assert((type(eval(value)) == int) == is_int(self.pVar.varZ3))
         # Check float
@@ -40,10 +40,10 @@ class Feature:
 if __name__ == '__main__':
     a = 'New_s1Count'
     b = ['1', '2', '3']
-    pVar = PrecisVar(a, 'int', a.startswith('New_'))
-    dp = Feature(pVar)
+    pVar = PrecisFeature(a, 'int', a.startswith('New_'))
+    dp = FeatureDatapoint(pVar)
     print(len(dp.valuesZ3))
-    dp.addValues(b)
+    dp.AddValues(b)
     print(len(dp.valuesZ3))
-    dp.clearValues()
+    dp.ClearValues()
     print(len(dp.valuesZ3))
