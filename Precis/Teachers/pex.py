@@ -11,7 +11,7 @@ import json
 import time
 import shutil
 import io
-import executecommand
+import command_runner
 from lxml import etree
 from os.path import join
 from z3 import *
@@ -30,7 +30,7 @@ class Pex:
         self.time = 0.0
         startTime = time.time()
         args = self.GetExecCommand(dll, testMethod, testNamespace, testType)
-        pexOutput = executecommand.runCommand(args)
+        pexOutput = command_runner.runCommand(args)
         self.time = time.time() - startTime
         
     def ParseReportPre(self, pexReportFolder):
