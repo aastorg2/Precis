@@ -104,13 +104,13 @@ class Pex:
         return number
 
 if __name__ == '__main__':
-    # dll = '../ContractSubjects/Stack/StackTest/bin/Debug/StackTest.dll'
-    dll = '../../../ContractsSubjects/Stack/StackTest/bin/Debug/StackTest.dll'
+    # Better use absolute path here!!!
+    # Or VSCode might have some problem (the relative path depends on where you open the VSCode)
+    dll = '../ContractsSubjects/Stack/StackTest/bin/Debug/StackTest.dll'
     testMethod = 'PUT_PushContract'
     testNamespace = 'Stack.Test'
     testType = 'StackContractTest'
-    # pexReportFoler = './ContractSubjects/Stack/StackTest/bin/Debug/'
-    pexReportFoler = '../../../ContractsSubjects/Stack/StackTest/bin/Debug/'
+    pexReportFoler = '../ContractsSubjects/Stack/StackTest/bin/Debug/'
 
     pex = Pex('pex.exe', 8, ['/nor'])
     pex.RunTeacher(dll, testMethod, testNamespace, testType)
