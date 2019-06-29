@@ -4,13 +4,17 @@ from precis_var import PrecisVar
 from z3 import *
 
 class Problem:
-    def __init__(self):
-        pass
+    def __init__(self, sln, projectName, testFileName, PUTs):
+        self.sln = sln
+        self.projectName = projectName
+        self.testFileName = testFileName
+        self.PUTs = PUTs
 
     # Use C# code to extract the observer methods and corresponding types to an output file
-    def ExtractObservers(self, sln, projectName, testFileName, PUTName, outputFile):
-        observerExtractor = os.path.abspath('./ObserverExtractor/ObserverExtractor.exe')
-        cmd = observerExtractor + ' ' + sln + ' ' + projectName + ' ' + testFileName + ' ' + PUTName + ' ' + outputFile
+    def ExtractObservers(self, PUTName, outputFile):
+        assert PUTName in self.PUTs, 'PUTName not found or does not match PUTs given in constructor!!!'
+        observerExtractor = os.path.abspath('./ObserverExtractor/ObserverExtractor/bin/Debug/ObserverExtractor.exe')
+        cmd = observerExtractor + ' ' + self.sln + ' ' + self.projectName + ' ' + self.testFileName + ' ' + PUTName + ' ' + outputFile
         os.system(cmd)
 
     # Read the output file and parse the observer methods
@@ -26,14 +30,16 @@ class Problem:
         return pvarList
 
 if __name__ == '__main__':
-    sln = os.path.abspath('./ContractSubjects/Stack/Stack.sln')
+    sln = os.path.abspath('../ContractsSubjects/Stack/Stack.sln')
     projectName =  'StackTest' 
     testFileName = 'StackContractTest.cs' 
-    PUTName = 'PUT_PushContract' 
+    PUTs = ['PUT_PushContract', 'PUT_PopContract', 'PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract'] 
+    PUTName = 'PUT_PushContract'
     outputFile = os.path.abspath('./typesOM.txt')
 
-    p = Problem()
-    p.ExtractObservers(sln, projectName, testFileName, PUTName, outputFile)
+    p = Problem(sln, projectName, testFileName, PUTs)
+    print(PUTName in p.PUTs)
+    p.ExtractObservers(PUTName, outputFile)
     pvarList = p.ReadObserversFromFile(outputFile)
     print(pvarList[1].varName)
     print(pvarList[1].varZ3)
