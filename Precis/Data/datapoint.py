@@ -1,51 +1,47 @@
 from z3 import *
+from precis_var import *
 
 class Datapoint:
-    # var (string): variable name
-    # varType (string): variable type, int|float|bool
-    def __init__(self, var, varType):
-        self.checkVarType(varType)
-
-        if varType.upper() == 'INT':
-            self.varZ3 = Int(var)
-        elif varType.upper() == 'FLOAT':
-            self.varZ3 = Real(var)
-        elif varType.upper() == 'BOOL':
-            self.varZ3 = Bool(var)
+    def __init__(self, pVar):
+        # feature
+        self.pVar = pVar
         
+        # values of feature
+        # in 2d matrix representation of feature vectors, this is a column.
+        self.values = []
         self.valuesZ3 = []
 
     # values (list of string): list of values 
     def addValues(self, values):
         for value in values:
-            self.checkValueType(self.varZ3, value)
-            
-            if is_int(self.varZ3):
+            self.values.append(value)
+
+            self.checkValueType(self.pVar.varZ3, value)
+            if is_int(self.pVar.varZ3):
                 self.valuesZ3.append(IntVal(value))
-            elif is_real(self.varZ3):
+            elif is_real(self.pVar.varZ3):
                 self.valuesZ3.append(RealVal(value))
-            elif is_bool(self.varZ3):
+            elif is_bool(self.pVar.varZ3):
                 self.valuesZ3.append(BoolVal(value))
 
     def clearValues(self):
+        self.values = []
         self.valuesZ3 = []
 
-    def checkVarType(self, varType):
-        assert(varType.upper() == 'INT' or varType.upper() == 'FLOAT' or varType.upper() == 'BOOL')
-
+    # DEBUG method
     def checkValueType(self, var, value):
         # Check int
-        assert((type(eval(value)) == int) == is_int(var))
+        assert((type(eval(value)) == int) == is_int(self.pVar.varZ3))
         # Check float
-        assert((type(eval(value)) == float) == is_real(var))
+        assert((type(eval(value)) == float) == is_real(self.pVar.varZ3))
         # Check bool
-        assert(((value.upper() == 'TRUE') or (value.upper() == 'FALSE')) == is_bool(var))
+        assert(((value.upper() == 'TRUE') or (value.upper() == 'FALSE')) == is_bool(self.pVar.varZ3))
 
 if __name__ == '__main__':
-    a = 'a'
+    a = 'New_s1Count'
     b = ['1', '2', '3']
-    
-    dp = Datapoint(a, 'Int')
+    pVar = PrecisVar(a, 'int', a.startswith('New_'))
+    dp = Datapoint(pVar)
     print(len(dp.valuesZ3))
     dp.addValues(b)
     print(len(dp.valuesZ3))
