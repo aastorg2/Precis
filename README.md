@@ -9,4 +9,3 @@
 1. When executing this program in VSCode, relative paths used in our code depends on where you open VSCode.
 
 ## TODO:
-1. Problem: keep $dll, $project, $testFile, $PUTName, set them as members

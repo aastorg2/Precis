@@ -13,7 +13,6 @@ import shutil
 import io
 from lxml import etree
 
-
 def runCommand(args):
     try:
         executionOutput = ""
