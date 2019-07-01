@@ -22,5 +22,9 @@ class PrecisFeature:
     def CheckVarType(self, varType):
         assert varType.upper() == 'INT' or varType.upper() == 'FLOAT' or varType.upper() == 'BOOL', 'Only variables with type int, float and bool are supported!!!'
     
-# if __name__ == '__main__':
-#     print(0)
+    def __str__(self):
+        return self.varName
+    
+if __name__ == '__main__':
+    pvar = PrecisFeature('New_s1Count', 'Int', True)
+    print(pvar)
