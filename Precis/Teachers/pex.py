@@ -34,7 +34,8 @@ class Pex:
         args = self.GetExecCommand(problem.testDll, PUTName, problem.testNamespace, problem.testClass)
         pexOutput = command_runner.runCommand(args)
         self.time = time.time() - startTime
-        
+        print (self.time)
+
         return self.ParseReport(problem.testDebugFolder, pvarList)
 
     def ParseReport(self, pexReportFolder, pvarList):

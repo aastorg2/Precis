@@ -25,6 +25,10 @@ class PrecisFeature:
     def __str__(self):
         return self.varName
     
+    # for printing PrecisFeature in Lists
+    def __repr__(self):
+        return self.__str__()
+
 if __name__ == '__main__':
     pvar = PrecisFeature('New_s1Count', 'Int', True)
     print(pvar)
