@@ -1,4 +1,5 @@
 from z3 import *
+import itertools
 from Data.precis_feature import PrecisFeature
 
 class FeatureSynthesis:
@@ -11,6 +12,14 @@ class FeatureSynthesis:
     def CreateEqualities(self, intFeatures):
         print(intFeatures)
         #create copy constructor for PrecisFeature
+        if len(intFeatures) >= 2:
+            allCombinations = itertools.combinations(intFeatures,2)
+            for (feat1,feat2) in allCombinations:
+                print (feat1, feat2)
+                notEqualExpr = feat1.varZ3 != feat2.varZ3
+                print(notEqualExpr)
+                print(type(notEqualExpr))
+
         """
         namesDataFile = list()
         if len(intVars) >= 2:

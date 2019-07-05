@@ -1,6 +1,14 @@
 from z3 import *
 
 class PrecisFeature:
+
+    #string
+    varName = ""
+    #bool
+    isNew = False
+    #Z3ExprRef
+    varZ3 = None
+
     def __init__(self, varName, varType, isNew):
         # Check variable type
         self.CheckVarType(varType)
@@ -16,7 +24,8 @@ class PrecisFeature:
             self.varZ3 = Bool(varName)
         else:
             print('Unknown type!')
-            exit(1)
+            exit(1)# throw exception instead of abruptly exiting
+
 
     # DEBUG method
     def CheckVarType(self, varType):
