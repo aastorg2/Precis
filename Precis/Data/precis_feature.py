@@ -4,12 +4,15 @@ class PrecisFeature:
 
     #string
     varName = ""
-    #bool
+    #bool should isNew be none for when PrecisFeature is derived?
     isNew = False
     #Z3ExprRef
     varZ3 = None
+    isDerived = None
+    #TODO: need an additional field -- isDerived = derived predicates
 
-    def __init__(self, varName, varType, isNew):
+    # TODO: Need to add isDerived to parameter
+    def __init__(self, varName, varType, isNew=None):
         # Check variable type
         self.CheckVarType(varType)
 
@@ -25,6 +28,19 @@ class PrecisFeature:
         else:
             print('Unknown type!')
             exit(1)# throw exception instead of abruptly exiting
+        
+        isDerived = False
+    
+    @staticmethod
+    def create(isDerived, z3DerivedFeatExpr, tpe=""):
+        precisFeature = PrecisFeature(str(z3DerivedFeatExpr),tpe,None)
+        precisFeature.isDerived = True
+
+        return precisFeature
+        
+    #         self.isNew = None
+    #     self.varName = str(z3DerivedFeatExpr)
+    #     self.isDerived = isDerived
 
 
     # DEBUG method
