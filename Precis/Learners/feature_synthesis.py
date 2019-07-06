@@ -9,6 +9,7 @@ class FeatureSynthesis:
         intFeatures = [f for f in baseFeatures if str(f.varZ3.sort())=="Int"]
         return self.CreateEqualities(intFeatures)
 
+    # this method assumes it called with integer features
     def CreateEqualities(self, intFeatures):
         equalitiesFeatures = list()        
         
