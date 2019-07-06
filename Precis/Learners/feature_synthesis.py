@@ -13,18 +13,20 @@ class FeatureSynthesis:
         equalitiesFeatures = list()        
         
         if len(intFeatures) <= 1:
-            return intFeatures
+            return intFeatures # throw new error
         
         allCombinations = itertools.combinations(intFeatures,2)
         
         for (feat1,feat2) in allCombinations:
             #print (feat1, feat2)
             notEqualExpr = feat1.varZ3 != feat2.varZ3
+            equalExpr = feat1.varZ3 == feat2.varZ3
             #print(notEqualExpr)
             #print(notEqualExpr.sort())
             #print(type(notEqualExpr))
-            pDerivedFeature = PrecisFeature.create(True,notEqualExpr ,str(notEqualExpr.sort()))
-            equalitiesFeatures.append(pDerivedFeature)
-        
+            notEqualDerived = PrecisFeature.create(True,notEqualExpr ,str(notEqualExpr.sort()))
+            equalDerived = PrecisFeature.create(True,equalExpr ,str(equalExpr.sort()))
+            equalitiesFeatures.append(notEqualDerived)
+            equalitiesFeatures.append(equalDerived)
         return equalitiesFeatures
     

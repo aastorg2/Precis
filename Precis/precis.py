@@ -23,9 +23,9 @@ def learnPost():
 
     # returns list of base features
     pvarList = p.ReadObserversFromFile(outputFile)
-    synthesizer = FeatureSynthesis()
+    featureSynthesizer = FeatureSynthesis()
     #list of derivedFeatures
-    derivedFeatures = synthesizer.GenerateDerivedFeatures(pvarList)
+    derivedFeatures = featureSynthesizer.GenerateDerivedFeatures(pvarList)
     print(derivedFeatures)
     #for f in pvarList:
 
