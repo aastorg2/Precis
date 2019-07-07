@@ -34,19 +34,20 @@ class Pex:
         args = self.GetExecCommand(problem.testDll, PUTName, problem.testNamespace, problem.testClass)
         pexOutput = command_runner.runCommand(args)
         self.time = time.time() - startTime
-        print (self.time)
+        #print (self.time)
 
         return self.ParseReport(problem.testDebugFolder, pvarList)
 
     def ParseReport(self, pexReportFolder, pvarList):
+        #This function should label the field testLabel for a feature vector object
         pexReportFile = os.path.join(pexReportFolder, self.ro, self.rn, "report.per")
         tree = etree.parse(pexReportFile)
         dataPoints = set()
+        featureValues = None
         for test in tree.xpath('//generatedTest'):
             # REMIENDER: will need to add more cases for pex internal failures such as the above. We do not want to create feature from these values
             if test.get('status') == 'assumptionviolation' or test.get('status') == 'minimizationrequest':
                 continue
-            
             singlePoint = ()
             for value in test.xpath('./value'):
                 if re.match("^\$.*", value.xpath('./@name')[0]):
@@ -57,13 +58,15 @@ class Pex:
 
             if test.get('status') == 'normaltermination':
                 singlePoint = singlePoint + ('True',)
-
+                featureValues = FeatureVector(pvarList, singlePoint)
             else:
                 singlePoint = singlePoint +('True',)
-                
+                featureValues = FeatureVector(pvarList, singlePoint)
+
             if len(singlePoint) < len(pvarList):
                 continue
-            dataPoints.add(FeatureVector(pvarList, singlePoint))
+            assert(featureValues != None)
+            dataPoints.add(featureValues)
     
         return dataPoints
 

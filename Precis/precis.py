@@ -23,20 +23,19 @@ def learnPost():
 
     # returns list of base features
     pvarList = p.ReadObserversFromFile(outputFile)
+
+    pex = Pex()
+    featureVectors = pex.RunTeacher(p, PUTName, pvarList)
+    
+    
+
     featureSynthesizer = FeatureSynthesis()
     #list of derivedFeatures
     derivedFeatures = featureSynthesizer.GenerateDerivedFeatures(pvarList)
     print(derivedFeatures)
-    #for f in pvarList:
-
-    #    print(f)
-    #    #print(f.varZ3.sort())
-    #    s = str(f.varZ3.sort())
-    #    print(s)
-    #pex = Pex()
-    #featureVectors = pex.RunTeacher(p, PUTName, pvarList)
-    #for vec in featureVectors:
-    #    print (vec)
+    
+    print(featureVectors)
+    
 
     print ("here")
 
