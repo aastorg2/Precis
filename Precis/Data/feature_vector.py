@@ -3,18 +3,23 @@ from precis_feature import PrecisFeature
 
 class FeatureVector:
 
-    #tuple of values
+    #tuple of z3 values 
     valuesZ3 = ()
 
-    def __init__(self, pvarList, values):
+    #tuple of values(in string format) 
+
+    def __init__(self, pvarList, values, testLabel):
         # In 2d matrix, represents a row of data
-        self.values = values[:-1]
+        #self.values = values[:-1]
+        assert(testLabel == 'True' or testLabel == 'False')
+
+        self.values = values
+        
         #self.valuesZ3 = ()
         for idx in range(len(values) - 1):
             self.AddValues(pvarList[idx].varZ3, values[idx])
-        assert(values[-1] == 'True' or values[-1] == 'False')
         
-        if values[-1] == 'True':
+        if testLabel == 'True':
             self.testLabel = True
         else:
             self.testLabel = False

@@ -57,11 +57,11 @@ class Pex:
                     singlePoint = singlePoint + (val,)
 
             if test.get('status') == 'normaltermination':
-                singlePoint = singlePoint + ('True',)
-                featureValues = FeatureVector(pvarList, singlePoint)
+                #singlePoint = singlePoint + ('True',)
+                featureValues = FeatureVector(pvarList, singlePoint, 'True')
             else:
-                singlePoint = singlePoint +('True',)
-                featureValues = FeatureVector(pvarList, singlePoint)
+                #singlePoint = singlePoint +('False',)
+                featureValues = FeatureVector(pvarList, singlePoint,'False')
 
             if len(singlePoint) < len(pvarList):
                 continue
