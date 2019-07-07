@@ -43,7 +43,8 @@ class FeatureVector:
         assert((type(eval(value)) == float) == is_real(pvarZ3))
         # Check bool
         assert(((value.upper() == 'TRUE') or (value.upper() == 'FALSE')) == is_bool(pvarZ3))
-    
+    # End of DEBUG method
+
     def __str__(self):
         output = '('
         for value in self.values:
