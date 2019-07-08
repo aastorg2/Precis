@@ -13,6 +13,15 @@ class Houdini:
         print(featureVectors)
         print ("here")
         print(features)
+
+        #TODO: f of type FeatureVector --> make this indexable; this line wont work
+        #print(features[i], f[i])
+        for f in featureVectors:
+            print(f)
+            print (type(f))
+            for i in  range(len(features)):
+                print(features[i], f.valuesZ3[i])
+
         print(type(deriveFeatureVec))
 
     def learn(featureVector):

@@ -15,7 +15,9 @@ class FeatureVector:
         self.values = values
         assert(testLabel == 'True' or testLabel == 'False')
         
-        for idx in range(len(values) - 1):
+        #TODO: why range(len(values) -1 )
+        #for idx in range(len(values) - 1):
+        for idx in range(len(values)):
             self.AddValues(pvarList[idx].varZ3, values[idx])
         
         if testLabel == 'True':
