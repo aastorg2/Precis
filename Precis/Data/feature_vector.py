@@ -4,7 +4,7 @@ from precis_feature import PrecisFeature
 class FeatureVector:
 
     #tuple of z3 values 
-    valuesZ3 = ()
+    #valuesZ3 = ()
 
     #tuple of values(in string format) 
 
@@ -14,10 +14,11 @@ class FeatureVector:
         #self.values = values[:-1]
         self.values = values
         assert(testLabel == 'True' or testLabel == 'False')
-        
+        self.valuesZ3 = ()
         #TODO: why range(len(values) -1 )
-        #for idx in range(len(values) - 1):
-        for idx in range(len(values)):
+        for idx in range(len(values) - 1):
+        #for idx in range(len(values)):
+        #for idx in range(len(pvarList)):
             self.AddValues(pvarList[idx].varZ3, values[idx])
         
         if testLabel == 'True':
