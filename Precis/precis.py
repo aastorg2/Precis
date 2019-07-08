@@ -4,7 +4,7 @@ from z3 import *
 from Data.problem import Problem
 from Teachers.pex import Pex
 from Learners.feature_synthesis import FeatureSynthesis
-
+from Learners.houdini import Houdini
 
 def learnPost():
     sln = os.path.abspath('../ContractsSubjects/Stack/Stack.sln')
@@ -22,22 +22,27 @@ def learnPost():
     p.ExtractObservers(PUTName, outputFile)
 
     # returns list of base features
-    pvarList = p.ReadObserversFromFile(outputFile)
+    features = p.ReadObserversFromFile(outputFile)
 
     pex = Pex()
-    featureVectors = pex.RunTeacher(p, PUTName, pvarList)
+    featureVectors = pex.RunTeacher(p, PUTName, features)
     
     
 
     featureSynthesizer = FeatureSynthesis()
     #list of derivedFeatures
-    derivedFeatures = featureSynthesizer.GenerateDerivedFeatures(pvarList)
-    print(derivedFeatures)
+    derivedFeatures = featureSynthesizer.GenerateDerivedFeatures(features)
     
-    print(featureVectors)
+    houdini = Houdini()
+
+    houdini.generateDerivedFeatureVectors(derivedFeatures,features, featureVectors)
+
+    #print(derivedFeatures)
+    
+    #print(featureVectors)
     
 
-    print ("here")
+    #print ("here")
 
 
 

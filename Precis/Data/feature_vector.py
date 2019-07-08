@@ -9,13 +9,12 @@ class FeatureVector:
     #tuple of values(in string format) 
 
     def __init__(self, pvarList, values, testLabel):
-        # In 2d matrix, represents a row of data
-        #self.values = values[:-1]
-        assert(testLabel == 'True' or testLabel == 'False')
+        #represents a row of data; a list of self.values would represent a 2D matrix.
 
+        #self.values = values[:-1]
         self.values = values
+        assert(testLabel == 'True' or testLabel == 'False')
         
-        #self.valuesZ3 = ()
         for idx in range(len(values) - 1):
             self.AddValues(pvarList[idx].varZ3, values[idx])
         
@@ -24,6 +23,7 @@ class FeatureVector:
         else:
             self.testLabel = False
 
+        #TODO: counterexample label should not set here but at client side
         self.counterexampleLabel = True
 
     def AddValues(self, pvarZ3, value):
