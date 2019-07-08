@@ -20,9 +20,9 @@ class Houdini:
             print(f)
             print (type(f))
             for i in  range(len(features)):
-                print(features[i])
+                #print(features[i])
                 #print(f.valuesZ3[i]) # this will throw index out range
-                #print(features[i], f.valuesZ3[i])
+                print(features[i], f[i])
 
         print(type(deriveFeatureVec))
 

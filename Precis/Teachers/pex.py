@@ -61,7 +61,7 @@ class Pex:
                 featureValues = FeatureVector(pvarList, singlePoint, 'True')
             else:
                 #singlePoint = singlePoint +('False',)
-                featureValues = FeatureVector(pvarList, singlePoint,'False')
+                featureValues = FeatureVector(pvarList, singlePoint, 'False')
 
             if len(singlePoint) < len(pvarList):
                 continue

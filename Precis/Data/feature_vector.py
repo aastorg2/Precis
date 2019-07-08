@@ -16,9 +16,8 @@ class FeatureVector:
         assert(testLabel == 'True' or testLabel == 'False')
         self.valuesZ3 = ()
         #TODO: why range(len(values) -1 )
-        for idx in range(len(values) - 1):
-        #for idx in range(len(values)):
-        #for idx in range(len(pvarList)):
+        #Answer: Because before, values contains testLabel itself, so [0, len(values)-1] are the actual values. But now, the constructor has additional testLabel, then should be len(values)
+        for idx in range(len(values)):
             self.AddValues(pvarList[idx].varZ3, values[idx])
         
         if testLabel == 'True':
@@ -36,7 +35,7 @@ class FeatureVector:
         elif is_real(pvarZ3):
             self.valuesZ3 += (RealVal(value), )
         elif is_bool(pvarZ3):
-            self.valuesZ3 += (BoolVal(value), )
+            self.valuesZ3 += (BoolVal(value.upper() == 'TRUE'), )
 
     # DEBUG method
     def CheckValueType(self, pvarZ3, value):
@@ -59,3 +58,9 @@ class FeatureVector:
     # for printing FeatureVector in Lists
     def __repr__(self):
         return self.__str__()
+    
+    def __getitem__(self, key):
+        return self.valuesZ3[key]
+
+    def __setitem__(self, key, value):
+        pass
