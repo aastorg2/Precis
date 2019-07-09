@@ -23,5 +23,5 @@ Before, values contains test label at the end, so the actual values don't includ
 2. ***Teacher/houdini.py***: ```f.varZ3[i]``` out of range
 It comes from 1, if the input ```values``` are all actual values (without ```testLabel```) are we use ```range(len(values) - 1)```, then we will miss the value at the end. If we change it to ```range(len(values))``` we should be good.
 
-3. ```valuesZ3``` should be ```False``` but print is ```True```
+3. ***Data/feature_vector.py line 38***: ```valuesZ3``` should be ```False``` but print is ```True```
 Note!!! In z3py, ```BoolVal('False')``` returns ```True```, but ```BoolVal(False)``` returns ```False```. We should initialize with bool value rather than string.
