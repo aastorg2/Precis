@@ -14,3 +14,14 @@
 3. Example: Instrumenter.exe --solution=$your dir of Stack$/Stack/Stack.sln --test-project-name=StackTest --test-file-name=StackContractTest.cs --PUT-name=PUT_PushContract  --post-condition=true
 
 ## TODO:
+
+
+## BUG List (fixed):
+1. ***Data/feature_vector.py line 20***: Why ```range(len(values) - 1)``` before?
+Before, values contains test label at the end, so the actual values don't include the last one. Now we have the constructor with additional field ```testLabel```, so it should be ```range(len(values))``` now. 
+
+2. ***Teacher/houdini.py***: ```f.varZ3[i]``` out of range
+It comes from 1, if the input ```values``` are all actual values (without ```testLabel```) are we use ```range(len(values) - 1)```, then we will miss the value at the end. If we change it to ```range(len(values))``` we should be good.
+
+3. ```valuesZ3``` should be ```False``` but print is ```True```
+Note!!! In z3py, ```BoolVal('False')``` returns ```True```, but ```BoolVal(False)``` returns ```False```. We should initialize with bool value rather than string.
