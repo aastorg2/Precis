@@ -64,3 +64,5 @@ class FeatureVector:
 
     def __setitem__(self, key, value):
         pass
+    def __len__(self):
+        return len(self.valuesZ3)
