@@ -22,8 +22,10 @@ class Houdini:
             #print(type(pairs))
             for df in derivedFeatures:
                 #TODO: the substitute does not work
-                subDf = substitute(simplify(df.varZ3) , pairs)
-                #print(subDf)
+                #t = simplify(And(df.varZ3,pairs[0][0] == pairs[0][1],pairs[1][0] == pairs[1][1])) ideally simplify should evaluate AND(x != y, x ==2, y == 3) to false
+                #print("print simplify " + str(t))
+                subDf = substitute(df.varZ3 , pairs)
+                print(simplify(subDf) )
                 #print(type(df.varZ3))
 
         #for df in derivedFeatures:
