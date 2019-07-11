@@ -25,9 +25,10 @@ class Houdini:
                 deriveFeatVec = substitute(df.varZ3 , pairs)
                 deriveFeatVecValue = simplify(deriveFeatVec)
                 derivedFeatureVector += (deriveFeatVecValue,)
-            # number of derived feature values(i.e. length of derived feature vector(tuple)) should be the same as
-            # number of derived features (.i.e length of list of derived features)
+            # Assert: # of derived feature values(i.e. length of derived feature vector(tuple)) should be the same as
+            # Assert: # of derived features (.i.e length of list of derived features)
             assert(len(derivedFeatureVector) == len(derivedFeatures))
+            
             print(type(f))
             print(f)    
             print(derivedFeatureVector)

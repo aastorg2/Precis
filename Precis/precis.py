@@ -8,7 +8,7 @@ from Learners.houdini import Houdini
 
 def learnPost():
     sln = os.path.abspath('../ContractsSubjects/Stack/Stack.sln')
-    projectName =  'StackTest' 
+    projectName =  'StackTest'
     testDebugFolder = '../ContractsSubjects/Stack/StackTest/bin/Debug/'
     testDll = testDebugFolder + 'StackTest.dll'
     testFileName = 'StackContractTest.cs' 
