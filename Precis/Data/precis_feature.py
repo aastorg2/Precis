@@ -22,14 +22,14 @@ class PrecisFeature:
             self.varName = varName
             self.isNew = None
             self.varZ3 = varZ3
-            self.isDerived = isDerived
+            self.isDerived = True
         else:
             # Check variable type
             self.CheckVarType(varType)
 
             self.varName = varName
             self.isNew = isNew
-            self.isDerived = isDerived
+            self.isDerived = False
 
             if varType.upper() == 'INT':
                 self.varZ3 = Int(varName)
