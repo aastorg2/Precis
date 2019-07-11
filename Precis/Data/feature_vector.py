@@ -4,19 +4,14 @@ from precis_feature import PrecisFeature
 class FeatureVector:
 
     #tuple of z3 values 
-    #valuesZ3 = ()
-
-    #tuple of values(in string format) 
+    valuesZ3 = ()
+    # tuple of strings representing values of features (i.e represents a row of data; a list of self.values would represent a 2D matrix.)
+    values =()
+    
 
     def __init__(self, pvarList, values, testLabel):
-        #represents a row of data; a list of self.values would represent a 2D matrix.
-
-        #self.values = values[:-1]
         self.values = values
         assert(testLabel == 'True' or testLabel == 'False')
-        self.valuesZ3 = ()
-        #TODO: why range(len(values) -1 )
-        #Answer: Because before, values contains testLabel itself, so [0, len(values)-1] are the actual values. But now, the constructor has additional testLabel, then should be len(values)
         for idx in range(len(values)):
             self.AddValues(pvarList[idx].varZ3, values[idx])
         
