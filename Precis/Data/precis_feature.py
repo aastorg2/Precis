@@ -2,49 +2,44 @@ from z3 import *
 
 class PrecisFeature:
 
-    #string
+    # varName: string; variable name
     varName = ""
-    #bool should isNew be none for when PrecisFeature is derived?
-    isNew = False
-    #Z3ExprRef
+    # isNew: string; True: New_*, False, Old_*, None: feature is derived
+    isNew = None
+    # varZ3: Z3ExprRef; variable of Z3 version
     varZ3 = None
+    # isDerived: bool; whether the feature is derived
     isDerived = None
-    #TODO: need an additional field -- isDerived = derived predicates
-
-    # TODO: Need to add isDerived to parameter
-    def __init__(self, varName, varType, isNew=None):
-        # Check variable type
-        self.CheckVarType(varType)
-
-        self.varName = varName  # string version of var
-        self.isNew = isNew
-
-        if varType.upper() == 'INT':
-            self.varZ3 = Int(varName)
-        elif varType.upper() == 'FLOAT':
-            self.varZ3 = Real(varName)
-        elif varType.upper() == 'BOOL':
-            self.varZ3 = Bool(varName)
-        else:
-            print('Unknown type!')
-            exit(1)# throw exception instead of abruptly exiting
-        
-        isDerived = False
     
-    @staticmethod
-    def create(isDerived, z3DerivedFeatExpr, tpe=""):
-        precisFeature = PrecisFeature(str(z3DerivedFeatExpr), tpe, None)
-        precisFeature.isDerived = True
+    # isDerived: bool
+    # varName: string; variable name
+    # varType: string; {int, float, bool}
+    # isNew: bool; declared when the feature is not derived
+    # varZ3: Z3ExprRef; declared when the feature is derived
+    def __init__(self, isDerived, varName, varType=None, isNew=None, varZ3=None):
         
-        precisFeature.varZ3 = z3DerivedFeatExpr
+        if isDerived:
+            self.varName = varName
+            self.isNew = None
+            self.varZ3 = varZ3
+            self.isDerived = isDerived
+        else:
+            # Check variable type
+            self.CheckVarType(varType)
 
-        return precisFeature
-        
-    #         self.isNew = None
-    #     self.varName = str(z3DerivedFeatExpr)
-    #     self.isDerived = isDerived
+            self.varName = varName
+            self.isNew = isNew
+            self.isDerived = isDerived
 
-
+            if varType.upper() == 'INT':
+                self.varZ3 = Int(varName)
+            elif varType.upper() == 'FLOAT':
+                self.varZ3 = Real(varName)
+            elif varType.upper() == 'BOOL':
+                self.varZ3 = Bool(varName)
+            else:
+                raise Exception('Unknown type!')
+            
     # DEBUG method
     def CheckVarType(self, varType):
         assert varType.upper() == 'INT' or varType.upper() == 'FLOAT' or varType.upper() == 'BOOL', 'Only variables with type int, float and bool are supported!!!'
@@ -57,5 +52,5 @@ class PrecisFeature:
         return self.__str__()
 
 if __name__ == '__main__':
-    pvar = PrecisFeature('New_s1Count', 'Int', True)
+    pvar = PrecisFeature(False, 'New_s1Count', 'Int', True, None)
     print(pvar)

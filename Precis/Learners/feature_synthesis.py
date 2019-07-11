@@ -25,8 +25,8 @@ class FeatureSynthesis:
             #print(notEqualExpr)
             #print(notEqualExpr.sort())
             #print(type(notEqualExpr))
-            notEqualDerived = PrecisFeature.create(True,notEqualExpr ,str(notEqualExpr.sort()))
-            equalDerived = PrecisFeature.create(True,equalExpr ,str(equalExpr.sort()))
+            notEqualDerived = PrecisFeature(True, str(notEqualExpr), None, None, notEqualExpr)
+            equalDerived = PrecisFeature(True, str(equalExpr), None, None, equalExpr)
             equalitiesFeatures.append(notEqualDerived)
             equalitiesFeatures.append(equalDerived)
         return equalitiesFeatures

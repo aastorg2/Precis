@@ -34,7 +34,7 @@ class Problem:
             line = line.strip().split()
             varName = line[0]
             varType = line[1]
-            pvarList.append(PrecisFeature(varName, varType, varName.startswith("New_")))
+            pvarList.append(PrecisFeature(False, varName, varType, varName.startswith("New_"), None))
         return pvarList
 
 # if __name__ == '__main__':
