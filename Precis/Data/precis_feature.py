@@ -33,8 +33,10 @@ class PrecisFeature:
     
     @staticmethod
     def create(isDerived, z3DerivedFeatExpr, tpe=""):
-        precisFeature = PrecisFeature(str(z3DerivedFeatExpr),tpe,None)
+        precisFeature = PrecisFeature(str(z3DerivedFeatExpr), tpe, None)
         precisFeature.isDerived = True
+        
+        precisFeature.varZ3 = z3DerivedFeatExpr
 
         return precisFeature
         
