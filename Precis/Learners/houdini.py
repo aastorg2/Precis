@@ -15,6 +15,7 @@ class Houdini:
         print(baseFeatures)
         pairs = list()
         # consider
+        allDerivedFeatureVectors = list()
         for f in baseFeatureVectors:
             print("feature vec: " +str(f))
             pairs = Houdini.generateFeatureValueMapping(baseFeatures,f)
@@ -29,8 +30,10 @@ class Houdini:
             # Assert: # of derived features (.i.e length of list of derived features)
             assert(len(derivedFeatureVector) == len(derivedFeatures))
             
-            print(f)    
-            print(derivedFeatureVector)
+            allDerivedFeatureVectors.append(derivedFeatureVector)
+        
+        #print(allDerivedFeatureVectors)
+        return allDerivedFeatureVectors
 
     @staticmethod
     def generateFeatureValueMapping(baseFeatures, featureVector):

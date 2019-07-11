@@ -21,14 +21,12 @@ def learnPost():
     p = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
     p.ExtractObservers(PUTName, outputFile)
 
-    # returns list of base features
+    #returns list of base features
     baseFeatures = p.ReadObserversFromFile(outputFile)
-
+    
     pex = Pex()
     baseFeatureVectors = pex.RunTeacher(p, PUTName, baseFeatures)
     
-    
-
     featureSynthesizer = FeatureSynthesis()
     #list of derivedFeatures
     derivedFeatures = featureSynthesizer.GenerateDerivedFeatures(baseFeatures)
@@ -39,9 +37,9 @@ def learnPost():
 
     print ("all features: ", features)
     houdini = Houdini()
-
-    houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
-
+    derivedFeatureVectors = ()
+    derivedFeatureVectors = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
+    print(derivedFeatureVectors)
     #print(derivedFeatures)
     
     #print(featureVectors)
