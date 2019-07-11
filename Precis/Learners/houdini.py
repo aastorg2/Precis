@@ -7,15 +7,15 @@ class Houdini:
     useBounds = False
 
 
-    def generateDerivedFeatureVectors(self, derivedFeatures, baseFeatures, featureVectors):
+    def generateDerivedFeatureVectors(self, derivedFeatures, baseFeatures, baseFeatureVectors):
         
         print(derivedFeatures)
-        print(featureVectors)
+        print(baseFeatureVectors)
         print ("here")
         print(baseFeatures)
         pairs = list()
         # consider
-        for f in featureVectors:
+        for f in baseFeatureVectors:
             print("feature vec: " +str(f))
             pairs = Houdini.generateFeatureValueMapping(baseFeatures,f)
             print(pairs)
@@ -29,7 +29,6 @@ class Houdini:
             # Assert: # of derived features (.i.e length of list of derived features)
             assert(len(derivedFeatureVector) == len(derivedFeatures))
             
-            print(type(f))
             print(f)    
             print(derivedFeatureVector)
 
