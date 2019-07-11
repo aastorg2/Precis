@@ -13,7 +13,7 @@ class PrecisFeature:
     
     # isDerived: bool
     # varName: string; variable name
-    # varType: string; {int, float, bool}
+    # varType: string; {int, float, bool}, declared when the feature is not derived
     # isNew: bool; declared when the feature is not derived
     # varZ3: Z3ExprRef; declared when the feature is derived
     def __init__(self, isDerived, varName, varType=None, isNew=None, varZ3=None):
