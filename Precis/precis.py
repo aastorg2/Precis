@@ -22,20 +22,20 @@ def learnPost():
     p.ExtractObservers(PUTName, outputFile)
 
     # returns list of base features
-    features = p.ReadObserversFromFile(outputFile)
+    baseFeatures = p.ReadObserversFromFile(outputFile)
 
     pex = Pex()
-    featureVectors = pex.RunTeacher(p, PUTName, features)
+    baseFeatureVectors = pex.RunTeacher(p, PUTName, baseFeatures)
     
     
 
     featureSynthesizer = FeatureSynthesis()
     #list of derivedFeatures
-    derivedFeatures = featureSynthesizer.GenerateDerivedFeatures(features)
+    derivedFeatures = featureSynthesizer.GenerateDerivedFeatures(baseFeatures)
     
     houdini = Houdini()
-
-    houdini.generateDerivedFeatureVectors(derivedFeatures,features, featureVectors)
+    print("TYPEEEE", type(baseFeatures))
+    houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
 
     #print(derivedFeatures)
     
