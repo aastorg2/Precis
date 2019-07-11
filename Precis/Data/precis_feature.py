@@ -19,7 +19,7 @@ class PrecisFeature:
     def __init__(self, isDerived, varName, varType=None, isNew=None, varZ3=None):
         
         if isDerived:
-            self.varName = varName
+            self.varName = str(varZ3)
             self.isNew = None
             self.varZ3 = varZ3
             self.isDerived = True

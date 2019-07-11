@@ -33,8 +33,13 @@ def learnPost():
     #list of derivedFeatures
     derivedFeatures = featureSynthesizer.GenerateDerivedFeatures(baseFeatures)
     
+    features = list()
+    # appending two list
+    features =  baseFeatures + derivedFeatures
+
+    print ("all features: ", features)
     houdini = Houdini()
-    print("TYPEEEE", type(baseFeatures))
+
     houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
 
     #print(derivedFeatures)
