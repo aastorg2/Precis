@@ -53,4 +53,4 @@ class PrecisFeature:
 
 if __name__ == '__main__':
     pvar = PrecisFeature(False, 'New_s1Count', 'Int', True, None)
-    print(pvar)
+    print(pvar)  

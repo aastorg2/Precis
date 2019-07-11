@@ -20,16 +20,17 @@ class Houdini:
             pairs = Houdini.generateFeatureValueMapping(baseFeatures,f)
             print(pairs)
             #print(type(pairs))
+            derivedFeatureVector = ()
             for df in derivedFeatures:
-                #TODO: the substitute does not work
-                #t = simplify(And(df.varZ3,pairs[0][0] == pairs[0][1],pairs[1][0] == pairs[1][1])) ideally simplify should evaluate AND(x != y, x ==2, y == 3) to false
-                #print("print simplify " + str(t))
-                subDf = substitute(df.varZ3 , pairs)
-                print(simplify(subDf) )
-                #print(type(df.varZ3))
-
-        #for df in derivedFeatures:
-        #    print(df)
+                deriveFeatVec = substitute(df.varZ3 , pairs)
+                deriveFeatVecValue = simplify(deriveFeatVec)
+                derivedFeatureVector += (deriveFeatVecValue,)
+            # number of derived feature values(i.e. length of derived feature vector(tuple)) should be the same as
+            # number of derived features (.i.e length of list of derived features)
+            assert(len(derivedFeatureVector) == len(derivedFeatures))
+            print(type(f))
+            print(f)    
+            print(derivedFeatureVector)
 
     @staticmethod
     def generateFeatureValueMapping(baseFeatures, featureVector):
