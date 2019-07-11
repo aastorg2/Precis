@@ -42,7 +42,7 @@ class Pex:
         #This function should label the field testLabel for a feature vector object
         pexReportFile = os.path.join(pexReportFolder, self.ro, self.rn, "report.per")
         tree = etree.parse(pexReportFile)
-        dataPoints = set()
+        dataPoints = list()
         featureValues = None
         for test in tree.xpath('//generatedTest'):
             # REMIENDER: will need to add more cases for pex internal failures such as the above. We do not want to create feature from these values
@@ -67,7 +67,7 @@ class Pex:
                 continue
             
             assert(featureValues != None)
-            dataPoints.add(featureValues)
+            dataPoints.append(featureValues)
     
         return dataPoints
 

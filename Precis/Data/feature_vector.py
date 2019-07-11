@@ -62,3 +62,6 @@ class FeatureVector:
         
     def __len__(self):
         return len(self.valuesZ3)
+
+    #def __add__(self, o):
+    #    assert(type)

@@ -35,13 +35,16 @@ def learnPost():
     # appending two list
     features =  baseFeatures + derivedFeatures
 
-    print ("all features: ", features)
     houdini = Houdini()
-    derivedFeatureVectors = ()
+    derivedFeatureVectors = list()
     derivedFeatureVectors = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
-    print(derivedFeatureVectors)
+    # keep feature vectors as list, once appended turn to set
+    print ("base Feature Vectors", baseFeatureVectors)
+    print("derived feature vectors:", derivedFeatureVectors)
+    print ("all features: ", features)
+
     #print(derivedFeatures)
-    
+
     #print(featureVectors)
     
 
