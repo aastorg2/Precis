@@ -40,9 +40,13 @@ def learnPost():
     derivedFeatureVectors = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
     # keep feature vectors as list, once appended turn to set
     print ("base Feature Vectors: ", baseFeatureVectors)
+    print("\n")
     print("derived feature vectors: ", derivedFeatureVectors)
+    print("\n")
     print ("all features: ", features)
-
+    
+    #assert(bfv[0] <--> dfv[0] )
+    #featureVectors = baseFeatureVectors + derivedFeatureVectors
     #print(derivedFeatures)
 
     #print(featureVectors)
