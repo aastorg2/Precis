@@ -6,7 +6,12 @@ class Houdini:
     
     useBounds = False
 
-
+    def concatenateFeatureVectors(self, baseFeatureVectors, derivedValuesZ3Tuples):
+        featureVectors = []
+        for i in range(len(baseFeatureVectors)):
+            featureVectors.append(baseFeatureVectors[i] + derivedValuesZ3Tuples[i])
+        return featureVectors
+        
     def generateDerivedFeatureVectors(self, derivedFeatures, baseFeatures, baseFeatureVectors):
         
         print(derivedFeatures)

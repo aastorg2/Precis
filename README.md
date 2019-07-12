@@ -15,6 +15,8 @@
 
 ## TODO:
 
+## Design Decisions To Be Made:
+1. ***Learners/feature_synthesis.py***: ```GenerateDerivedFeatures``` generates a list of tuples of Z3 values now, need to make it return a list of feature vectors.
 
 ## BUG List (fixed):
 1. ***Data/feature_vector.py***: Why ```range(len(values) - 1)``` before?  

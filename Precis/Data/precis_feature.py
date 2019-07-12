@@ -52,5 +52,5 @@ class PrecisFeature:
         return self.__str__()
 
 if __name__ == '__main__':
-    pvar = PrecisFeature(False, 'New_s1Count', 'Int', True, None)
-    print(pvar)  
+    precisFeature = PrecisFeature(False, 'New_s1Count', 'Int', True, None)
+    print(precisFeature)  

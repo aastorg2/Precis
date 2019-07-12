@@ -28,7 +28,7 @@ class Pex:
         self.ro = "r1" 
         self.time = 0.0
 
-    def RunTeacher(self, problem, PUTName, pvarList):
+    def RunTeacher(self, problem, PUTName, precisFeatureList):
         self.time = 0.0
         startTime = time.time()
         args = self.GetExecCommand(problem.testDll, PUTName, problem.testNamespace, problem.testClass)
@@ -36,9 +36,9 @@ class Pex:
         self.time = time.time() - startTime
         #print (self.time)
 
-        return self.ParseReport(problem.testDebugFolder, pvarList)
+        return self.ParseReport(problem.testDebugFolder, precisFeatureList)
 
-    def ParseReport(self, pexReportFolder, pvarList):
+    def ParseReport(self, pexReportFolder, precisFeatureList):
         #This function should label the field testLabel for a feature vector object
         pexReportFile = os.path.join(pexReportFolder, self.ro, self.rn, "report.per")
         tree = etree.parse(pexReportFile)
@@ -58,12 +58,12 @@ class Pex:
 
             if test.get('status') == 'normaltermination':
                 #singlePoint = singlePoint + ('True',)
-                featureValues = FeatureVector(pvarList, singlePoint, 'True')
+                featureValues = FeatureVector(precisFeatureList, singlePoint, 'True')
             else:
                 #singlePoint = singlePoint +('False',)
-                featureValues = FeatureVector(pvarList, singlePoint, 'False')
+                featureValues = FeatureVector(precisFeatureList, singlePoint, 'False')
 
-            if len(singlePoint) < len(pvarList):
+            if len(singlePoint) < len(precisFeatureList):
                 continue
             
             assert(featureValues != None)

@@ -27,15 +27,15 @@ class Problem:
 
     # Read the output file and parse the observer methods
     def ReadObserversFromFile(self, outputFile):
-        pvarList = []
+        precisFeatureList = []
         with open(outputFile) as f:
             lines = f.readlines()
         for line in lines:
             line = line.strip().split()
             varName = line[0]
             varType = line[1]
-            pvarList.append(PrecisFeature(False, varName, varType, varName.startswith("New_"), None))
-        return pvarList
+            precisFeatureList.append(PrecisFeature(False, varName, varType, varName.startswith("New_"), None))
+        return precisFeatureList
 
 # if __name__ == '__main__':
 #     sln = os.path.abspath('../ContractsSubjects/Stack/Stack.sln')
@@ -53,6 +53,6 @@ class Problem:
 #     print(PUTName in p.PUTs)
 #     p.ExtractObservers(PUTName, outputFile)
 #     p.ReadObserversFromFile(outputFile)
-#     print(p.pvarList[1].varName)
-#     print(p.pvarList[1].varZ3)
-#     print(p.pvarList[1].isNew)
+#     print(p.precisFeatureList[1].varName)
+#     print(p.precisFeatureList[1].varZ3)
+#     print(p.precisFeatureList[1].isNew)

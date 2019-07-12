@@ -21,10 +21,10 @@ def learnPost():
 
     p = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
     p.ExtractObservers(PUTName, outputFile)
-    pvarList = p.ReadObserversFromFile(outputFile)
+    precisFeatureList = p.ReadObserversFromFile(outputFile)
 
     pex = Pex()
-    dataPoints = pex.RunTeacher(p, PUTName, pvarList)
+    dataPoints = pex.RunTeacher(p, PUTName, precisFeatureList)
     
     for dp in dataPoints:
         print(dp)

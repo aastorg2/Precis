@@ -9,11 +9,11 @@ class FeatureVector:
     values = ()
     
 
-    def __init__(self, pvarList, values, testLabel):
+    def __init__(self, precisFeatureList, values, testLabel):
         self.values = values
         assert(testLabel == 'True' or testLabel == 'False')
         for idx in range(len(values)):
-            self.AddValues(pvarList[idx].varZ3, values[idx])
+            self.AddValues(precisFeatureList[idx].varZ3, values[idx])
         
         if testLabel == 'True':
             self.testLabel = True
@@ -23,23 +23,23 @@ class FeatureVector:
         #TODO: counterexample label should not set here but at client side
         self.counterexampleLabel = True
 
-    def AddValues(self, pvarZ3, value):
-        self.CheckValueType(pvarZ3, value)
-        if is_int(pvarZ3):
+    def AddValues(self, precisFeatureZ3, value):
+        self.CheckValueType(precisFeatureZ3, value)
+        if is_int(precisFeatureZ3):
             self.valuesZ3 += (IntVal(value), )
-        elif is_real(pvarZ3):
+        elif is_real(precisFeatureZ3):
             self.valuesZ3 += (RealVal(value), )
-        elif is_bool(pvarZ3):
+        elif is_bool(precisFeatureZ3):
             self.valuesZ3 += (BoolVal(value.upper() == 'TRUE'), )
 
     # DEBUG method
-    def CheckValueType(self, pvarZ3, value):
+    def CheckValueType(self, precisFeatureZ3, value):
         # Check int
-        assert((type(eval(value)) == int) == is_int(pvarZ3))
+        assert((type(eval(value)) == int) == is_int(precisFeatureZ3))
         # Check float
-        assert((type(eval(value)) == float) == is_real(pvarZ3))
+        assert((type(eval(value)) == float) == is_real(precisFeatureZ3))
         # Check bool
-        assert(((value.upper() == 'TRUE') or (value.upper() == 'FALSE')) == is_bool(pvarZ3))
+        assert(((value.upper() == 'TRUE') or (value.upper() == 'FALSE')) == is_bool(precisFeatureZ3))
     # End of DEBUG method
 
     def __str__(self):
@@ -63,15 +63,13 @@ class FeatureVector:
     def __len__(self):
         return len(self.valuesZ3)
 
-    # derivedFeatureVector: tuple of derived Z3 feature vector
+    # derivedValuesZ3: tuple of derived Z3 values
     def __add__(self, derivedValuesZ3):
         derivedValues = ()
         for valueZ3 in derivedValuesZ3:
             derivedValues += (str(valueZ3), )
-        observerValues = self.values
-        observerValuesZ3 = self.valuesZ3
 
         featureVector = FeatureVector([], [], str(self.testLabel))
-        featureVector.values = observerValues + derivedValues
-        featureVector.valuesZ3 = observerValuesZ3 + derivedValuesZ3
+        featureVector.values = self.values + derivedValues
+        featureVector.valuesZ3 = self.valuesZ3 + derivedValuesZ3
         return featureVector
