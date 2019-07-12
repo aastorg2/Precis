@@ -39,8 +39,8 @@ def learnPost():
     derivedFeatureVectors = list()
     derivedFeatureVectors = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
     # keep feature vectors as list, once appended turn to set
-    print ("base Feature Vectors", baseFeatureVectors)
-    print("derived feature vectors:", derivedFeatureVectors)
+    print ("base Feature Vectors: ", baseFeatureVectors)
+    print("derived feature vectors: ", derivedFeatureVectors)
     print ("all features: ", features)
 
     #print(derivedFeatures)
