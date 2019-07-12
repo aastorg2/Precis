@@ -44,15 +44,15 @@ def learnPost():
     print("derived feature vectors: ", derivedFeatureVectors)
     print("\n")
     print ("all features: ", features)
-    
+
+    featureVectors = []
+    for i in range(len(baseFeatureVectors)):
+        featureVectors.append(baseFeatureVectors[i] + derivedFeatureVectors[i])
+    print('here')
     #assert(bfv[0] <--> dfv[0] )
     #featureVectors = baseFeatureVectors + derivedFeatureVectors
     #print(derivedFeatures)
-
     #print(featureVectors)
-    
-
-    #print ("here")
 
 
 

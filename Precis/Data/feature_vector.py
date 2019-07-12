@@ -6,7 +6,7 @@ class FeatureVector:
     #tuple of z3 values 
     valuesZ3 = ()
     # tuple of strings representing values of features (i.e represents a row of data; a list of self.values would represent a 2D matrix.)
-    values =()
+    values = ()
     
 
     def __init__(self, pvarList, values, testLabel):
@@ -63,5 +63,15 @@ class FeatureVector:
     def __len__(self):
         return len(self.valuesZ3)
 
-    #def __add__(self, o):
-    #    assert(type)
+    # derivedFeatureVector: tuple of derived Z3 feature vector
+    def __add__(self, derivedValuesZ3):
+        derivedValues = ()
+        for valueZ3 in derivedValuesZ3:
+            derivedValues += (str(valueZ3), )
+        observerValues = self.values
+        observerValuesZ3 = self.valuesZ3
+
+        featureVector = FeatureVector([], [], str(self.testLabel))
+        featureVector.values = observerValues + derivedValues
+        featureVector.valuesZ3 = observerValuesZ3 + derivedValuesZ3
+        return featureVector
