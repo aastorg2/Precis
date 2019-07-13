@@ -43,7 +43,7 @@ class PrecisFeature:
     # DEBUG method
     def CheckVarType(self, varType):
         assert varType.upper() == 'INT' or varType.upper() == 'FLOAT' or varType.upper() == 'BOOL', 'Only variables with type int, float and bool are supported!!!'
-    
+
     def __str__(self):
         return self.varName
     

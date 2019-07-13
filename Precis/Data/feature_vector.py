@@ -13,9 +13,6 @@ class FeatureVector:
     def __init__(self, precisFeatureList, values, testLabel):
         self.values = values
 
-        # boolean value indices
-        self.boolFeatureIndices = []
-
         assert(testLabel == 'True' or testLabel == 'False')
         for idx in range(len(values)):
             self.AddValues(precisFeatureList[idx].varZ3, values[idx], idx)
@@ -36,8 +33,7 @@ class FeatureVector:
             self.valuesZ3 += (RealVal(value), )
         elif is_bool(precisFeatureZ3):
             self.valuesZ3 += (BoolVal(value.upper() == 'TRUE'), )
-            self.boolFeatureIndices.append(idx)
-
+    
     # DEBUG method
     def CheckValueType(self, precisFeatureZ3, value):
         # Check int
@@ -47,7 +43,7 @@ class FeatureVector:
         # Check bool
         assert(((value.upper() == 'TRUE') or (value.upper() == 'FALSE')) == is_bool(precisFeatureZ3))
     # End of DEBUG method
-
+        
     def __str__(self):
         output = '('
         for value in self.values:
@@ -77,5 +73,4 @@ class FeatureVector:
         featureVector = FeatureVector([], [], str(self.testLabel))
         featureVector.values = self.values + derivedValues
         featureVector.valuesZ3 = self.valuesZ3 + derivedValuesZ3
-        featureVector.boolFeatureIndices = self.boolFeatureIndices + list(range(len(self.values), len(self.values) + len(derivedValues)))
         return featureVector

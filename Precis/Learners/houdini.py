@@ -1,6 +1,7 @@
 from z3 import *
 import itertools
 from Data.precis_feature import PrecisFeature
+from Data.feature_vector import FeatureVector
 
 class Houdini:
     
@@ -11,7 +12,34 @@ class Houdini:
         for i in range(len(baseFeatureVectors)):
             featureVectors.append(baseFeatureVectors[i] + derivedValuesZ3Tuples[i])
         return featureVectors
-        
+    
+    def getBoolFeatures(self, precisFeatureList):
+        boolFeatures = []
+        boolFeatureIndices = []
+        for idx in range(len(precisFeatureList)):
+            if is_bool(precisFeatureList[idx].varZ3):
+                boolFeatures.append(precisFeatureList[idx])
+                boolFeatureIndices.append(idx)
+        return boolFeatures, boolFeatureIndices
+    
+    def getBoolFeatureVectors(self, featureVectorList):
+        assert(len(featureVectorList) > 0)
+        boolFeatureVectorIndices = self.getBoolFeatureVector(featureVectorList[0])
+        boolFeatureVectors = []
+        for featureVector in featureVectorList:
+            boolFeatureVector = FeatureVector([], [], str(featureVector.testLabel))
+            boolFeatureVector.valuesZ3 = tuple(featureVector.valuesZ3[i] for i in boolFeatureVectorIndices)
+            boolFeatureVector.values = tuple(featureVector.values[i] for i in boolFeatureVectorIndices)
+            boolFeatureVectors.append(boolFeatureVector)
+        return boolFeatureVectors, boolFeatureVectorIndices
+
+    def getBoolFeatureVector(self, featureVector):
+        boolFeatureVectorIndices = []
+        for idx in range(len(featureVector.valuesZ3)):
+            if is_bool(featureVector.valuesZ3[idx]):
+                boolFeatureVectorIndices.append(idx)
+        return boolFeatureVectorIndices
+
     def generateDerivedFeatureVectors(self, derivedFeatures, baseFeatures, baseFeatureVectors):
         
         print(derivedFeatures)
