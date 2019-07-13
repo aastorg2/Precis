@@ -51,6 +51,8 @@ def learnPost():
     # derivedFeatureVectors is a list of tuples of Z3 values
     featureVectors = houdini.concatenateFeatureVectors(baseFeatureVectors, derivedFeatureVectors)
     print(featureVectors)
+    print(baseFeatureVectors[0].boolFeatureIndices)
+    print(featureVectors[0].boolFeatureIndices)
     print('Here')
 
     #assert(bfv[0] <--> dfv[0] )
