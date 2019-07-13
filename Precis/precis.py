@@ -41,13 +41,6 @@ def learnPost():
     # derivedFeatureVectors is a list of tuples of Z3 values
     derivedFeatureVectors = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
 
-    # keep feature vectors as list, once appended turn to set
-    print ("base Feature Vectors: ", baseFeatureVectors)
-    print("\n")
-    print("derived feature vectors: ", derivedFeatureVectors)
-    print("\n")
-    print ("all features: ", features)
-
     # derivedFeatureVectors is a list of tuples of Z3 values
     featureVectors = houdini.concatenateFeatureVectors(baseFeatureVectors, derivedFeatureVectors)
     print(featureVectors)
