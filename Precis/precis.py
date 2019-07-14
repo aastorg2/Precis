@@ -46,7 +46,12 @@ def learnPost():
     print(featureVectors)
     
     boolFeatures, boolFeatureIndices = houdini.getBoolFeatures(features)
-    boolFeatureVectors, boolFeatureVectorIndices = houdini.getBoolFeatureVectors(featureVectors)
+    boolFeatureVectors = houdini.getBoolFeatureVectors(featureVectors, boolFeatureIndices)
+    print(boolFeatures)
+    print()
+    print(boolFeatureIndices)
+    print()
+    print(boolFeatureVectors)
 
     print('Here')
 
