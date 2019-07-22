@@ -52,7 +52,8 @@ def learnPost():
     #print(boolFeatureIndices)
     #print()
     #print(boolFeatureVectors)
-    houdini.learn(boolFeatures, boolFeatureVectors)
+    postcondition = None
+    postcondition = houdini.learn(boolFeatures, boolFeatureVectors)
     
     #assert(bfv[0] <--> dfv[0] )
     #featureVectors = baseFeatureVectors + derivedFeatureVectors
