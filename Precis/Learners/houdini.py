@@ -72,23 +72,19 @@ class Houdini:
         return pairs
 
 
-    def learn(features,featureVectors):
+    def learn(self,features,featureVectors):
         assert(len(featureVectors) > 0)
         #check datapoint are boolean
-        #assert(len(self.dataPoints) or all ( all( v == "true" or v == "false" for v in dp) for dp in self.dataPoints))
+        assert(len(featureVectors) or all ( all( v == "true" or v == "false" for v in dp) for dp in featureVectors))
     
+        # map from  index of features to
+        alwaysTrueMap = {idx: True for idx in range(0, len(features))}
+        
+
+
     """
      def runLearner(self):
-        #print os.linesep+ " bool variables renamed again: " + str(self.symbolicBoolVariables)
-        # Numpy implementation, future work
-        # A = np.array(np.array(self.dataPoints) == "true")
-        # X, y = A[:, :-1], A[:, -1]
-        assert(len(self.dataPoints)> 0 )
-        #asset all data point elements are "true" or "false"
-        #if len(self.dataPoints) == 0:
-        #    self.learntConjuction = ["true"]
-        #    return "true"
-
+        
         assert(len(self.dataPoints) or all ( all( v == "true" or v == "false" for v in dp) for dp in self.dataPoints))
         
         #Assign all predicate to true
