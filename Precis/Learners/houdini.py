@@ -77,56 +77,21 @@ class Houdini:
         #check datapoint are boolean
         assert(len(featureVectors) or all ( all( v == "true" or v == "false" for v in dp) for dp in featureVectors))
     
-        # map from  index of features to
-        alwaysTrueMap = {idx: True for idx in range(0, len(features))}
+        # dict from  index of features to
+        workList = {idx: True for idx in range(0, len(features))}
+        #workList = list(features)
+        #oldCount = len(workList)
+        for idx in range(0, len(features)):
+            #fv is of type feature vector
+            for fv in featureVectors:
+                assert(len(fv) == len(features) )
+                if str(fv[idx]) == "False":
+                   workList[idx]  = False
+                   break 
+        houdini = []
+        for idx in range(0, len(features)):
+            if workList[idx]:
+                houdini.append(features[idx])
         
-
-
-    """
-     def runLearner(self):
-        
-        assert(len(self.dataPoints) or all ( all( v == "true" or v == "false" for v in dp) for dp in self.dataPoints))
-        
-        #Assign all predicate to true
-        predAssignment = {varIndex: True for varIndex in range(0, len(self.symbolicBoolVariables))} 
-        
-        for varIndex in range(0, len(self.symbolicBoolVariables)):
-            # not needed, but useful to prune: If a predicate is already evaluated to Flase, skip 
-            if predAssignment[varIndex] == False:
-                continue
-            
-            for dp in self.dataPoints:
-                #There are no negative points for postcondition learning!!! Should not check for this
-                if dp[-1] == "false":
-                    #continue 
-                    raise ValueError("Inspect ME, I may be wrong")
-                
-                #datapoint is posetive 
-                #if datapoint on predicate is false
-                if dp[varIndex]  == "false":
-                    predAssignment[varIndex]  = False
-                    break
-        
-        posPred = []
-        for varIndex in range(0, len(self.symbolicBoolVariables)):
-            if predAssignment[varIndex]:
-                posPred.append(self.symbolicBoolVariables[varIndex])
-        
-
-
-        # This is also wrong!, if no positive predicates than we should not output false but rather TRUE;
-        if len(posPred) == 0:
-            conjunct = "true"
-            # Quick Fix- to return list
-            self.learntConjuction = ["true"]
-        
-        elif len(posPred) == 1:
-            conjunct = posPred[0]
-            # Quick Fix- to return list
-            self.learntConjuction = posPred
-        else: 
-            conjunct = "(and " + " ".join(posPred) + ")"
-            self.learntConjuction = posPred
-        #print os.linesep+ "conjunct from houdini: "+ conjunct
-        return conjunct
-    """
+        print("always true")
+        print(houdini)
