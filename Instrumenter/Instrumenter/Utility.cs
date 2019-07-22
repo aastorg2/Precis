@@ -32,9 +32,9 @@ namespace ObserverTypeExtractor
             Debug.Assert(File.Exists(sln));
             this.workspace = MSBuildWorkspace.Create();
             this.solution = workspace.OpenSolutionAsync(sln).Result;
-
+            //Console.WriteLine(testProjectName);
             Document testClassDocument = FindDocumentByName(testProjectName, testFileName);
-
+            //Environment.Exit(0);
             /**** DEBUG ****/
             Debug.Assert(testClassDocument != null);
 
