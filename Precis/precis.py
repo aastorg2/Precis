@@ -40,7 +40,6 @@ def learnPost():
 
     # derivedFeatureVectors is a list of tuples of Z3 values
     derivedFeatureVectors = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
-
     # derivedFeatureVectors is a list of tuples of Z3 values
     featureVectors = houdini.concatenateFeatureVectors(baseFeatureVectors, derivedFeatureVectors)
     #print(featureVectors)
@@ -53,8 +52,6 @@ def learnPost():
     #print(boolFeatureIndices)
     #print()
     #print(boolFeatureVectors)
-
-    print('Here')
     houdini.learn(boolFeatures, boolFeatureVectors)
     
     #assert(bfv[0] <--> dfv[0] )

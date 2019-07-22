@@ -2,6 +2,7 @@ from z3 import *
 import itertools
 from Data.precis_feature import PrecisFeature
 from Data.feature_vector import FeatureVector
+from Data.precis_formula import PrecisFormula
 
 class Houdini:
     
@@ -33,17 +34,17 @@ class Houdini:
 
     def generateDerivedFeatureVectors(self, derivedFeatures, baseFeatures, baseFeatureVectors):
         
-        print(derivedFeatures)
-        print(baseFeatureVectors)
-        print ("here")
-        print(baseFeatures)
+        #print(derivedFeatures)
+        #print(baseFeatureVectors)
+        #print ("here")
+        #print(baseFeatures)
         pairs = list()
         # consider
         allDerivedFeatureVectors = list()
         for f in baseFeatureVectors:
-            print("feature vec: " +str(f))
+            #print("feature vec: " +str(f))
             pairs = Houdini.generateFeatureValueMapping(baseFeatures,f)
-            print(pairs)
+            #print(pairs)
             #print(type(pairs))
             derivedFeatureVector = ()
             for df in derivedFeatures:
@@ -88,10 +89,14 @@ class Houdini:
                 if str(fv[idx]) == "False":
                    workList[idx]  = False
                    break 
-        houdini = []
+        conjuncts = []
         for idx in range(0, len(features)):
             if workList[idx]:
-                houdini.append(features[idx])
+                conjuncts.append(features[idx].varZ3)
         
-        print("always true")
-        print(houdini)
+        phi = ""
+        houdini = None
+        phi = And(conjuncts)
+        houdini = PrecisFormula(phi)
+        return houdini
+        
