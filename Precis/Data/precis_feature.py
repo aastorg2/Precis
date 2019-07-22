@@ -51,6 +51,10 @@ class PrecisFeature:
     def __repr__(self):
         return self.__str__()
 
+    #Consider adding hash function after getting implication check to work in z3 and then refactor houdini
+    #def ___hash__(self):
+    #    return hash()
+
 if __name__ == '__main__':
     precisFeature = PrecisFeature(False, 'New_s1Count', 'Int', True, None)
     print(precisFeature)  
