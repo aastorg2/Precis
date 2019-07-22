@@ -13,3 +13,5 @@ class PrecisFormula:
         self.formulaZ3 = varZ3
         # Z3eprx in string format add a newline after every conjunct
         self.formula = str(varZ3).replace("\n","")
+
+    #def toInfix
