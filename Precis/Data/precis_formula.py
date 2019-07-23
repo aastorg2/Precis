@@ -21,7 +21,8 @@ class PrecisFormula:
             if not flag:
                 #replace("&&    ","&& ") is to deal with spacing added in z3 expr when toString
                 return s.replace("`","(").replace("~",")").replace("&&    ","&& ")
-
+   
+    # Acknowledgement: Neil Zhao
     def replace(self, s):
         pattern = re.compile(r'((And|Or)(\(([^,()]+(,[^,()]+))*\)))')
         res = pattern.findall(s)

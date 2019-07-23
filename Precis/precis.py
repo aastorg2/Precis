@@ -25,48 +25,55 @@ def learnPost():
 
     #returns list of base features
     baseFeatures = p.ReadObserversFromFile(outputFile)
+    allPostconditions = list()
+    while True:
+        pex = Pex()
+        baseFeatureVectors = pex.RunTeacher(p, PUTName, baseFeatures)
     
-    pex = Pex()
-    baseFeatureVectors = pex.RunTeacher(p, PUTName, baseFeatures)
-    
-    featureSynthesizer = FeatureSynthesis()
-    #list of derivedFeatures
-    derivedFeatures = featureSynthesizer.GenerateDerivedFeatures(baseFeatures)
-    
-    features = list()
-    # appending two list
-    features =  baseFeatures + derivedFeatures
+        featureSynthesizer = FeatureSynthesis()
+        #list of derivedFeatures
+        derivedFeatures = featureSynthesizer.GenerateDerivedFeatures(baseFeatures)
+        features = list()
+        # appending two list
+        features =  baseFeatures + derivedFeatures
 
-    houdini = Houdini()
-    derivedFeatureVectors = list()
+        houdini = Houdini()
+        derivedFeatureVectors = list()
 
-    # derivedFeatureVectors is a list of tuples of Z3 values
-    derivedFeatureVectors = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
-    # derivedFeatureVectors is a list of tuples of Z3 values
-    featureVectors = houdini.concatenateFeatureVectors(baseFeatureVectors, derivedFeatureVectors)
-    #print(featureVectors)
-    
-    boolFeatures, boolFeatureIndices = houdini.getBoolFeatures(features)
-    boolFeatureVectors = houdini.getBoolFeatureVectors(featureVectors, boolFeatureIndices)
-    #print()
-    #print(boolFeatures)
-    #print()
-    #print(boolFeatureIndices)
-    #print()
-    #print(boolFeatureVectors)
-    postcondition = None
-    postcondition = houdini.learn(boolFeatures, boolFeatureVectors)
-    print("before to infix")
-    print(postcondition.toInfix())
-    
-    instruCommand = "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe --solution=C:/Users/astor/Research/LearningContracts/ContractsSubjects/Stack/Stack.sln --test-project-name=StackTest  --test-file-name=StackContractTest.cs --PUT-name=PUT_PushContract --post-condition="+"\""+postcondition.toInfix()+"\""
-    instOutput = command_runner.runCommand(instruCommand)
+        # derivedFeatureVectors is a list of tuples of Z3 values
+        derivedFeatureVectors = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
+        # derivedFeatureVectors is a list of tuples of Z3 values
+        featureVectors = houdini.concatenateFeatureVectors(baseFeatureVectors, derivedFeatureVectors)
+        #print(featureVectors)
+        
+        boolFeatures, boolFeatureIndices = houdini.getBoolFeatures(features)
+        boolFeatureVectors = houdini.getBoolFeatureVectors(featureVectors, boolFeatureIndices)
+        #print()
+        #print(boolFeatures)
+        #print()
+        #print(boolFeatureIndices)
+        #print()
+        #print(boolFeatureVectors)
+        postcondition = None
+        postcondition = houdini.learn(boolFeatures, boolFeatureVectors)
+        print("before to infix")
+        print(postcondition.toInfix())
+        
+        instruCommand = "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe --solution="+ p.sln + \
+        " --test-project-name=" +p.projectName+ " --test-file-name=" +p.testFileName+ " --PUT-name=" +PUTName+ " --post-condition="+"\""+postcondition.toInfix()+"\""
+        instOutput = command_runner.runCommand(instruCommand)
 
-    print(instOutput)
-    #assert(bfv[0] <--> dfv[0] )
-    #featureVectors = baseFeatureVectors + derivedFeatureVectors
-    #print(derivedFeatures)
-    #print(featureVectors)
+        print(instOutput)
+
+        if postcondition.formula in allPostconditions:
+            print("found it")
+            break
+        
+        allPostconditions.append(postcondition.formula)
+        #assert(bfv[0] <--> dfv[0] )
+        #featureVectors = baseFeatureVectors + derivedFeatureVectors
+        #print(derivedFeatures)
+        #print(featureVectors)
 
 
 
