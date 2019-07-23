@@ -56,9 +56,10 @@ def learnPost():
     #print(boolFeatureVectors)
     postcondition = None
     postcondition = houdini.learn(boolFeatures, boolFeatureVectors)
-    print(postcondition.formula)
+    print("before to infix")
+    print(postcondition.toInfix())
     
-    instruCommand = "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe --solution=C:/Users/astor/Research/LearningContracts/ContractsSubjects/Stack/Stack.sln --test-project-name=StackTest  --test-file-name=StackContractTest.cs --PUT-name=PUT_PushContract --post-condition=true"
+    instruCommand = "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe --solution=C:/Users/astor/Research/LearningContracts/ContractsSubjects/Stack/Stack.sln --test-project-name=StackTest  --test-file-name=StackContractTest.cs --PUT-name=PUT_PushContract --post-condition="+"\""+postcondition.toInfix()+"\""
     instOutput = command_runner.runCommand(instruCommand)
 
     print(instOutput)
