@@ -5,6 +5,7 @@ from Data.problem import Problem
 from Teachers.pex import Pex
 from Learners.feature_synthesis import FeatureSynthesis
 from Learners.houdini import Houdini
+from Learners.disjunctive_learner import DisjunctiveLearner
 
 import command_runner
 
@@ -28,8 +29,8 @@ def learnPost():
     allPostconditions = list()
     while True:
         pex = Pex()
+        
         baseFeatureVectors = pex.RunTeacher(p, PUTName, baseFeatures)
-    
         featureSynthesizer = FeatureSynthesis()
         #list of derivedFeatures
         derivedFeatures = featureSynthesizer.GenerateDerivedFeatures(baseFeatures)
@@ -39,7 +40,6 @@ def learnPost():
 
         houdini = Houdini()
         derivedFeatureVectors = list()
-
         # derivedFeatureVectors is a list of tuples of Z3 values
         derivedFeatureVectors = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
         # derivedFeatureVectors is a list of tuples of Z3 values
@@ -55,14 +55,15 @@ def learnPost():
         #print()
         #print(boolFeatureVectors)
         postcondition = None
-        postcondition = houdini.learn(boolFeatures, boolFeatureVectors)
+        disLearner = DisjunctiveLearner()
+        postcondition = disLearner.learn(0,boolFeatures, boolFeatureVectors)
         print("before to infix")
         print(postcondition.toInfix())
         
         instruCommand = "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe --solution="+ p.sln + \
         " --test-project-name=" +p.projectName+ " --test-file-name=" +p.testFileName+ " --PUT-name=" +PUTName+ " --post-condition="+"\""+postcondition.toInfix()+"\""
         instOutput = command_runner.runCommand(instruCommand)
-
+        # missing call to MSBuild
         print(instOutput)
 
         if postcondition.formula in allPostconditions:

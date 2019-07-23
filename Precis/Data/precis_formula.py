@@ -20,6 +20,8 @@ class PrecisFormula:
             s, flag = self.replace(s)
             if not flag:
                 #replace("&&    ","&& ") is to deal with spacing added in z3 expr when toString
+                # symbols ~ and ) are used placed holders for left and right parenthesis.
+                # We need these place holders because our regex looks for left and right paren 
                 return s.replace("`","(").replace("~",")").replace("&&    ","&& ")
    
     # Acknowledgement: Neil Zhao
