@@ -6,6 +6,8 @@ from Teachers.pex import Pex
 from Learners.feature_synthesis import FeatureSynthesis
 from Learners.houdini import Houdini
 
+import command_runner
+
 def learnPost():
     sln = os.path.abspath('../ContractsSubjects/Stack/Stack.sln')
     projectName =  'StackTest'
@@ -54,7 +56,12 @@ def learnPost():
     #print(boolFeatureVectors)
     postcondition = None
     postcondition = houdini.learn(boolFeatures, boolFeatureVectors)
+    print(postcondition.formula)
     
+    instruCommand = "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe --solution=C:/Users/astor/Research/LearningContracts/ContractsSubjects/Stack/Stack.sln --test-project-name=StackTest  --test-file-name=StackContractTest.cs --PUT-name=PUT_PushContract --post-condition=true"
+    instOutput = command_runner.runCommand(instruCommand)
+
+    print(instOutput)
     #assert(bfv[0] <--> dfv[0] )
     #featureVectors = baseFeatureVectors + derivedFeatureVectors
     #print(derivedFeatures)
