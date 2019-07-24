@@ -56,7 +56,8 @@ def learnPost():
         #print(boolFeatureVectors)
         postcondition = None
         disLearner = DisjunctiveLearner()
-        postcondition = disLearner.learn(0,boolFeatures, boolFeatureVectors)
+        postcondition = disLearner.learn(1,boolFeatures, boolFeatureVectors)
+        sys.exit(0)
         print("before to infix")
         print(postcondition.toInfix())
         
