@@ -79,11 +79,11 @@ class DisjunctiveLearner:
 
             #print( [ len(fv)  for fv in fposFv] )
             #print( [ len(fv)  for fv in fnegFv] )
-            #posPost = learn(k-1,newFeatures,fposFv)
-            #negPost = learn(k-1,newFeatures,fnegFv)
+            posPost = self.learn(k-1,newFeatures,fposFv)
+            negPost = self.learn(k-1,newFeatures,fnegFv)
 
-            #print("positive: ",posPost.toInfix())
-            #print("negative: ",negPost.toInfix())
+            print("positive: ",posPost.toInfix())
+            print("negative: ",negPost.toInfix())
 
             
             #nextFeatureVector.values =  
