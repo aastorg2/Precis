@@ -4,6 +4,7 @@
 1. Python version: 3.6 and pip
 2. lxml --> pip install lxml
 3. python z3 library
+4. numpy --> pip install numpy
 
 ## Development notes
 1. When executing this program in VSCode, relative paths used in our code depends on where you open VSCode.
@@ -17,6 +18,8 @@
 
 ## Design Decisions To Be Made:
 1. ***Learners/feature_synthesis.py***: ```GenerateDerivedFeatures``` generates a list of tuples of Z3 values now, need to make it return a list of feature vectors.
+
+2. *** Make a base Scorer class that can extended***: the scorer base class can be extended by classes such as EntropyScore, MaxConjunctScore
 
 ## BUG List (fixed):
 1. ***Data/feature_vector.py***: Why ```range(len(values) - 1)``` before?  
