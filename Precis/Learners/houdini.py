@@ -90,6 +90,8 @@ class Houdini:
                    workList[idx]  = False
                    break 
         conjuncts = []
+        # add early return if no predicates are always true -> houdini should return true
+        # if len
         for idx in range(0, len(features)):
             if workList[idx]:
                 conjuncts.append(features[idx].varZ3)
