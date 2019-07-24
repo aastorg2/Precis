@@ -14,6 +14,7 @@ class FeatureVector:
         self.values = values
 
         assert(testLabel == 'True' or testLabel == 'False')
+        assert( len(precisFeatureList) == len(values) )
         for idx in range(len(values)):
             self.AddValues(precisFeatureList[idx].varZ3, values[idx], idx)
         
