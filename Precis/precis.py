@@ -9,7 +9,20 @@ from Learners.disjunctive_learner import DisjunctiveLearner
 
 import command_runner
 
+import logging
+
+
 def learnPost():
+    logger = logging.getLogger("Runner")
+    logger.setLevel(logging.INFO)
+    # create the logging file handler
+    fh = logging.FileHandler("information")
+    formatter = logging.Formatter('%(message)s')
+    fh.setFormatter(formatter)
+    # add handler to logger object
+    logger.addHandler(fh)
+
+
     sln = os.path.abspath('../ContractsSubjects/Stack/Stack.sln')
     projectName =  'StackTest'
     testDebugFolder = '../ContractsSubjects/Stack/StackTest/bin/Debug/'
