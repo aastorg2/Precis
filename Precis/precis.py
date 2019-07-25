@@ -40,10 +40,12 @@ def learnPost():
     #returns list of base features
     baseFeatures = p.ReadObserversFromFile(outputFile)
     allPostconditions = list()
+    allBaseFeatureVectors =[]
     while True:
         pex = Pex()
         
         baseFeatureVectors = pex.RunTeacher(p, PUTName, baseFeatures)
+        allBaseFeatureVectors.extend(baseFeatureVectors)
         featureSynthesizer = FeatureSynthesis()
         #list of derivedFeatures
         derivedFeatures = featureSynthesizer.GenerateDerivedFeatures(baseFeatures)
@@ -54,9 +56,9 @@ def learnPost():
         houdini = Houdini()
         derivedFeatureVectors = list()
         # derivedFeatureVectors is a list of tuples of Z3 values
-        derivedFeatureVectors = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
+        derivedFeatureVectors = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, allBaseFeatureVectors)
         # derivedFeatureVectors is a list of tuples of Z3 values
-        featureVectors = houdini.concatenateFeatureVectors(baseFeatureVectors, derivedFeatureVectors)
+        featureVectors = houdini.concatenateFeatureVectors(allBaseFeatureVectors, derivedFeatureVectors)
         #print(featureVectors)
         
         boolFeatures, boolFeatureIndices = houdini.getBoolFeatures(features)

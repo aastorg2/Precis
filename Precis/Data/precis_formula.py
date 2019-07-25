@@ -35,3 +35,11 @@ class PrecisFormula:
                 replacement = r[2][1:-1].replace(', ', ' || ')
             s = s.replace(r[0], '`{}~'.format(replacement))
         return s, len(res) > 0
+
+    def precisAnd(self,other):
+        # check other is of type z3eprx
+        return PrecisFormula(And(self.formulaZ3. other))
+
+    def precisOr(self,other):
+        # check other is of type z3eprx
+        return PrecisFormula(Or(self.formulaZ3. other))

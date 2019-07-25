@@ -81,14 +81,24 @@ class DisjunctiveLearner:
             #print( [ len(fv)  for fv in fnegFv] )
             posPost = self.learn(k-1,newFeatures,fposFv)
             negPost = self.learn(k-1,newFeatures,fnegFv)
-
+            print(f)
             print("positive: ",posPost.toInfix())
+            print("positive: ",posPost.formula )
             print("negative: ",negPost.toInfix())
-
+            print("negative: ",posPost.formula)
+            print()
+            print("result of conjunction")
+            #Todo: missing conjunction with split predicate
+            disjunction = Or(posPost.formulaZ3, negPost.formulaZ3)
+            #stringDisjunc = "(or(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (= Old_Top New_Top) (= Old_Top Old_x) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x ))(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not(= Old_s1Count Old_Top)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (not (= Old_Top New_Top)) (not(= Old_Top Old_x)) (not (= Old_Top New_x)) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x )))"
+            #result = self.precisSimplify(stringDisjunc,['Old_s1Count', 'New_s1Count', 'Old_Top', 'New_Top', 'Old_x', 'New_x'],["Old_s1ContainsX", "New_s1ContainsX"])
             
+            #for conjuct in result:
+            #    print(type(conjuct))
+            #    print(conjuct)
             #nextFeatureVector.values =  
             #nextFeatureVector.valuesZ3 = self.valuesZ3 + derivedValuesZ3
-
+            return PrecisFormula(disjunction)
 
             
     #return feature along with index
@@ -147,6 +157,92 @@ class DisjunctiveLearner:
         return - (probability_value_attribute * numpy.log(probability_value_attribute) / numpy.log(base)).sum()
         # Note: I believe this implementation is missing an additional multiplication
         #return - ((probability_value_attribute/initialTotalSample)* probability_value_attribute * numpy.log(probability_value_attribute) / numpy.log(base)).sum()
+
+    def precisSimplify(self,precondition, intVariables, boolVariables):
+        set_option(max_args = 10000000, max_lines = 1000000, max_depth = 10000000, max_visited = 1000000)
+        set_option(html_mode=False)
+        set_fpa_pretty(flag=False)
+        
+        intVars = [ Int(var) for var in intVariables]
+        boolVars = [ Bool(var) for var in boolVariables]
+    
+        declareInts = "\n".join([ "(declare-const " + var + " Int)" for var in intVariables ])
+        declareBools = "\n".join([ "(declare-const " + var + " Bool)" for var in boolVariables ])
+        stringToParse = "\n".join([declareInts,  declareBools, "( assert " + precondition + ")"])
+    
+        #logger = logging.getLogger("Framework.z3Simplify")
+    
+        #logger.info("############ z3 program")
+        #logger.info("############ " + stringToParse)
+    
+        expr = parse_smt2_string(stringToParse)
+        
+        g  = Goal()
+        g.add(expr)
+        
+        works = Repeat(Then( 
+        
+        OrElse(Tactic('ctx-solver-simplify'),Tactic('skip')),
+        
+        # OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
+        # OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
+        # OrElse(Tactic('purify-arith'),Tactic('skip')),
+        # OrElse(Tactic('ctx-simplify'),Tactic('skip')),
+        # OrElse(Tactic('dom-simplify'),Tactic('skip')),
+        # OrElse(Tactic('propagate-values'),Tactic('skip')),
+        
+        OrElse(Tactic('simplify'),Tactic('skip')),
+        
+        # OrElse(Tactic('aig'),Tactic('skip')),
+        # OrElse(Tactic('degree-shift'),Tactic('skip')),
+        # OrElse(Tactic('factor'),Tactic('skip')),
+        # OrElse(Tactic('lia2pb'),Tactic('skip')),
+        # OrElse(Tactic('recover-01'),Tactic('skip')),
+        
+        OrElse(Tactic('elim-term-ite'),Tactic('skip')), #must to remove ite
+        
+        # OrElse(Tactic('injectivity'),Tactic('skip')),
+        # OrElse(Tactic('snf'),Tactic('skip')),
+        # OrElse(Tactic('reduce-args'),Tactic('skip')),
+        # OrElse(Tactic('elim-and'),Tactic('skip')),
+        # OrElse(Tactic('symmetry-reduce'),Tactic('skip')),
+        # OrElse(Tactic('macro-finder'),Tactic('skip')),
+        # OrElse(Tactic('quasi-macros'),Tactic('skip')),
+        
+        Repeat(OrElse(Tactic('split-clause'),Tactic('skip'))),
+        ))
+        #works1 = Tactic('simplify')    
+
+        result = works(g)
+        #result = works1(g)
+        # split_all = 
+
+        # print str(result)
+        # result = [[ "d1", "d2", "d3"], #= conjunct && conjunct
+        #           [ "d4", "d5", "d6"]]
+        
+        #remove empty subgoals and check if resultant list is empty.
+        result = filter(None, result)
+        if not result:
+            return "true" 
+        #return result
+        
+        completeConjunct = []
+        for conjunct in result: 
+            completeDisjunct = []
+            for disjunct in conjunct:
+                    completeDisjunct.append("(" + str(disjunct) + ")")
+                    
+            completeConjunct.append( "(" + " && ".join(completeDisjunct) + ")")
+        
+        simplifiedPrecondition = " || ".join(completeConjunct)
+        
+        simplifiedPrecondition = simplifiedPrecondition.replace("Not", " ! ")
+        simplifiedPrecondition = simplifiedPrecondition.replace("False", " false ")
+        simplifiedPrecondition = simplifiedPrecondition.replace("True", " true ")
+        simplifiedPrecondition = simplifiedPrecondition.replace("\n", "  ")
+        return simplifiedPrecondition
+
 
 if __name__ == '__main__':
 
