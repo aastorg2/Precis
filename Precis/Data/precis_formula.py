@@ -26,14 +26,17 @@ class PrecisFormula:
    
     # Acknowledgement: Neil Zhao
     def replace(self, s):
-        pattern = re.compile(r'((And|Or)(\(([^,()]+(,[^,()]+))*\)))')
+        pattern = re.compile(r'((And|Or|Not)(\(([^,()]+(,[^,()]+)*)\)))')
         res = pattern.findall(s)
         for r in res:
             if r[1] == 'And':
                 replacement = r[2][1:-1].replace(', ', ' && ')
-            else:
+                s = s.replace(r[0], '`{}~'.format(replacement))
+            elif r[1] == 'Or':
                 replacement = r[2][1:-1].replace(', ', ' || ')
-            s = s.replace(r[0], '`{}~'.format(replacement))
+                s = s.replace(r[0], '`{}~'.format(replacement))
+            else:
+                s = '`!`{}~~'.format(r[2][1:-1])
         return s, len(res) > 0
 
     def precisAnd(self,other):
