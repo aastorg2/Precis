@@ -63,12 +63,7 @@ def learnPost():
         
         boolFeatures, boolFeatureIndices = houdini.getBoolFeatures(features)
         boolFeatureVectors = houdini.getBoolFeatureVectors(featureVectors, boolFeatureIndices)
-        #print()
-        #print(boolFeatures)
-        #print()
-        #print(boolFeatureIndices)
-        #print()
-        #print(boolFeatureVectors)
+        
         postcondition = None
         disLearner = DisjunctiveLearner()
         postcondition = disLearner.learn(0,boolFeatures, boolFeatureVectors)
@@ -76,14 +71,9 @@ def learnPost():
         print("before to infix")
         print(postcondition.toInfix())
         
-        instruCommand = "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe --solution="+ p.sln + \
-        " --test-project-name=" +p.projectName+ " --test-file-name=" +p.testFileName+ " --PUT-name=" +PUTName+ " --post-condition="+"\""+postcondition.toInfix()+"\""
-        instOutput = command_runner.runCommand(instruCommand)
-        print(instOutput)
-
         # assumes ms build in path
         inst = Instrumenter("MSBuild.exe","./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
-        inst.instrumentPost(p, postcondition)    
+        inst.instrumentPost(p, postcondition, PUTName)    
 
         if postcondition.formula in allPostconditions:
             print("found it")
