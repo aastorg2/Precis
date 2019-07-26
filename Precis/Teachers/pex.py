@@ -61,6 +61,7 @@ class Pex:
                 featureValues = FeatureVector(precisFeatureList, singlePoint, 'True')
             else:
                 #singlePoint = singlePoint +('False',)
+                #TODO: don't forget to add pex check for TermFailure 
                 featureValues = FeatureVector(precisFeatureList, singlePoint, 'False')
 
             if len(singlePoint) < len(precisFeatureList):
