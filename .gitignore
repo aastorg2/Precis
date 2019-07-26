@@ -382,3 +382,5 @@ log
 z3/
 *.ps1
 *.txt
+information
+example.yaml
