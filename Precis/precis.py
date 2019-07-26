@@ -6,7 +6,7 @@ from Teachers.pex import Pex
 from Learners.feature_synthesis import FeatureSynthesis
 from Learners.houdini import Houdini
 from Learners.disjunctive_learner import DisjunctiveLearner
-
+from Teachers.instrumenter import Instrumenter
 import command_runner
 
 import logging
@@ -71,16 +71,19 @@ def learnPost():
         #print(boolFeatureVectors)
         postcondition = None
         disLearner = DisjunctiveLearner()
-        postcondition = disLearner.learn(1,boolFeatures, boolFeatureVectors)
-        sys.exit(0)
+        postcondition = disLearner.learn(0,boolFeatures, boolFeatureVectors)
+        #sys.exit(0)
         print("before to infix")
         print(postcondition.toInfix())
         
         instruCommand = "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe --solution="+ p.sln + \
         " --test-project-name=" +p.projectName+ " --test-file-name=" +p.testFileName+ " --PUT-name=" +PUTName+ " --post-condition="+"\""+postcondition.toInfix()+"\""
         instOutput = command_runner.runCommand(instruCommand)
-        # missing call to MSBuild
         print(instOutput)
+
+        # assumes ms build in path
+        inst = Instrumenter("MSBuild.exe","./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
+        inst.instrumentPost(p, postcondition)    
 
         if postcondition.formula in allPostconditions:
             print("found it")
