@@ -7,7 +7,13 @@ class FeatureSynthesis:
     #def __init__(self):
     def GenerateDerivedFeatures(self,baseFeatures):
         intFeatures = [f for f in baseFeatures if str(f.varZ3.sort())=="Int"]
+        sygusResult = "(= New_s1Count (- Old_New1Count  1))"
+
+        #minus = precisFeature.oldcount - IntVal(1)
+        #equal = precisFeature.New  
+        #sygusPrecisFeature = PrecisFeature(sygusResult, )
         return self.CreateEqualities(intFeatures)
+        #Todo: call to sygus solvers can be placed here.
 
     # this method assumes it called with integer features
     def CreateEqualities(self, intFeatures):
