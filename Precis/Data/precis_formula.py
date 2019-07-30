@@ -14,6 +14,7 @@ class PrecisFormula:
         # Z3eprx in string format add a newline after every conjunct
         self.formula = str(varZ3).replace("\n","")
 
+    #returns string
     def toInfix(self):
         s = self.formula
         while True:
@@ -21,8 +22,10 @@ class PrecisFormula:
             if not flag:
                 #replace("&&    ","&& ") is to deal with spacing added in z3 expr when toString
                 # symbols ~ and ) are used placed holders for left and right parenthesis.
-                # We need these place holders because our regex looks for left and right paren 
-                return s.replace("`","(").replace("~",")").replace("&&    ","&& ")
+                # We need these place holders because our regex looks for left and right paren
+                replacePlacedHolderFormula = s.replace("`","(").replace("~",")").replace("&&    ","&& ")
+                cSharpCompatibleFormula = replacePlacedHolderFormula.replace("False","false").replace("True","true")
+                return cSharpCompatibleFormula
    
     # Acknowledgement: Neil Zhao
     def replace(self, s):
