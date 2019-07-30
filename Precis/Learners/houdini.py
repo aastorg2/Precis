@@ -32,6 +32,13 @@ class Houdini:
             boolFeatureVectors.append(boolFeatureVector)
         return boolFeatureVectors
 
+    # Inputs:
+    #   baseFeatures: list of PrecisFeature containing features provided by user in Parameterized Unit Test(i.e., PUTs)
+    #   deriveFeatures: list of PrecisFeature containing feature created from the user provided base features
+    #   (i.e., return values of observer methods, and/or parameters of methods and return variables of the method)
+    #   baseFeatureVectors: 
+    # This funtion extends each FeatureVector object in baseFeatureVector(.i.e., list of FeatureObjects)
+    # to contain entries of valuation of derivedFeatures(this shall be boolean features only)
     def generateDerivedFeatureVectors(self, derivedFeatures, baseFeatures, baseFeatureVectors):
         
         #print(derivedFeatures)
