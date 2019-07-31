@@ -14,7 +14,8 @@ class Houdini:
     def concatenateFeatureVectors(self, baseFeatureVectors, derivedValuesZ3Tuples):
         featureVectors = []
         for i in range(len(baseFeatureVectors)):
-            featureVectors.append(baseFeatureVectors[i] + derivedValuesZ3Tuples[i])
+            concatenatedFv = baseFeatureVectors[i] + derivedValuesZ3Tuples[i]
+            featureVectors.append(concatenatedFv)
         return featureVectors
     
     def getBoolFeatures(self, precisFeatureList):
@@ -61,6 +62,7 @@ class Houdini:
                 deriveFeatVec = substitute(df.varZ3 , pairs)
                 deriveFeatVecValue = simplify(deriveFeatVec)
                 derivedFeatureVector += (deriveFeatVecValue,)
+
             # Assert: # of derived feature values(i.e. length of derived feature vector(tuple)) should be the same as
             # Assert: # of derived features (.i.e length of list of derived features)
             assert(len(derivedFeatureVector) == len(derivedFeatures))
@@ -85,8 +87,8 @@ class Houdini:
 
     def learn(self,features,featureVectors):
         assert(len(featureVectors) > 0)
-        #check datapoint are boolean
-        assert(len(featureVectors) or all ( all( v == "true" or v == "false" for v in dp) for dp in featureVectors))
+        #check datapoint are boolean --> currently assention doesnt work
+        #assert(len(featureVectors) or all ( all( v == "True" or v == "False" for v in dp) for dp in featureVectors))
     
         # dict from  index of features to
         workList = {idx: True for idx in range(0, len(features))}
