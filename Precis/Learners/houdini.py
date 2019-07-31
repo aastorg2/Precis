@@ -3,6 +3,9 @@ import itertools
 from Data.precis_feature import PrecisFeature
 from Data.feature_vector import FeatureVector
 from Data.precis_formula import PrecisFormula
+import logging
+
+logger = logging.getLogger("Runner.Houdini")
 
 class Houdini:
     
@@ -97,11 +100,15 @@ class Houdini:
                    workList[idx]  = False
                    break 
         conjuncts = []
-        # add early return if no predicates are always true -> houdini should return true
-        # if len
+        
         for idx in range(0, len(features)):
             if workList[idx]:
                 conjuncts.append(features[idx].varZ3)
+        
+        # early return if no predicates are always true -> houdini should return true
+        if len(conjuncts) == 0:
+            assert(False) #remove this assertion the first time it is tested
+            return PrecisFormula(BoolVal(True))
         
         phi = ""
         houdini = None
