@@ -25,11 +25,11 @@ def learnPost(p,PUTName, outputFile):
     logger.addHandler(fh)
     #todo: test for k==2
     #post = learnPostUpToK(p,PUTName,outputFile,0)
-    postK1 = learnPostUpToK(p,PUTName, outputFile,1)
-    #postK2 = learnPostUpToK(p,PUTName, outputFile,2)
+    #postK1 = learnPostUpToK(p,PUTName, outputFile,1)
+    postK2 = learnPostUpToK(p,PUTName, outputFile,2)
     #print("smallest post up to k == 0", post.toInfix())
-    print("smallest post up k == 1",postK1.toInfix())
-    #print("smallest post up k == 2",postK2.toInfix())
+    #print("smallest post up k == 1",postK1.toInfix())
+    print("smallest post up k == 2",postK2.toInfix())
     """
     implication = Implies(post.formulaZ3,postK1.formulaZ3)
     solver0 = Solver()
@@ -82,7 +82,7 @@ def learnPostUpToK(p,PUTName, outputFile, k):
         
         postcondition = None
         disLearner = DisjunctiveLearner()
-        postcondition = disLearner.learn(k,boolFeatures, boolFeatureVectors)
+        postcondition = disLearner.learn(k,boolFeatures, boolFeatureVectors,"root")
         #sys.exit(0)
         print("postcondition formulaZ3")
         print(postcondition.formulaZ3)
