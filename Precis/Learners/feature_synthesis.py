@@ -7,13 +7,26 @@ class FeatureSynthesis:
     #def __init__(self):
     def GenerateDerivedFeatures(self,baseFeatures):
         intFeatures = [f for f in baseFeatures if str(f.varZ3.sort())=="Int"]
+        boolFeatures = [f for f in baseFeatures if str(f.varZ3.sort())=="Bool"]
         sygusResult = "(= New_s1Count (- Old_New1Count  1))"
 
         #minus = precisFeature.oldcount - IntVal(1)
         #equal = precisFeature.New  
         #sygusPrecisFeature = PrecisFeature(sygusResult, )
-        return self.CreateEqualities(intFeatures)
+        assert(len(intFeatures) > 0)
+        assert(len(boolFeatures) > 0)
+        equalityFeatures = self.CreateEqualities(intFeatures)
+        negationBaseBoolFeatures = self.createNegationBool(boolFeatures)
+        return negationBaseBoolFeatures+equalityFeatures
+        #return equalityFeatures
         #Todo: call to sygus solvers can be placed here.
+    def createNegationBool(self, boolFeatures):
+        negBoolFeatures = list()
+        for bf in boolFeatures:
+            negBoolExpr = Not(bf.varZ3)
+            negBoolDerive = PrecisFeature(True, str(negBoolExpr), str(negBoolExpr.sort()), None, negBoolExpr)
+            negBoolFeatures.append(negBoolDerive)
+        return negBoolFeatures
 
     # this method assumes it called with integer features
     def CreateEqualities(self, intFeatures):
@@ -31,8 +44,8 @@ class FeatureSynthesis:
             #print(notEqualExpr)
             #print(notEqualExpr.sort())
             #print(type(notEqualExpr))
-            notEqualDerived = PrecisFeature(True, str(notEqualExpr), None, None, notEqualExpr)
-            equalDerived = PrecisFeature(True, str(equalExpr), None, None, equalExpr)
+            notEqualDerived = PrecisFeature(True, str(notEqualExpr), str(notEqualExpr.sort()), None, notEqualExpr)
+            equalDerived = PrecisFeature(True, str(equalExpr), str(equalExpr.sort()), None, equalExpr)
             equalitiesFeatures.append(notEqualDerived)
             equalitiesFeatures.append(equalDerived)
         return equalitiesFeatures
