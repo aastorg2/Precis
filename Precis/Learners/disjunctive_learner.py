@@ -16,13 +16,13 @@ class DisjunctiveLearner:
     # for now we choose, largest entropy
     useEntropy = True
 
-    def learn(self,k, features, featureVectors):
+    def learn(self,k, features, featureVectors, call):
         houdini = Houdini()
         
         if k == 0:
             return houdini.learn(features, featureVectors)
         else:
-            (f,idx, fposFv,fnegFv) = self.chooseFeature(features, featureVectors)
+            (f,idx, fposFv,fnegFv) = self.chooseFeature(features, featureVectors, call)
             
             #region
             print("feature:", f)
@@ -80,9 +80,10 @@ class DisjunctiveLearner:
 
             #print( [ len(fv)  for fv in fposFv] )
             #print( [ len(fv)  for fv in fnegFv] )
-            posPost = self.learn(k-1,newFeatures,fposFv)
-            negPost = self.learn(k-1,newFeatures,fnegFv)
-            print("choosen for split:", f)
+            posPost = self.learn(k-1,newFeatures,fposFv, "pos")
+            negPost = self.learn(k-1,newFeatures,fnegFv, "neg")
+            print("for call "+call +" at k == "+str(k))
+            print("choosen for split for :", f)
             #print("positive: ",posPost.formula )
             print("positive: ",posPost.toInfix())
             #print("negative: ",negPost.formula)
@@ -103,7 +104,7 @@ class DisjunctiveLearner:
 
             
     #return feature along with index
-    def chooseFeature(self, features, featureVectors):
+    def chooseFeature(self, features, featureVectors, call):
         # TODO: figure is removing always false predicates will lead to optimizations
         fvPos = list()
         fvNeg = list()
