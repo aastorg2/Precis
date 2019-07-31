@@ -33,13 +33,20 @@ class PrecisFormula:
         res = pattern.findall(s)
         for r in res:
             if r[1] == 'And':
-                replacement = r[2][1:-1].replace(', ', ' && ')
+                conjunct = r[2][1:-1]
+                replacement = conjunct.replace(', ', ' && ')
                 s = s.replace(r[0], '`{}~'.format(replacement))
             elif r[1] == 'Or':
-                replacement = r[2][1:-1].replace(', ', ' || ')
+                disjunct = r[2][1:-1]
+                replacement = disjunct.replace(', ', ' || ')
                 s = s.replace(r[0], '`{}~'.format(replacement))
+            elif r[1] == 'Not':
+                negation = r[2][1:-1]
+                replacement = negation.replace(', ', ' && ')
+                s = s.replace(r[0],'`!`{}~~'.format(negation))
             else:
-                s = '`!`{}~~'.format(r[2][1:-1])
+                assert(False) #why this case
+
         return s, len(res) > 0
 
     def precisAnd(self,other):
