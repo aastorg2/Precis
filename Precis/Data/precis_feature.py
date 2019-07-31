@@ -19,11 +19,14 @@ class PrecisFeature:
     def __init__(self, isDerived, varName, varType=None, isNew=None, varZ3=None):
         
         if isDerived:
+            # Check variable type
+            self.CheckVarType(varType)
+
             self.varName = str(varZ3)
-            self.isNew = None
+            self.isNew = isNew
             self.varZ3 = varZ3
             self.isDerived = True
-        else:
+        else: # base feature -> from parameterized unit test
             # Check variable type
             self.CheckVarType(varType)
 
