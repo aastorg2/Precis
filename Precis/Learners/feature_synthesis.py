@@ -9,14 +9,17 @@ class FeatureSynthesis:
         intFeatures = [f for f in baseFeatures if str(f.varZ3.sort())=="Int"]
         boolFeatures = [f for f in baseFeatures if str(f.varZ3.sort())=="Bool"]
         sygusResult = "(= New_s1Count (- Old_New1Count  1))"
-
+        negationBaseBoolFeatures =[]
         #minus = precisFeature.oldcount - IntVal(1)
         #equal = precisFeature.New  
         #sygusPrecisFeature = PrecisFeature(sygusResult, )
         assert(len(intFeatures) > 0)
-        assert(len(boolFeatures) > 0)
+        #assert(len(boolFeatures) > 0)
         equalityFeatures = self.CreateEqualities(intFeatures)
-        negationBaseBoolFeatures = self.createNegationBool(boolFeatures)
+        
+        if len(boolFeatures) > 0: # there exist any base bool observer methods
+            negationBaseBoolFeatures = self.createNegationBool(boolFeatures)
+        
         return negationBaseBoolFeatures+equalityFeatures
         #return equalityFeatures
         #Todo: call to sygus solvers can be placed here.
