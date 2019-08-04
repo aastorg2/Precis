@@ -110,8 +110,8 @@ def runLearnPost(p, putList,outputFile):
         solver0 = Solver()
         solver0.add(Not(implication)) # check (not (postK0 => postK1)) is unsat
         check0 = solver0.check()
-        #logger.info("first check\n")
-        #logger.info(solver0.to_smt2())
+        logger1.info("first check\n")
+        logger1.info(solver0.to_smt2()+"\n")
         logger1.info("is it unsat Not(k0 -> k1)? "+ str(check0)+"\n")
         print("is it unsat?", check0 ) # if unsat, stop
         nextImplication = Implies(postK1.formulaZ3,postK2.formulaZ3) # check (not (postK1 => postK2)) is unsat
@@ -145,7 +145,7 @@ if __name__ == '__main__':
     fh1.setFormatter(formatter1)
     logger1.addHandler(fh1)
 
-
+    ################ Stack
     sln = os.path.abspath('../ContractsSubjects/Stack/Stack.sln')
     projectName =  'StackTest'
     testDebugFolder = '../ContractsSubjects/Stack/StackTest/bin/Debug/'
@@ -159,8 +159,11 @@ if __name__ == '__main__':
     outputFile = os.path.abspath('./typesOM.txt')
 
     p = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
+    
+    
     #runLearnPost(p,stackPUTs,outputFile)
 
+    ################ HashSet
     sln = os.path.abspath('../ContractsSubjects/HashSet/HashSet.sln')
     projectName =  'HashSetTest'
     testDebugFolder = '../ContractsSubjects/HashSet/HashSetTest/bin/Debug/'
@@ -175,6 +178,18 @@ if __name__ == '__main__':
 
     p1 = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
 
-    runLearnPost(p1,hashsetPUTs,outputFile)
+    #runLearnPost(p1,hashsetPUTs,outputFile)
 
+    ################ Dictionary
+    sln = os.path.abspath('../ContractsSubjects/Dictionary/Dictionary.sln')
+    projectName =  'HashSetTest'
+    testDebugFolder = '../ContractsSubjects/Dictionary/DictionaryTest/bin/Debug/'
+    testDll = testDebugFolder + 'DictionaryTest.dll'
+    testFileName = 'DictionaryContractTest.cs' 
+    testNamepace = 'Dictionary.Test'
+    testClass = 'DictionaryContractTest'
+    hashsetPUTs = ['PUT_AddContract', 'PUT_RemoveContract', 'PUT_GetContract', 'PUT_SetContract','PUT_ContainsKeyContract','PUT_ContainsValueContract','PUT_CountContract'] 
+    #PUTName = 'PUT_PushContract'
+    #PUTName = 'PUT_PopContract'
+    outputFile = os.path.abspath('./typesOM.txt')
         
