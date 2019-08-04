@@ -15,35 +15,20 @@ import logging
 
 def learnPost(p,PUTName, outputFile):
     
-    logger = logging.getLogger("Runner")
-    logger.setLevel(logging.INFO)
-    # create the logging file handler
-    fh = logging.FileHandler("information")
-    formatter = logging.Formatter('%(message)s')
-    fh.setFormatter(formatter)
-    # add handler to logger object
-    logger.addHandler(fh)
-    #todo: test for k==2
-    #post = learnPostUpToK(p,PUTName,outputFile,0)
-    #postK1 = learnPostUpToK(p,PUTName, outputFile,1)
-    postK2 = learnPostUpToK(p,PUTName, outputFile,2)
-    #print("smallest post up to k == 0", post.toInfix())
-    #print("smallest post up k == 1",postK1.toInfix())
-    print("smallest post up k == 2",postK2.toInfix())
-    """
-    implication = Implies(post.formulaZ3,postK1.formulaZ3)
-    solver0 = Solver()
-    solver0.add(Not(implication)) # check (not (post => post1)) is unsat
-    check0 = solver0.check()
-    logger.info("first check\n")
-    logger.info(solver0.to_smt2())
-    print("is it unsat?", check0 ) # if unsat, stop
-    otherside = Implies(postK1.formulaZ3,postK2.formulaZ3)
-    solver1 = Solver()
-    solver1.add(Not(otherside))
-    check1 = solver1.check()
-    print("is it unsat?", check1 )
-    """
+    (postK2,r2) = learnPostUpToK(p,PUTName, outputFile,2)
+    #print("smallest post up to k == 2", postK2.toInfix())
+    #sys.exit(0)
+    (postK1,r1) = learnPostUpToK(p,PUTName, outputFile,1)
+    #print("smallest post up to k == 2", postK1.toInfix())
+    #sys.exit(0)
+    (postK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
+    #print("smallest post up to k == 0", postK0.toInfix())
+    #sys.exit(0)
+    
+    return (postK0, r0, postK1, r1 , postK2, r2)
+    
+    
+
 def learnPostUpToK(p,PUTName, outputFile, k):
 
     p.ExtractObservers(PUTName, outputFile)
@@ -56,7 +41,7 @@ def learnPostUpToK(p,PUTName, outputFile, k):
     inst = Instrumenter("MSBuild.exe","./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
     initFormula = PrecisFormula(BoolVal(False))
     inst.instrumentPost(p,initFormula , PUTName)
-
+    rounds = 0
     while True:
         pex = Pex()
         
@@ -82,7 +67,8 @@ def learnPostUpToK(p,PUTName, outputFile, k):
         
         postcondition = None
         disLearner = DisjunctiveLearner()
-        postcondition = disLearner.learn(k,boolFeatures, boolFeatureVectors,"root")
+        indices = list()
+        (postcondition, indices) = disLearner.learn2(k,boolFeatures, boolFeatureVectors,"root")
         #sys.exit(0)
         print("postcondition formulaZ3")
         print(postcondition.formulaZ3)
@@ -97,15 +83,69 @@ def learnPostUpToK(p,PUTName, outputFile, k):
 
         if postcondition.formula in allPostconditions:
             print("found it")
-            return postcondition
+            return postcondition, rounds
         
         allPostconditions.append(postcondition.formula)
+        rounds = rounds + 1
         #assert(bfv[0] <--> dfv[0] )
         #featureVectors = baseFeatureVectors + derivedFeatureVectors
         #print(derivedFeatures)
         #print(featureVectors)
 
+#todo: list of problems
+def runLearnPost(p, putList,outputFile):
+    #assert puts in putList in problem
+    for PUTName in putList:
+        # post = learnPost(p,PUTName, outputFile)
+        logger1.info("PUT: "+PUTName+"\n")
+        (postK0,r0, postK1,r1,postK2,r2) = learnPost(p, PUTName, outputFile)
+        logger1.info("postcondition k == 0\n "+ postK0.toInfix()+"\nrounds: "+str(r0)+"\n")
+        logger1.info("postcondition k == 1\n "+ postK1.toInfix()+"\nrounds: "+str(r1)+"\n")
+        logger1.info("postcondition k == 2\n "+ postK2.toInfix()+"\nrounds: "+str(r2)+"\n")
+        print("postcondition k == 0 ", postK0.toInfix(), "rounds: ", r0)
+        print("postcondition k == 1 ", postK1.toInfix(), "rounds: ", r1)
+        print("postcondition k == 2 ", postK2.toInfix(), "rounds: ", r2)
+        
+        implication = Implies(postK0.formulaZ3,postK1.formulaZ3)
+        solver0 = Solver()
+        solver0.add(Not(implication)) # check (not (postK0 => postK1)) is unsat
+        check0 = solver0.check()
+        #logger.info("first check\n")
+        #logger.info(solver0.to_smt2())
+        logger1.info("is it unsat Not(k0 -> k1)? "+ str(check0)+"\n")
+        print("is it unsat?", check0 ) # if unsat, stop
+        nextImplication = Implies(postK1.formulaZ3,postK2.formulaZ3) # check (not (postK1 => postK2)) is unsat
+        solver1 = Solver()
+        solver1.add(Not(nextImplication))
+        check1 = solver1.check()
+        logger1.info("is it unsat? Not(k1 -> k2)"+ str(check1)+"\n")
+        print("is it unsat?", check1)
+        nextNextImplication = Implies(postK0.formulaZ3,postK2.formulaZ3) # check (not (postK1 => postK2)) is unsat
+        solver2 = Solver()
+        solver2.add(Not(nextNextImplication))
+        check2 = solver2.check()
+        logger1.info("is it unsat? Not(k0 -> k2)"+ str(check1)+"\n")
+        print("is it unsat?", check2)
+
 if __name__ == '__main__':
+
+    logger = logging.getLogger("Runner")
+    logger.setLevel(logging.INFO)
+    # create the logging file handler
+    fh = logging.FileHandler("information")
+    formatter = logging.Formatter('%(message)s')
+    fh.setFormatter(formatter)
+    # add handler to logger object
+    logger.addHandler(fh)
+
+    logger1 = logging.getLogger("Results")
+    logger1.setLevel(logging.INFO)
+    fh1 = logging.FileHandler("results")
+    formatter1 = logging.Formatter('%(message)s')
+    fh1.setFormatter(formatter1)
+    logger1.addHandler(fh1)
+
+
     sln = os.path.abspath('../ContractsSubjects/Stack/Stack.sln')
     projectName =  'StackTest'
     testDebugFolder = '../ContractsSubjects/Stack/StackTest/bin/Debug/'
@@ -113,10 +153,28 @@ if __name__ == '__main__':
     testFileName = 'StackContractTest.cs' 
     testNamepace = 'Stack.Test'
     testClass = 'StackContractTest'
-    PUTs = ['PUT_PushContract', 'PUT_PopContract', 'PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract'] 
-    PUTName = 'PUT_PushContract'
+    stackPUTs = ['PUT_PushContract', 'PUT_PopContract', 'PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract'] 
+    #PUTName = 'PUT_PushContract'
+    #PUTName = 'PUT_PopContract'
     outputFile = os.path.abspath('./typesOM.txt')
 
     p = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
-    
-    learnPost(p, PUTName, outputFile)
+    #runLearnPost(p,stackPUTs,outputFile)
+
+    sln = os.path.abspath('../ContractsSubjects/HashSet/HashSet.sln')
+    projectName =  'HashSetTest'
+    testDebugFolder = '../ContractsSubjects/HashSet/HashSetTest/bin/Debug/'
+    testDll = testDebugFolder + 'HashSetTest.dll'
+    testFileName = 'HashSetContractTest.cs' 
+    testNamepace = 'HashSet.Test'
+    testClass = 'HashSetContractTest'
+    hashsetPUTs = ['PUT_AddContract', 'PUT_RemoveContract', 'PUT_CountContract', 'PUT_ContainsContract'] 
+    #PUTName = 'PUT_PushContract'
+    #PUTName = 'PUT_PopContract'
+    outputFile = os.path.abspath('./typesOM.txt')
+
+    p1 = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
+
+    runLearnPost(p1,hashsetPUTs,outputFile)
+
+        

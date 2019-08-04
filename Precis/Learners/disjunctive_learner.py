@@ -16,11 +16,99 @@ class DisjunctiveLearner:
     # for now we choose, largest entropy
     useEntropy = True
 
+    #fix this
+    def removeFeatureEntryInFeatureVectors(self,featureVectors, indices):
+        newFeatureVectors = list()
+        if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
+            for fv in featureVectors:
+                newFeatureVector = FeatureVector([], [], str(fv.testLabel))
+                newFeatureVector.values = tuple(fv.values)
+                newFeatureVector.valuesZ3 = tuple(fv.valuesZ3)
+                for idx in reversed(indices):
+                        newFeatureVector.values = newFeatureVector.values[0:idx] + newFeatureVector.values[idx+1:]
+                        newFeatureVector.valuesZ3 = newFeatureVector.valuesZ3[0:idx] + newFeatureVector.valuesZ3[idx+1:]
+                newFeatureVectors.append(newFeatureVector)
+        else:
+            assert(False)
+        return newFeatureVectors
+
+    
+    def removeFeatureFromFeaturelist(self,features,indices):
+        
+        newFeatures = list(features)
+        if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
+            
+            for idx in reversed(indices):
+                newFeatures = newFeatures[0:idx]+ newFeatures[idx+1:]
+            
+        else:
+            assert(False)
+        
+        return newFeatures
+
+
+    def learn2(self,k, features, featureVectors, call):
+        houdini = Houdini()
+        if k == 0:
+            (formula, indices) = houdini.learn2(features, featureVectors, call)
+            return (formula, indices)
+        else:
+            notAlwaysTrueFeatures =list()
+            notAlwaysTrueEntriesFv =list()
+            (allTrueFormula, indicesAllwaysTrue) = houdini.learn2(features, featureVectors, call)
+            notAlwaysTrueFeatures = self.removeFeatureFromFeaturelist(features,indicesAllwaysTrue)
+            notAlwaysTrueEntriesFv = self.removeFeatureEntryInFeatureVectors(featureVectors, indicesAllwaysTrue)
+            
+            (f,idx, fposFv,fnegFv) = self.chooseFeature(notAlwaysTrueFeatures, notAlwaysTrueEntriesFv, call)
+            
+            
+            newFeatures = notAlwaysTrueFeatures[0:idx]+ notAlwaysTrueFeatures[idx+1:]
+
+            
+            newfposFv = list()
+            newfnegFv = list()
+            for fv in fposFv:
+                fposFeatureVector = FeatureVector([], [], str(fv.testLabel))
+                fposFeatureVector.values = fv.values[0:idx] + fv.values[idx+1:] 
+                fposFeatureVector.valuesZ3 = fv.valuesZ3[0:idx] + fv.valuesZ3[idx+1:]
+                newfposFv.append(fposFeatureVector)
+            for fv in fnegFv:
+                fnegFeatureVector = FeatureVector([], [], str(fv.testLabel))
+                fnegFeatureVector.values = fv.values[0:idx] + fv.values[idx+1:]                
+                fnegFeatureVector.valuesZ3 = fv.valuesZ3[0:idx] + fv.valuesZ3[idx+1:]
+                newfnegFv.append(fnegFeatureVector)
+
+            
+            #print( [ len(fv)  for fv in fposFv] )
+            #print( [ len(fv)  for fv in fnegFv] )
+            (posPost,posIndices) = self.learn2(k-1,newFeatures,newfposFv, "pos")
+            (negPost, negIndices) = self.learn2(k-1,newFeatures,newfnegFv, "neg")
+            print("for call "+call +" at k == "+str(k))
+            print("choosen for split for :", f)
+            #print("positive: ",posPost.formula )
+            print("positive: ",posPost.toInfix())
+            #print("negative: ",negPost.formula)
+            print("negative: ",negPost.toInfix())
+            print()
+            print("result of conjunction")
+            #Todo: missing conjunction with split predicate
+            #disjunction = Or(And(posPost.formulaZ3, f.varZ3), negPost.formulaZ3)
+            disjunction  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3),negPost.formulaZ3))
+            #stringDisjunc = "(or(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (= Old_Top New_Top) (= Old_Top Old_x) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x ))(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not(= Old_s1Count Old_Top)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (not (= Old_Top New_Top)) (not(= Old_Top Old_x)) (not (= Old_Top New_x)) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x )))"
+            #result = self.precisSimplify(stringDisjunc,['Old_s1Count', 'New_s1Count', 'Old_Top', 'New_Top', 'Old_x', 'New_x'],["Old_s1ContainsX", "New_s1ContainsX"])
+            
+            #for conjuct in result:
+            #    print(type(conjuct))
+            #    print(conjuct)
+            #nextFeatureVector.values =  
+            #nextFeatureVector.valuesZ3 = self.valuesZ3 + derivedValuesZ3
+            return PrecisFormula(disjunction), posIndices + negIndices
+
     def learn(self,k, features, featureVectors, call):
         houdini = Houdini()
         
         if k == 0:
-            return houdini.learn(features, featureVectors)
+            return houdini.learn(features, featureVectors, call)
         else:
             (f,idx, fposFv,fnegFv) = self.chooseFeature(features, featureVectors, call)
             
@@ -69,15 +157,14 @@ class DisjunctiveLearner:
             #nextFeatureVector = FeatureVector([], [], str(.testLabel))
             #endregion
             newFeatures = features[0:idx]+ features[idx+1:]
-
+            
             for fv in fposFv:
                 fv.values = fv.values[0:idx] + fv.values[idx+1:]
-                fv.valuesZ3 = fv.valuesZ3[0:idx] + fv.valuesZ3[idx+1:]
+                fv.valuesZ3 = fv.valuesZ3[0:idx] + fv.valuesZ3[idx+1:] # this assignments affect the variable featureVectors
             
             for fv in fnegFv:
                 fv.values = fv.values[0:idx] + fv.values[idx+1:]
                 fv.valuesZ3 = fv.valuesZ3[0:idx] + fv.valuesZ3[idx+1:]
-
             #print( [ len(fv)  for fv in fposFv] )
             #print( [ len(fv)  for fv in fnegFv] )
             posPost = self.learn(k-1,newFeatures,fposFv, "pos")
@@ -92,6 +179,7 @@ class DisjunctiveLearner:
             print("result of conjunction")
             #Todo: missing conjunction with split predicate
             disjunction = Or(And(posPost.formulaZ3, f.varZ3), negPost.formulaZ3)
+            #disjunction = 
             #stringDisjunc = "(or(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (= Old_Top New_Top) (= Old_Top Old_x) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x ))(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not(= Old_s1Count Old_Top)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (not (= Old_Top New_Top)) (not(= Old_Top Old_x)) (not (= Old_Top New_x)) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x )))"
             #result = self.precisSimplify(stringDisjunc,['Old_s1Count', 'New_s1Count', 'Old_Top', 'New_Top', 'Old_x', 'New_x'],["Old_s1ContainsX", "New_s1ContainsX"])
             
