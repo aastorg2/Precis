@@ -208,8 +208,10 @@ class DisjunctiveLearner:
             score = self.entropy(posLabel+negLabel)
             allScores.append({'predicate': features[idx],'idx': idx, 'score': score , 'posData':fvPos, 'negData': fvNeg} )
             
+        #experimental score metric incorporating length of formula- consider prioritizing  old_vars over new vars
+        sortedScores = sorted(allScores, key=lambda x: x['score'] + (x['score']/len(x['predicate'].varZ3.children())) )
+        #sortedScores = sorted(allScores, key=lambda x: x['score'] )
         
-        sortedScores = sorted(allScores, key=lambda x: x['score'])
         #for entry in sortedScores:
         #    logger.info("predicate: "+ str(entry['predicate']))
         #    logger.info("predicate: "+ str(entry['score']))
