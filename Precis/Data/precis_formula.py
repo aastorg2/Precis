@@ -23,7 +23,11 @@ class PrecisFormula:
                 #replace("&&    ","&& ") is to deal with spacing added in z3 expr when toString
                 # symbols ~ and ) are used placed holders for left and right parenthesis.
                 # We need these place holders because our regex looks for left and right paren
-                replacePlacedHolderFormula = s.replace("`","(").replace("~",")").replace("&&    ","&& ")
+                replacePlacedHolderFormula = \
+                    s.replace("`","(").replace("~",")").replace("&&    ","&& ") \
+                        .replace("&&        ","&& ").replace("&&            ","&& ").replace("&&     ","&& ") \
+                        .replace("||       ","|| ").replace("||              ","|| ") \
+                        .replace("||                  ", "|| ").replace("||            ","|| ")
                 cSharpCompatibleFormula = replacePlacedHolderFormula.replace("False","false").replace("True","true")
                 return cSharpCompatibleFormula
    
