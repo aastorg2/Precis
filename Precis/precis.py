@@ -15,12 +15,21 @@ import logging
 
 def learnPost(p,PUTName, outputFile):
     
+    r0 = -1
+    r1 = -1
+    r2 = -1
+    postK0 = PrecisFormula(BoolVal(True))
+    postK1 = PrecisFormula(BoolVal(True))
+    postK2 = PrecisFormula(BoolVal(True))
+
     (postK2,r2) = learnPostUpToK(p,PUTName, outputFile,2)
     #print("smallest post up to k == 2", postK2.toInfix())
     #sys.exit(0)
+    
     (postK1,r1) = learnPostUpToK(p,PUTName, outputFile,1)
     #print("smallest post up to k == 2", postK1.toInfix())
     #sys.exit(0)
+   
     (postK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
     #print("smallest post up to k == 0", postK0.toInfix())
     #sys.exit(0)
@@ -41,7 +50,7 @@ def learnPostUpToK(p,PUTName, outputFile, k):
     inst = Instrumenter("MSBuild.exe","./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
     initFormula = PrecisFormula(BoolVal(False))
     inst.instrumentPost(p,initFormula , PUTName)
-    rounds = 0
+    rounds = 1
     while True:
         pex = Pex()
         
@@ -110,8 +119,8 @@ def runLearnPost(p, putList,outputFile):
         solver0 = Solver()
         solver0.add(Not(implication)) # check (not (postK0 => postK1)) is unsat
         check0 = solver0.check()
-        logger1.info("first check\n")
-        logger1.info(solver0.to_smt2()+"\n")
+        #logger1.info("first check\n")
+        #logger1.info(solver0.to_smt2()+"\n")
         logger1.info("is it unsat Not(k0 -> k1)? "+ str(check0)+"\n")
         print("is it unsat?", check0 ) # if unsat, stop
         nextImplication = Implies(postK1.formulaZ3,postK2.formulaZ3) # check (not (postK1 => postK2)) is unsat
@@ -124,7 +133,7 @@ def runLearnPost(p, putList,outputFile):
         solver2 = Solver()
         solver2.add(Not(nextNextImplication))
         check2 = solver2.check()
-        logger1.info("is it unsat? Not(k0 -> k2)"+ str(check1)+"\n")
+        logger1.info("is it unsat? Not(k0 -> k2)"+ str(check2)+"\n")
         print("is it unsat?", check2)
 
 if __name__ == '__main__':
@@ -158,10 +167,13 @@ if __name__ == '__main__':
     #PUTName = 'PUT_PopContract'
     outputFile = os.path.abspath('./typesOM.txt')
 
+    
     p = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
     
     
-    #runLearnPost(p,stackPUTs,outputFile)
+    runLearnPost(p,stackPUTs,outputFile)
+    
+    ################ Stack
 
     ################ HashSet
     sln = os.path.abspath('../ContractsSubjects/HashSet/HashSet.sln')
@@ -180,7 +192,11 @@ if __name__ == '__main__':
 
     #runLearnPost(p1,hashsetPUTs,outputFile)
 
+    ################ HashSet
+
+
     ################ Dictionary
+
     sln = os.path.abspath('../ContractsSubjects/Dictionary/Dictionary.sln')
     projectName =  'HashSetTest'
     testDebugFolder = '../ContractsSubjects/Dictionary/DictionaryTest/bin/Debug/'
@@ -188,8 +204,12 @@ if __name__ == '__main__':
     testFileName = 'DictionaryContractTest.cs' 
     testNamepace = 'Dictionary.Test'
     testClass = 'DictionaryContractTest'
-    hashsetPUTs = ['PUT_AddContract', 'PUT_RemoveContract', 'PUT_GetContract', 'PUT_SetContract','PUT_ContainsKeyContract','PUT_ContainsValueContract','PUT_CountContract'] 
+    dictionaryPUTs = ['PUT_AddContract', 'PUT_RemoveContract', 'PUT_GetContract', 'PUT_SetContract','PUT_ContainsKeyContract','PUT_ContainsValueContract','PUT_CountContract'] 
     #PUTName = 'PUT_PushContract'
     #PUTName = 'PUT_PopContract'
+    p2 = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
     outputFile = os.path.abspath('./typesOM.txt')
-        
+    
+    #runLearnPost(p2,dictionaryPUTs,outputFile)
+
+    ################ Dictionary
