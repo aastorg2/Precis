@@ -1,15 +1,28 @@
 from z3 import *
 import itertools
 from Data.precis_feature import PrecisFeature
-
+from Learners.sygus import Sygus
+from os import sys, path
+from Data.shell import Shell
+from Learners.sygus_lia import SygusLIA
 class FeatureSynthesis:
 
-    #def __init__(self):
+    #binary executable to run sygus solver
+    binary = ""
+    temporaryFolder = ""
+    sygusFileEndingPattern = '.*\.sl'
+    sygusFileName = ""
+    def __init__(self, binaryExec, tempFolder, syguFileName):
+        self.binary = binaryExec
+        self.temporaryFolder = tempFolder
+        self.sygusFileName = syguFileName
+
     def GenerateDerivedFeatures(self,baseFeatures):
         intFeatures = [f for f in baseFeatures if str(f.varZ3.sort())=="Int"]
         boolFeatures = [f for f in baseFeatures if str(f.varZ3.sort())=="Bool"]
-        sygusResult = "(= New_s1Count (- Old_New1Count  1))"
         negationBaseBoolFeatures =[]
+        
+        #sygusLearner = SygusLIA("esolver", "learner/EnumerativeSolver/bin/starexec_run_Default", "grammar=True", "tempLocation")
         #minus = precisFeature.oldcount - IntVal(1)
         #equal = precisFeature.New  
         #sygusPrecisFeature = PrecisFeature(sygusResult, )
@@ -23,6 +36,49 @@ class FeatureSynthesis:
         return negationBaseBoolFeatures+equalityFeatures
         #return equalityFeatures
         #Todo: call to sygus solvers can be placed here.
+    def synthesizeFeatures(self,baseFeatures, featureVectors):
+        intFeatures = [f for f in baseFeatures if str(f.varZ3.sort())=="Int"]
+        boolFeatures = [f for f in baseFeatures if str(f.varZ3.sort())=="Bool"]
+        grammar = ""
+        assert(len(intFeatures) > 0)
+
+        sygusSynthesizer = SygusLIA(self.binary)
+        #grammar = sygusSynthesizer.formatGrammar(sygusSynthesizer.constructGrammar(intFeatures, boolFeatures))
+        
+        #getting old vars
+        intOldVarAndIdxs = [(intFeatures[idx],idx) for idx in range(len(intFeatures)) if intFeatures[idx].isNew != None and not(intFeatures[idx].isNew)]
+        intOldVarFeatures = list((map(lambda x:  x[0] , intOldVarAndIdxs)))
+        grammar = sygusSynthesizer.constructGrammar(intOldVarFeatures, boolFeatures)
+        #print(sygusSynthesizer.formatGrammar(grammar))
+        
+        shell = Shell(True)
+        shell.removeSygusFile(self.temporaryFolder, self.sygusFileEndingPattern)
+
+        ## wrap this code with a synthesize function
+        ## there can be synthesized features that we already add
+        logic = [["(set-logic LIA)"]]
+        checkSynth = [["(check-synth)"]]
+        synthesizedFeatures = []
+        for postFeaturesIdxs  in [ (intFeatures[newIdx], newIdx) for newIdx in range(len(intFeatures)) if intFeatures[newIdx].isNew != None and intFeatures[newIdx].isNew]:
+            #print(postFeaturesIdxs[0].varName)
+            constraints = sygusSynthesizer.addSemanticConstraints(postFeaturesIdxs[1],intOldVarAndIdxs,featureVectors)
+            sygusProblem = sygusSynthesizer.constructSygusProblem(logic, grammar, constraints,checkSynth)
+            shell.writeToFile(self.temporaryFolder,self.sygusFileName, sygusProblem )
+            synthizedExprStr = sygusSynthesizer.learn(self.temporaryFolder,self.sygusFileName)
+            if synthizedExprStr == "No Solutions!":
+                continue
+            declMap = { f.varName : f.varZ3 for f in intFeatures}
+            synthesizedFeature = "(= "+ postFeaturesIdxs[0].varName +" " +synthizedExprStr +")" 
+            sygusExpr = parse_smt2_string("(assert "+ synthesizedFeature+ " )",decls=declMap)
+            synthesizedFeatures.append(PrecisFeature(True, str(sygusExpr[0]), str(sygusExpr[0].sort()), None, sygusExpr[0]))
+            #print(sygusExpr.ctx)
+            #print(postFeaturesIdxs[0].varZ3.ctx)
+        #print(synthesizedFeatures)
+        return synthesizedFeatures
+
+
+
+
     def createNegationBool(self, boolFeatures):
         negBoolFeatures = list()
         for bf in boolFeatures:

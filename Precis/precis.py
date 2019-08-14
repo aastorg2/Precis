@@ -21,20 +21,24 @@ def learnPost(p,PUTName, outputFile):
     postK0 = PrecisFormula(BoolVal(True))
     postK1 = PrecisFormula(BoolVal(True))
     postK2 = PrecisFormula(BoolVal(True))
+    simpPostK0 = PrecisFormula(BoolVal(True))
+    simpPostK1 = PrecisFormula(BoolVal(True))
+    simpPostK2 = PrecisFormula(BoolVal(True))
 
-    (postK2,r2) = learnPostUpToK(p,PUTName, outputFile,2)
+    (postK2,simpPostK2,r2) = learnPostUpToK(p,PUTName, outputFile,2)
     #print("smallest post up to k == 2", postK2.toInfix())
     #sys.exit(0)
     
-    (postK1,r1) = learnPostUpToK(p,PUTName, outputFile,1)
+    (postK1,simpPostK1,r1) = learnPostUpToK(p,PUTName, outputFile,1)
     #print("smallest post up to k == 2", postK1.toInfix())
     #sys.exit(0)
    
-    (postK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
+    (postK0,simpPostK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
+    #print("simplified: ", PrecisFormula(precisSimplify(postK0.formulaZ3)).toInfix() )
     #print("smallest post up to k == 0", postK0.toInfix())
     #sys.exit(0)
     
-    return (postK0, r0, postK1, r1 , postK2, r2)
+    return (postK0,simpPostK0, r0, postK1,simpPostK1, r1 , postK2,simpPostK2, r2)
     
     
 
@@ -56,16 +60,25 @@ def learnPostUpToK(p,PUTName, outputFile, k):
         
         baseFeatureVectors = pex.RunTeacher(p, PUTName, baseFeatures)
         allBaseFeatureVectors.extend(baseFeatureVectors)
-        featureSynthesizer = FeatureSynthesis()
+        sygusExecutable = "Precis/Learners/EnumerativeSolver/bin/starexec_run_Default"
+        tempLocation = "tempLocation"
+        sygusFileName = "postcondition.sl"
+        featureSynthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName)
+        
+        features = list()
+        
         #list of derivedFeatures
         derivedFeatures = featureSynthesizer.GenerateDerivedFeatures(baseFeatures)
-        features = list()
         # appending two list
-        features =  baseFeatures + derivedFeatures
 
         houdini = Houdini()
         derivedFeatureVectors = list()
         # derivedFeatureVectors is a list of tuples of Z3 values
+        synthesizedFeatures = featureSynthesizer.synthesizeFeatures(baseFeatures, baseFeatureVectors)
+
+        derivedFeatures = synthesizedFeatures + derivedFeatures
+        features =  baseFeatures + derivedFeatures
+
         derivedFeatureVectors = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, allBaseFeatureVectors)
         # derivedFeatureVectors is a list of tuples of Z3 values
         featureVectors = houdini.concatenateFeatureVectors(allBaseFeatureVectors, derivedFeatureVectors)
@@ -92,7 +105,8 @@ def learnPostUpToK(p,PUTName, outputFile, k):
 
         if postcondition.formula in allPostconditions:
             print("found it")
-            return postcondition, rounds
+            simplifiedPost = PrecisFormula(precisSimplify(postcondition.formulaZ3))
+            return postcondition, simplifiedPost, rounds
         
         allPostconditions.append(postcondition.formula)
         rounds = rounds + 1
@@ -102,18 +116,25 @@ def learnPostUpToK(p,PUTName, outputFile, k):
         #print(featureVectors)
 
 #todo: list of problems
-def runLearnPost(p, putList,outputFile):
+def runLearnPost(p, putList,projectName,outputFile):
     #assert puts in putList in problem
+    logger1.info("Problem: "+projectName+"\n")
     for PUTName in putList:
         # post = learnPost(p,PUTName, outputFile)
         logger1.info("PUT: "+PUTName+"\n")
-        (postK0,r0, postK1,r1,postK2,r2) = learnPost(p, PUTName, outputFile)
+        (postK0,simpPostK0,r0, postK1,simpPostK1,r1, postK2,simpPostK2,r2) = learnPost(p, PUTName, outputFile)
         logger1.info("postcondition k == 0\n "+ postK0.toInfix()+"\nrounds: "+str(r0)+"\n")
+        logger1.info("simple   post k == 0\n "+ simpPostK0.toInfix()+"\nrounds: "+str(r0)+"\n")
         logger1.info("postcondition k == 1\n "+ postK1.toInfix()+"\nrounds: "+str(r1)+"\n")
+        logger1.info("simple   post k == 1\n "+ simpPostK1.toInfix()+"\nrounds: "+str(r1)+"\n")
         logger1.info("postcondition k == 2\n "+ postK2.toInfix()+"\nrounds: "+str(r2)+"\n")
+        logger1.info("simple   post k == 2\n "+ simpPostK2.toInfix()+"\nrounds: "+str(r2)+"\n")
         print("postcondition k == 0 ", postK0.toInfix(), "rounds: ", r0)
+        print("simple   post k == 0 ", simpPostK0.toInfix(), "rounds: ", r0,"\n")
         print("postcondition k == 1 ", postK1.toInfix(), "rounds: ", r1)
+        print("simple   post k == 1 ", simpPostK1.toInfix(), "rounds: ", r1,"\n")
         print("postcondition k == 2 ", postK2.toInfix(), "rounds: ", r2)
+        print("simple   post k == 2 ", simpPostK2.toInfix(), "rounds: ", r2,"\n")
         
         implication = Implies(postK0.formulaZ3,postK1.formulaZ3)
         solver0 = Solver()
@@ -121,20 +142,106 @@ def runLearnPost(p, putList,outputFile):
         check0 = solver0.check()
         #logger1.info("first check\n")
         #logger1.info(solver0.to_smt2()+"\n")
-        logger1.info("is it unsat Not(k0 -> k1)? "+ str(check0)+"\n")
+        logger1.info("Not(k0 -> k1)? "+ str(check0)+"\n")
         print("is it unsat?", check0 ) # if unsat, stop
         nextImplication = Implies(postK1.formulaZ3,postK2.formulaZ3) # check (not (postK1 => postK2)) is unsat
         solver1 = Solver()
         solver1.add(Not(nextImplication))
         check1 = solver1.check()
-        logger1.info("is it unsat? Not(k1 -> k2)"+ str(check1)+"\n")
+        logger1.info("Not(k1 -> k2)"+ str(check1)+"\n")
         print("is it unsat?", check1)
         nextNextImplication = Implies(postK0.formulaZ3,postK2.formulaZ3) # check (not (postK1 => postK2)) is unsat
         solver2 = Solver()
         solver2.add(Not(nextNextImplication))
         check2 = solver2.check()
-        logger1.info("is it unsat? Not(k0 -> k2)"+ str(check2)+"\n")
+        logger1.info("Not(k0 -> k2)"+ str(check2)+"\n")
         print("is it unsat?", check2)
+
+def precisSimplify(postcondition):
+        set_option(max_args = 10000000, max_lines = 1000000, max_depth = 10000000, max_visited = 1000000)
+        set_option(html_mode=False)
+        set_fpa_pretty(flag=False)
+        
+        #intVars = [ Int(var) for var in intVariables]
+        #boolVars = [ Bool(var) for var in boolVariables]
+    
+        #declareInts = "\n".join([ "(declare-const " + var + " Int)" for var in intVariables ])
+        #declareBools = "\n".join([ "(declare-const " + var + " Bool)" for var in boolVariables ])
+        #stringToParse = "\n".join([declareInts,  declareBools, "( assert " + precondition + ")"])
+    
+        #logger = logging.getLogger("Framework.z3Simplify")
+    
+        #logger.info("############ z3 program")
+        #logger.info("############ " + stringToParse)
+    
+        #expr = parse_smt2_string(stringToParse)
+        
+        g  = Goal()
+        g.add(postcondition)
+        
+        works = Repeat(Then( 
+        
+        OrElse(Tactic('ctx-solver-simplify'),Tactic('skip')),
+        
+        # OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
+        # OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
+        # OrElse(Tactic('purify-arith'),Tactic('skip')),
+        # OrElse(Tactic('ctx-simplify'),Tactic('skip')),
+        # OrElse(Tactic('dom-simplify'),Tactic('skip')),
+        # OrElse(Tactic('propagate-values'),Tactic('skip')),
+        
+        OrElse(Tactic('simplify'),Tactic('skip')),
+        
+        # OrElse(Tactic('aig'),Tactic('skip')),
+        # OrElse(Tactic('degree-shift'),Tactic('skip')),
+        # OrElse(Tactic('factor'),Tactic('skip')),
+        # OrElse(Tactic('lia2pb'),Tactic('skip')),
+        # OrElse(Tactic('recover-01'),Tactic('skip')),
+        
+        OrElse(Tactic('elim-term-ite'),Tactic('skip')), #must to remove ite
+        
+        # OrElse(Tactic('injectivity'),Tactic('skip')),
+        # OrElse(Tactic('snf'),Tactic('skip')),
+        # OrElse(Tactic('reduce-args'),Tactic('skip')),
+        # OrElse(Tactic('elim-and'),Tactic('skip')),
+        # OrElse(Tactic('symmetry-reduce'),Tactic('skip')),
+        # OrElse(Tactic('macro-finder'),Tactic('skip')),
+        # OrElse(Tactic('quasi-macros'),Tactic('skip')),
+        
+        Repeat(OrElse(Tactic('split-clause'),Tactic('skip'))),
+        ))
+        #works1 = Tactic('simplify')    
+
+        result = works(g)
+        #result = works1(g)
+        # split_all = 
+
+        # print str(result)
+        # result = [[ "d1", "d2", "d3"], #= conjunct && conjunct
+        #           [ "d4", "d5", "d6"]]
+        
+        #remove empty subgoals and check if resultant list is empty.
+        result = filter(None, result)
+        if not result:
+            return "true" 
+        #return result
+        
+        completeConjunct = []
+        for conjunct in result: 
+            completeDisjunct = []
+            for disjunct in conjunct:
+                    completeDisjunct.append(disjunct)
+                    
+            completeConjunct.append(And(completeDisjunct) )
+        
+        simplifiedPrecondition = Or(completeConjunct)
+        
+        #simplifiedPrecondition = simplifiedPrecondition.replace("Not", " ! ")
+        #simplifiedPrecondition = simplifiedPrecondition.replace("False", " false ")
+        #simplifiedPrecondition = simplifiedPrecondition.replace("True", " true ")
+        #simplifiedPrecondition = simplifiedPrecondition.replace("\n", "  ")
+        return simplifiedPrecondition
+
 
 if __name__ == '__main__':
 
@@ -167,11 +274,11 @@ if __name__ == '__main__':
     #PUTName = 'PUT_PopContract'
     outputFile = os.path.abspath('./typesOM.txt')
 
-    
+    #stackPUTs = ['PUT_PushContract']
     p = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
     
     
-    runLearnPost(p,stackPUTs,outputFile)
+    #runLearnPost(p,stackPUTs,projectName, outputFile)
     
     ################ Stack
 
@@ -190,7 +297,7 @@ if __name__ == '__main__':
 
     p1 = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
 
-    #runLearnPost(p1,hashsetPUTs,outputFile)
+    #runLearnPost(p1,hashsetPUTs,projectName,outputFile)
 
     ################ HashSet
 
@@ -198,7 +305,7 @@ if __name__ == '__main__':
     ################ Dictionary
 
     sln = os.path.abspath('../ContractsSubjects/Dictionary/Dictionary.sln')
-    projectName =  'HashSetTest'
+    projectName =  'DictionaryTest'
     testDebugFolder = '../ContractsSubjects/Dictionary/DictionaryTest/bin/Debug/'
     testDll = testDebugFolder + 'DictionaryTest.dll'
     testFileName = 'DictionaryContractTest.cs' 
@@ -210,6 +317,43 @@ if __name__ == '__main__':
     p2 = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
     outputFile = os.path.abspath('./typesOM.txt')
     
-    #runLearnPost(p2,dictionaryPUTs,outputFile)
+    #runLearnPost(p2,dictionaryPUTs, projectName, outputFile)
 
     ################ Dictionary
+
+    ################ Queue
+    sln = os.path.abspath('../ContractsSubjects/Queue/Queue.sln')
+    projectName =  'QueueTest'
+    testDebugFolder = '../ContractsSubjects/Queue/QueueTest/bin/Debug/'
+    testDll = testDebugFolder + 'QueueTest.dll'
+    testFileName = 'QueueContractTest.cs' 
+    testNamepace = 'Queue.Test'
+    testClass = 'QueueContractTest'
+    queuePUTs = ['PUT_EnqueueContract', 'PUT_DequeueContract', 'PUT_PeekContract', 'PUT_CountContract','PUT_ContainsContract'] 
+    #PUTName = 'PUT_PushContract'
+    #PUTName = 'PUT_PopContract'
+    p3 = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
+    outputFile = os.path.abspath('./typesOM.txt')
+    
+    #runLearnPost(p3,queuePUTs,projectName,outputFile)
+
+    ################ Queue
+
+    ################ ArrayList
+    sln = os.path.abspath('../ContractsSubjects/ArrayList/ArrayList.sln')
+    projectName =  'ArrayListTest'
+    testDebugFolder = '../ContractsSubjects/ArrayList/ArrayListTest/bin/Debug/'
+    testDll = testDebugFolder + 'ArrayListTest.dll'
+    testFileName = 'ArrayListContractTest.cs' 
+    testNamepace = 'ArrayList.Test'
+    testClass = 'ArrayListContractTest'
+    arrayListPUTs = ['PUT_AddContract', 'PUT_RemoveContract','PUT_InsertContract', 'PUT_SetContract','PUT_GetContract','PUT_ContainsContract','PUT_IndexOfContract','PUT_LastIndexOfContract','PUT_CountContract'] 
+    #PUTName = 'PUT_PushContract'
+    #PUTName = 'PUT_PopContract'
+    #arrayListPUTs = ['PUT_ContainsKeyContract','PUT_ContainsValueContract','PUT_CountContract'] 
+    p4 = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
+    outputFile = os.path.abspath('./typesOM.txt')
+    
+    #runLearnPost(p4,arrayListPUTs,projectName,outputFile)
+
+    ################ ArrayList
