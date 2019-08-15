@@ -5,6 +5,9 @@
 2. lxml --> pip install lxml
 3. python z3 library
 4. numpy --> pip install numpy
+### Message for Shiyu and others:
+1. create a tempLocation directory.
+
 
 ## Development notes
 1. When executing this program in VSCode, relative paths used in our code depends on where you open VSCode.
