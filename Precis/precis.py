@@ -25,7 +25,7 @@ def learnPost(p,PUTName, outputFile):
     simpPostK1 = PrecisFormula(BoolVal(True))
     simpPostK2 = PrecisFormula(BoolVal(True))
 
-    (postK2,simpPostK2,r2) = learnPostUpToK(p,PUTName, outputFile,2)
+    #(postK2,simpPostK2,r2) = learnPostUpToK(p,PUTName, outputFile,2)
     #print("smallest post up to k == 2", postK2.toInfix())
     #sys.exit(0)
     
@@ -33,7 +33,7 @@ def learnPost(p,PUTName, outputFile):
     #print("smallest post up to k == 2", postK1.toInfix())
     #sys.exit(0)
    
-    (postK0,simpPostK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
+    #(postK0,simpPostK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
     #print("simplified: ", PrecisFormula(precisSimplify(postK0.formulaZ3)).toInfix() )
     #print("smallest post up to k == 0", postK0.toInfix())
     #sys.exit(0)
@@ -43,13 +43,15 @@ def learnPost(p,PUTName, outputFile):
     
 
 def learnPostUpToK(p,PUTName, outputFile, k):
-
+    sygusExecutable = "Precis/Learners/EnumerativeSolver/bin/starexec_run_Default"
+    tempLocation = "tempLocation"
+    sygusFileName = "postcondition.sl"
     p.ExtractObservers(PUTName, outputFile)
 
     #returns list of base features
     baseFeatures = p.ReadObserversFromFile(outputFile)
     allPostconditions = list()
-    allBaseFeatureVectors =[]
+    allBaseFeatureVectors = list()
     
     inst = Instrumenter("MSBuild.exe","./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
     initFormula = PrecisFormula(BoolVal(False))
@@ -57,12 +59,8 @@ def learnPostUpToK(p,PUTName, outputFile, k):
     rounds = 1
     while True:
         pex = Pex()
-        
-        baseFeatureVectors = pex.RunTeacher(p, PUTName, baseFeatures)
+        baseFeatureVectors: list = pex.RunTeacher(p, PUTName, baseFeatures)
         allBaseFeatureVectors.extend(baseFeatureVectors)
-        sygusExecutable = "Precis/Learners/EnumerativeSolver/bin/starexec_run_Default"
-        tempLocation = "tempLocation"
-        sygusFileName = "postcondition.sl"
         featureSynthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName)
         
         features = list()
@@ -77,7 +75,7 @@ def learnPostUpToK(p,PUTName, outputFile, k):
         synthesizedFeatures = featureSynthesizer.synthesizeFeatures(baseFeatures, baseFeatureVectors)
 
         derivedFeatures = synthesizedFeatures + derivedFeatures
-        features =  baseFeatures + derivedFeatures
+        features: list =  baseFeatures + derivedFeatures
 
         derivedFeatureVectors = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, allBaseFeatureVectors)
         # derivedFeatureVectors is a list of tuples of Z3 values
@@ -111,9 +109,6 @@ def learnPostUpToK(p,PUTName, outputFile, k):
         allPostconditions.append(postcondition.formula)
         rounds = rounds + 1
         #assert(bfv[0] <--> dfv[0] )
-        #featureVectors = baseFeatureVectors + derivedFeatureVectors
-        #print(derivedFeatures)
-        #print(featureVectors)
 
 #todo: list of problems
 def runLearnPost(p, putList,projectName,outputFile):
@@ -296,8 +291,8 @@ if __name__ == '__main__':
     outputFile = os.path.abspath('./typesOM.txt')
 
     p1 = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
-
-    #runLearnPost(p1,hashsetPUTs,projectName,outputFile)
+    hashsetPUTs = ['PUT_AddContract']    
+    runLearnPost(p1,hashsetPUTs,projectName,outputFile)
 
     ################ HashSet
 
