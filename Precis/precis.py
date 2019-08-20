@@ -63,7 +63,7 @@ def learnPostUpToK(p,PUTName, outputFile, k):
     allBaseFeatureVectors = []
     
     # FixMe: feature synthesis object shoul be initialized with base features and the feature vector should be updated
-    featureSynthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName)
+    featureSynthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName, baseFeatures)
 
     initFormula = PrecisFormula(BoolVal(False))
     inst.instrumentPost(p,initFormula , PUTName)
@@ -93,7 +93,7 @@ def learnPostUpToK(p,PUTName, outputFile, k):
         boolFeatureVectors = houdini.getBoolFeatureVectors(featureVectors, boolFeatureIndices)
         
         #FixMe: initialize disjunctive learner with feature Synthesis Object
-        disLearner = DisjunctiveLearner()
+        disLearner = DisjunctiveLearner(featureSynthesizer)
         indices = []
         (postcondition, indices) = disLearner.learn2(k,boolFeatures, boolFeatureVectors,"root")
         #sys.exit(0)
