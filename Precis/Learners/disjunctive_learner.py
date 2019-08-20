@@ -25,10 +25,12 @@ class DisjunctiveLearner:
 
     def learn2(self,k, features, featureVectors, call):
         houdini = Houdini()
+        
         if k == 0:
             (formula, indices) = houdini.learn2(features, featureVectors, call)
             return (formula, indices)
         else:
+
             reaminingEntriesFv =list()
             (allTrueFormula, indicesAllwaysTrue) = houdini.learn2(features, featureVectors, call)
             remainingFeatures: List[PrecisFeature] = self.removeFeatureFromFeaturelist(features,indicesAllwaysTrue)
@@ -36,27 +38,17 @@ class DisjunctiveLearner:
             
             #FIXME: allow chooseFeature to be overridden in derived classes
             (f,idx, fposFv,fnegFv) = self.chooseFeature(remainingFeatures, reaminingEntriesFv, call)
-            
             conditionallyTrueFeatures = self.removeFeatureFromFeaturelist(remainingFeatures,[idx])
             
-            #posFv = list()
-            #negFv = list()
             posFv = self.removeFeatureEntryInFeatureVectors(fposFv, [idx])
             negFv = self.removeFeatureEntryInFeatureVectors(fnegFv, [idx])
-            #for fv in fposFv:
-            #    fposFeatureVector = FeatureVector([], [], str(fv.testLabel))
-            #    fposFeatureVector.values = fv.values[0:idx] + fv.values[idx+1:] 
-            #    fposFeatureVector.valuesZ3 = fv.valuesZ3[0:idx] + fv.valuesZ3[idx+1:]
-            #    posFv.append(fposFeatureVector)
-            #for fv in fnegFv:
-            #    fnegFeatureVector = FeatureVector([], [], str(fv.testLabel))
-            #    fnegFeatureVector.values = fv.values[0:idx] + fv.values[idx+1:]                
-            #    fnegFeatureVector.valuesZ3 = fv.valuesZ3[0:idx] + fv.valuesZ3[idx+1:]
-            #    negFv.append(fnegFeatureVector)
+            #self.setBaseFeatureVector(posFv)
+            #posFeatures = self.featureSynthesizer.synthesizeFeatures()
 
-            
-            #print( [ len(fv)  for fv in fposFv] )
-            #print( [ len(fv)  for fv in fnegFv] )
+            #self.setBaseFeatureVector(negFv)
+            #negFeatures = self.featureSynthesizer.synthesizeFeatures()
+
+
             (posPost,posIndices) = self.learn2(k-1,conditionallyTrueFeatures,posFv, "pos")
             (negPost, negIndices) = self.learn2(k-1,conditionallyTrueFeatures,negFv, "neg")
             print("for call "+call +" at k == "+str(k))

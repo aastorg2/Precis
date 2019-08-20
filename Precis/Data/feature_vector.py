@@ -7,7 +7,8 @@ class FeatureVector:
     valuesZ3 = ()
     # tuple of strings representing values of features (i.e represents a row of data; a list of self.values would represent a 2D matrix.)
     values = ()
-    
+    #passing or failing test
+    testLabel = None
     
 
     def __init__(self, precisFeatureList, values, testLabel):
@@ -65,8 +66,14 @@ class FeatureVector:
         
     def __len__(self):
         return len(self.valuesZ3)
+    def __eq__(self, other):
+        return hasattr(other, 'valuesZ3') and hasattr(other, 'values') and self.valuesZ3 == other.valuesZ3
+
+    def __hash__(self):
+        return hash(self.valuesZ3)
 
     # derivedValuesZ3: tuple of derived Z3 values
+    """
     def __add__(self, derivedValuesZ3):
         derivedValues = ()
         for valueZ3 in derivedValuesZ3:
@@ -74,4 +81,12 @@ class FeatureVector:
         featureVector = FeatureVector([], [], str(self.testLabel))
         featureVector.values = self.values + derivedValues
         featureVector.valuesZ3 = self.valuesZ3 + derivedValuesZ3
+        return featureVector
+    """
+    
+     # otherFV: other feature vector
+    def __add__(self, otherFV):
+        featureVector = FeatureVector([], [], str(self.testLabel))
+        featureVector.values = self.values + otherFV.values
+        featureVector.valuesZ3 = self.valuesZ3 + otherFV.valuesZ3
         return featureVector

@@ -10,7 +10,7 @@ from Learners.feature_synthesis import FeatureSynthesis
 from Learners.houdini import Houdini
 from Learners.disjunctive_learner import DisjunctiveLearner
 from Teachers.instrumenter import Instrumenter
-
+from featurizer import Featurizer
 import command_runner
 from typing import List, Tuple, Type
 
@@ -34,7 +34,7 @@ def learnPost(p,PUTName, outputFile):
     #print("smallest post up to k == 2", postK2.toInfix())
     #sys.exit(0)
     
-    (postK1,simpPostK1,r1) = learnPostUpToK(p,PUTName, outputFile,1)
+    (postK1,simpPostK1,r1) = learnPostUpToK(p,PUTName, outputFile,0)
     #print("smallest post up to k == 2", postK1.toInfix())
     #sys.exit(0)
    
@@ -81,18 +81,10 @@ def learnPostUpToK(p,PUTName, outputFile, k):
 
         features: List[PrecisFeature] =  baseFeatures + derivedFeatures
         
-        # region Push all Feature vector transformation to a utility module instead of Houdini class
-        houdini = Houdini()
-        derivedFeatureVectors: List[FeatureVector] = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, allBaseFeatureVectors)
-        
-        # derivedFeatureVectors is a list of tuples of Z3 values
-        # Rename aggregateFeatureVectors to mergeXXX or aggregateXXX
-        featureVectors = houdini.aggregateFeatureVectors(allBaseFeatureVectors, derivedFeatureVectors)
-        #print(featureVectors)
-        
-        boolFeatures, boolFeatureIndices = houdini.getBoolFeatures(features)
-        boolFeatureVectors = houdini.getBoolFeatureVectors(featureVectors, boolFeatureIndices)
-        
+        featurizer: Type[Featurizer] = Featurizer(derivedFeatures, baseFeatures, allBaseFeatureVectors)
+
+        boolFeatures, boolFeatureIndices = featurizer.getBoolFeatures(features)
+        boolFeatureVectors = featurizer.getBoolFeatureVectors(featurizer.completeFVs, boolFeatureIndices)
         #FixMe: initialize disjunctive learner with feature Synthesis Object
         disLearner = DisjunctiveLearner(featureSynthesizer)
         indices = []
