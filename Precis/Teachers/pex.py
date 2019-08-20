@@ -18,6 +18,7 @@ from z3 import *
 
 from Data.problem import Problem
 from Data.feature_vector import FeatureVector
+from typing import List
 
 class Pex:
     def __init__(self):
@@ -28,8 +29,7 @@ class Pex:
         self.ro = "r1" 
         self.time = 0.0
 
-    def RunTeacher(self, problem, PUTName, precisFeatureList):
-        self.time = 0.0
+    def RunTeacher(self, problem, PUTName, precisFeatureList) -> List[FeatureVector]:
         startTime = time.time()
         args = self.GetExecCommand(problem.testDll, PUTName, problem.testNamespace, problem.testClass)
         pexOutput = command_runner.runCommand(args)
