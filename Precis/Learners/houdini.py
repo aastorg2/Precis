@@ -11,7 +11,7 @@ class Houdini:
     
     useBounds = False
 
-    def concatenateFeatureVectors(self, baseFeatureVectors, derivedValuesZ3Tuples):
+    def aggregateFeatureVectors(self, baseFeatureVectors, derivedValuesZ3Tuples):
         featureVectors = []
         for i in range(len(baseFeatureVectors)):
             concatenatedFv = baseFeatureVectors[i] + derivedValuesZ3Tuples[i]
