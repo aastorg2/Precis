@@ -52,6 +52,9 @@ def learnPostUpToK(p,PUTName, outputFile, k):
     tempLocation = "tempLocation"
     sygusFileName = "postcondition.sl"
     
+    #assumes MSBuils.exe in path
+    inst = Instrumenter("MSBuild.exe","./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
+
     p.ExtractObservers(PUTName, outputFile)
 
     #returns list of base features
@@ -62,7 +65,6 @@ def learnPostUpToK(p,PUTName, outputFile, k):
     # FixMe: feature synthesis object shoul be initialized with base features and the feature vector should be updated
     featureSynthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName)
 
-    inst = Instrumenter("MSBuild.exe","./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
     initFormula = PrecisFormula(BoolVal(False))
     inst.instrumentPost(p,initFormula , PUTName)
     rounds = 1
