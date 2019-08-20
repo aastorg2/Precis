@@ -73,10 +73,11 @@ def learnPostUpToK(p,PUTName, outputFile, k):
         
         baseFeatureVectors: List[FeatureVector] = pex.RunTeacher(p, PUTName, baseFeatures)
         allBaseFeatureVectors.extend(baseFeatureVectors)
-        
+
+        featureSynthesizer.setBaseFeatureVector(baseFeatureVectors)
         derivedFeatures: List[PrecisFeature] = \
-                featureSynthesizer.synthesizeFeatures(baseFeatures, baseFeatureVectors) + \
-                featureSynthesizer.GenerateDerivedFeatures(baseFeatures)
+                featureSynthesizer.synthesizeFeatures() + \
+                featureSynthesizer.GenerateDerivedFeatures()
 
         features: List[PrecisFeature] =  baseFeatures + derivedFeatures
         

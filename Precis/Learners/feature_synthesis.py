@@ -16,6 +16,7 @@ class FeatureSynthesis:
     sygusFileName = ""
     # list of base features used to generate predicates and synthesize feature using a grammars
     baseFeatures: List[PrecisFeature] = None
+    baseFeatureVectors = None
     
     def __init__(self, binaryExec, tempFolder, syguFileName, baseFeatures):
         assert (baseFeatures != None)
@@ -23,6 +24,9 @@ class FeatureSynthesis:
         self.temporaryFolder = tempFolder
         self.sygusFileName = syguFileName
         self.baseFeatures = baseFeatures
+
+    def setBaseFeatureVector(self, baseFv):
+        self.baseFeatureVectors = baseFv
 
     def GenerateDerivedFeatures(self):
         intFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Int"]
@@ -43,7 +47,8 @@ class FeatureSynthesis:
         return negationBaseBoolFeatures+equalityFeatures
         #return equalityFeatures
         #Todo: call to sygus solvers can be placed here.
-    def synthesizeFeatures(self, featureVectors):
+    def synthesizeFeatures(self):
+        assert( self.baseFeatureVectors != None)
         intFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Int"]
         boolFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Bool"]
         grammar = ""
@@ -68,7 +73,7 @@ class FeatureSynthesis:
         synthesizedFeatures = []
         for postFeaturesIdxs  in [ (intFeatures[newIdx], newIdx) for newIdx in range(len(intFeatures)) if intFeatures[newIdx].isNew != None and intFeatures[newIdx].isNew]:
             #print(postFeaturesIdxs[0].varName)
-            constraints = sygusSynthesizer.addSemanticConstraints(postFeaturesIdxs[1],intOldVarAndIdxs,featureVectors)
+            constraints = sygusSynthesizer.addSemanticConstraints(postFeaturesIdxs[1],intOldVarAndIdxs, self.baseFeatureVectors)
             sygusProblem = sygusSynthesizer.constructSygusProblem(logic, grammar, constraints,checkSynth)
             shell.writeToFile(self.temporaryFolder,self.sygusFileName, sygusProblem )
             synthizedExprStr = sygusSynthesizer.learn(self.temporaryFolder,self.sygusFileName)
