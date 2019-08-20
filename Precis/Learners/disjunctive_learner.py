@@ -10,6 +10,7 @@ import numpy
 import logging
 
 logger = logging.getLogger("Runner.DisjunctiveLearner")
+
 class DisjunctiveLearner:
 
     # entropy measure is used by default for choosing Predicates to split data on
@@ -59,6 +60,7 @@ class DisjunctiveLearner:
             notAlwaysTrueFeatures = self.removeFeatureFromFeaturelist(features,indicesAllwaysTrue)
             notAlwaysTrueEntriesFv = self.removeFeatureEntryInFeatureVectors(featureVectors, indicesAllwaysTrue)
             
+            # FIXME allow chooseFeature to be overridden in derived classes
             (f,idx, fposFv,fnegFv) = self.chooseFeature(notAlwaysTrueFeatures, notAlwaysTrueEntriesFv, call)
             
             
