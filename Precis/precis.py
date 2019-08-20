@@ -81,14 +81,15 @@ def learnPostUpToK(p,PUTName, outputFile, k):
 
         features: List[PrecisFeature] =  baseFeatures + derivedFeatures
         
-        featurizer: Type[Featurizer] = Featurizer(derivedFeatures, baseFeatures, allBaseFeatureVectors)
+        featurizer: Type[Featurizer] = Featurizer(derivedFeatures, baseFeatures, allBaseFeatureVectors, features)
 
-        boolFeatures, boolFeatureIndices = featurizer.getBoolFeatures(features)
-        boolFeatureVectors = featurizer.getBoolFeatureVectors(featurizer.completeFVs, boolFeatureIndices)
+        #boolFeatures, boolFeatureIndices = featurizer.getBoolFeatures(features)
+        #boolFeatureVectors = featurizer.getBoolFeatureVectors(featurizer.completeFVs, boolFeatureIndices)
         #FixMe: initialize disjunctive learner with feature Synthesis Object
         disLearner = DisjunctiveLearner(featureSynthesizer)
         indices = []
-        (postcondition, indices) = disLearner.learn2(k,boolFeatures, boolFeatureVectors,"root")
+        
+        (postcondition, indices) = disLearner.learn2(k,featurizer.boolFeatures, featurizer.boolFVs ,"root")
         #sys.exit(0)
         print("postcondition formulaZ3")
         print(postcondition.formulaZ3)

@@ -10,27 +10,40 @@ import logging
 
 
 class Featurizer:
-    #mapping from complete feature vectors to base
-    mappingCompleteFvToBase = None
-    #mapping from complete feature vectors to derived 
-    mappingCompleteFvToDerived = None
+    #this should be list of base plus derived features
+    features = None
+    boolFeatures = None
+    boolFeaturesIndices = None
 
     baseFVs = None
     derivedFVs = None
     #tuple of complete(base + derived) feature vectors
     completeFVs = None
+    boolFVs = None
+    #mapping from complete feature vectors to base
+    mappingCompleteFvToBase = None
+    #mapping from complete feature vectors to derived 
+    mappingCompleteFvToDerived = None
 
-    def __init__(self, derivedFeatures, baseFeatures, baseFeatureVectors):
+    
+    
+
+    def __init__(self, derivedFeatures, baseFeatures, baseFeatureVectors, features):
         self.mappingCompleteFvToBase = {}
         self.mappingCompleteFvToDerived = {}
         self.baseFVs = baseFeatureVectors
+        self.features = features
         self.createCompleteFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
-
+        
     def createCompleteFeatureVectors(self, derivedFeatures, baseFeatures, baseFeatureVectors):
         self.derivedFVs = self.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
         self.completeFVs = self.aggregateFeatureVectors(baseFeatureVectors, self.derivedFVs)
+        
         self.mappingCompleteFvToBase.update({self.completeFVs: baseFeatureVectors })
         self.mappingCompleteFvToDerived.update({self.completeFVs: self.derivedFVs})
+        
+        (self.boolFeatures,self.boolFeaturesIndices ) = self.getBoolFeatures(self.features)
+        self.boolFVs = self.getBoolFeatureVectors(self.completeFVs,self.boolFeaturesIndices)
 
     # Inputs:
     #   baseFeatures: list of PrecisFeature containing features provided by user in Parameterized Unit Test(i.e., PUTs)
