@@ -3,11 +3,12 @@ from Data.precis_feature import PrecisFeature
 from Data.feature_vector import FeatureVector
 from Data.precis_formula import PrecisFormula
 from Learners.houdini import Houdini
-
 from os import sys
+from typing import List
 import math
 import numpy
 import logging
+
 
 logger = logging.getLogger("Runner.DisjunctiveLearner")
 
@@ -16,37 +17,11 @@ class DisjunctiveLearner:
     # entropy measure is used by default for choosing Predicates to split data on
     # for now we choose, largest entropy
     useEntropy = True
-
-    #fix this
-    def removeFeatureEntryInFeatureVectors(self,featureVectors, indices):
-        newFeatureVectors = list()
-        if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
-            for fv in featureVectors:
-                newFeatureVector = FeatureVector([], [], str(fv.testLabel))
-                newFeatureVector.values = tuple(fv.values)
-                newFeatureVector.valuesZ3 = tuple(fv.valuesZ3)
-                for idx in reversed(indices):
-                        newFeatureVector.values = newFeatureVector.values[0:idx] + newFeatureVector.values[idx+1:]
-                        newFeatureVector.valuesZ3 = newFeatureVector.valuesZ3[0:idx] + newFeatureVector.valuesZ3[idx+1:]
-                newFeatureVectors.append(newFeatureVector)
-        else:
-            assert(False)
-        return newFeatureVectors
-
+    featureSynthesizer = None
     
-    def removeFeatureFromFeaturelist(self,features,indices):
-        
-        newFeatures = list(features)
-        if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
-            
-            for idx in reversed(indices):
-                newFeatures = newFeatures[0:idx]+ newFeatures[idx+1:]
-            
-        else:
-            assert(False)
-        
-        return newFeatures
-
+    def __init__(self, featureSynthesizer, entropy=True):
+        self.useEntropy = entropy
+        self.featureSynthesizer = featureSynthesizer 
 
     def learn2(self,k, features, featureVectors, call):
         houdini = Houdini()
@@ -54,37 +29,36 @@ class DisjunctiveLearner:
             (formula, indices) = houdini.learn2(features, featureVectors, call)
             return (formula, indices)
         else:
-            notAlwaysTrueFeatures =list()
-            notAlwaysTrueEntriesFv =list()
+            reaminingEntriesFv =list()
             (allTrueFormula, indicesAllwaysTrue) = houdini.learn2(features, featureVectors, call)
-            notAlwaysTrueFeatures = self.removeFeatureFromFeaturelist(features,indicesAllwaysTrue)
-            notAlwaysTrueEntriesFv = self.removeFeatureEntryInFeatureVectors(featureVectors, indicesAllwaysTrue)
+            remainingFeatures: List[PrecisFeature] = self.removeFeatureFromFeaturelist(features,indicesAllwaysTrue)
+            reaminingEntriesFv = self.removeFeatureEntryInFeatureVectors(featureVectors, indicesAllwaysTrue)
             
-            # FIXME allow chooseFeature to be overridden in derived classes
-            (f,idx, fposFv,fnegFv) = self.chooseFeature(notAlwaysTrueFeatures, notAlwaysTrueEntriesFv, call)
+            #FIXME: allow chooseFeature to be overridden in derived classes
+            (f,idx, fposFv,fnegFv) = self.chooseFeature(remainingFeatures, reaminingEntriesFv, call)
             
+            conditionallyTrueFeatures = self.removeFeatureFromFeaturelist(remainingFeatures,[idx])
             
-            newFeatures = notAlwaysTrueFeatures[0:idx]+ notAlwaysTrueFeatures[idx+1:]
-
-            
-            newfposFv = list()
-            newfnegFv = list()
-            for fv in fposFv:
-                fposFeatureVector = FeatureVector([], [], str(fv.testLabel))
-                fposFeatureVector.values = fv.values[0:idx] + fv.values[idx+1:] 
-                fposFeatureVector.valuesZ3 = fv.valuesZ3[0:idx] + fv.valuesZ3[idx+1:]
-                newfposFv.append(fposFeatureVector)
-            for fv in fnegFv:
-                fnegFeatureVector = FeatureVector([], [], str(fv.testLabel))
-                fnegFeatureVector.values = fv.values[0:idx] + fv.values[idx+1:]                
-                fnegFeatureVector.valuesZ3 = fv.valuesZ3[0:idx] + fv.valuesZ3[idx+1:]
-                newfnegFv.append(fnegFeatureVector)
+            #posFv = list()
+            #negFv = list()
+            posFv = self.removeFeatureEntryInFeatureVectors(fposFv, [idx])
+            negFv = self.removeFeatureEntryInFeatureVectors(fnegFv, [idx])
+            #for fv in fposFv:
+            #    fposFeatureVector = FeatureVector([], [], str(fv.testLabel))
+            #    fposFeatureVector.values = fv.values[0:idx] + fv.values[idx+1:] 
+            #    fposFeatureVector.valuesZ3 = fv.valuesZ3[0:idx] + fv.valuesZ3[idx+1:]
+            #    posFv.append(fposFeatureVector)
+            #for fv in fnegFv:
+            #    fnegFeatureVector = FeatureVector([], [], str(fv.testLabel))
+            #    fnegFeatureVector.values = fv.values[0:idx] + fv.values[idx+1:]                
+            #    fnegFeatureVector.valuesZ3 = fv.valuesZ3[0:idx] + fv.valuesZ3[idx+1:]
+            #    negFv.append(fnegFeatureVector)
 
             
             #print( [ len(fv)  for fv in fposFv] )
             #print( [ len(fv)  for fv in fnegFv] )
-            (posPost,posIndices) = self.learn2(k-1,newFeatures,newfposFv, "pos")
-            (negPost, negIndices) = self.learn2(k-1,newFeatures,newfnegFv, "neg")
+            (posPost,posIndices) = self.learn2(k-1,conditionallyTrueFeatures,posFv, "pos")
+            (negPost, negIndices) = self.learn2(k-1,conditionallyTrueFeatures,negFv, "neg")
             print("for call "+call +" at k == "+str(k))
             print("choosen for split for :", f)
             #print("positive: ",posPost.formula )
@@ -252,91 +226,36 @@ class DisjunctiveLearner:
         # Note: I believe this implementation is missing an additional multiplication
         #return - ((probability_value_attribute/initialTotalSample)* probability_value_attribute * numpy.log(probability_value_attribute) / numpy.log(base)).sum()
 
-    def precisSimplify(self,precondition, intVariables, boolVariables):
-        set_option(max_args = 10000000, max_lines = 1000000, max_depth = 10000000, max_visited = 1000000)
-        set_option(html_mode=False)
-        set_fpa_pretty(flag=False)
-        
-        intVars = [ Int(var) for var in intVariables]
-        boolVars = [ Bool(var) for var in boolVariables]
-    
-        declareInts = "\n".join([ "(declare-const " + var + " Int)" for var in intVariables ])
-        declareBools = "\n".join([ "(declare-const " + var + " Bool)" for var in boolVariables ])
-        stringToParse = "\n".join([declareInts,  declareBools, "( assert " + precondition + ")"])
-    
-        #logger = logging.getLogger("Framework.z3Simplify")
-    
-        #logger.info("############ z3 program")
-        #logger.info("############ " + stringToParse)
-    
-        expr = parse_smt2_string(stringToParse)
-        
-        g  = Goal()
-        g.add(expr)
-        
-        works = Repeat(Then( 
-        
-        OrElse(Tactic('ctx-solver-simplify'),Tactic('skip')),
-        
-        # OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
-        # OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
-        # OrElse(Tactic('purify-arith'),Tactic('skip')),
-        # OrElse(Tactic('ctx-simplify'),Tactic('skip')),
-        # OrElse(Tactic('dom-simplify'),Tactic('skip')),
-        # OrElse(Tactic('propagate-values'),Tactic('skip')),
-        
-        OrElse(Tactic('simplify'),Tactic('skip')),
-        
-        # OrElse(Tactic('aig'),Tactic('skip')),
-        # OrElse(Tactic('degree-shift'),Tactic('skip')),
-        # OrElse(Tactic('factor'),Tactic('skip')),
-        # OrElse(Tactic('lia2pb'),Tactic('skip')),
-        # OrElse(Tactic('recover-01'),Tactic('skip')),
-        
-        OrElse(Tactic('elim-term-ite'),Tactic('skip')), #must to remove ite
-        
-        # OrElse(Tactic('injectivity'),Tactic('skip')),
-        # OrElse(Tactic('snf'),Tactic('skip')),
-        # OrElse(Tactic('reduce-args'),Tactic('skip')),
-        # OrElse(Tactic('elim-and'),Tactic('skip')),
-        # OrElse(Tactic('symmetry-reduce'),Tactic('skip')),
-        # OrElse(Tactic('macro-finder'),Tactic('skip')),
-        # OrElse(Tactic('quasi-macros'),Tactic('skip')),
-        
-        Repeat(OrElse(Tactic('split-clause'),Tactic('skip'))),
-        ))
-        #works1 = Tactic('simplify')    
 
-        result = works(g)
-        #result = works1(g)
-        # split_all = 
+    #fix this
+    def removeFeatureEntryInFeatureVectors(self,featureVectors, indices):
+        newFeatureVectors = list()
+        if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
+            for fv in featureVectors:
+                newFeatureVector = FeatureVector([], [], str(fv.testLabel))
+                newFeatureVector.values = tuple(fv.values)
+                newFeatureVector.valuesZ3 = tuple(fv.valuesZ3)
+                for idx in reversed(indices):
+                        newFeatureVector.values = newFeatureVector.values[0:idx] + newFeatureVector.values[idx+1:]
+                        newFeatureVector.valuesZ3 = newFeatureVector.valuesZ3[0:idx] + newFeatureVector.valuesZ3[idx+1:]
+                newFeatureVectors.append(newFeatureVector)
+        else:
+            assert(False)
+        return newFeatureVectors
 
-        # print str(result)
-        # result = [[ "d1", "d2", "d3"], #= conjunct && conjunct
-        #           [ "d4", "d5", "d6"]]
+    
+    def removeFeatureFromFeaturelist(self,features,indices):
         
-        #remove empty subgoals and check if resultant list is empty.
-        result = filter(None, result)
-        if not result:
-            return "true" 
-        #return result
+        newFeatures = list(features)
+        if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
+            
+            for idx in reversed(indices):
+                newFeatures = newFeatures[0:idx]+ newFeatures[idx+1:]
+            
+        else:
+            assert(False)
         
-        completeConjunct = []
-        for conjunct in result: 
-            completeDisjunct = []
-            for disjunct in conjunct:
-                    completeDisjunct.append("(" + str(disjunct) + ")")
-                    
-            completeConjunct.append( "(" + " && ".join(completeDisjunct) + ")")
-        
-        simplifiedPrecondition = " || ".join(completeConjunct)
-        
-        simplifiedPrecondition = simplifiedPrecondition.replace("Not", " ! ")
-        simplifiedPrecondition = simplifiedPrecondition.replace("False", " false ")
-        simplifiedPrecondition = simplifiedPrecondition.replace("True", " true ")
-        simplifiedPrecondition = simplifiedPrecondition.replace("\n", "  ")
-        return simplifiedPrecondition
-
+        return newFeatures
 
 if __name__ == '__main__':
 
