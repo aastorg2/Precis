@@ -2,13 +2,18 @@ import os
 from os import sys, path
 from z3 import *
 from Data.problem import Problem
+from Data.precis_feature import PrecisFeature
+from Data.precis_formula import PrecisFormula
+from Data.feature_vector import FeatureVector
 from Teachers.pex import Pex
 from Learners.feature_synthesis import FeatureSynthesis
 from Learners.houdini import Houdini
 from Learners.disjunctive_learner import DisjunctiveLearner
 from Teachers.instrumenter import Instrumenter
-from Data.precis_formula import PrecisFormula
+
 import command_runner
+from typing import List, Tuple, Type
+
 
 import logging
 
@@ -46,48 +51,48 @@ def learnPostUpToK(p,PUTName, outputFile, k):
     sygusExecutable = "Precis/Learners/EnumerativeSolver/bin/starexec_run_Default"
     tempLocation = "tempLocation"
     sygusFileName = "postcondition.sl"
+    
     p.ExtractObservers(PUTName, outputFile)
 
     #returns list of base features
-    baseFeatures = p.ReadObserversFromFile(outputFile)
-    allPostconditions = list()
-    allBaseFeatureVectors = list()
+    baseFeatures: List[PrecisFeature] = p.ReadObserversFromFile(outputFile)
+    allPostconditions = []
+    allBaseFeatureVectors = []
     
+    # FixMe: feature synthesis object shoul be initialized with base features and the feature vector should be updated
+    featureSynthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName)
+
     inst = Instrumenter("MSBuild.exe","./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
     initFormula = PrecisFormula(BoolVal(False))
     inst.instrumentPost(p,initFormula , PUTName)
     rounds = 1
     while True:
         pex = Pex()
-        baseFeatureVectors: list = pex.RunTeacher(p, PUTName, baseFeatures)
+        
+        baseFeatureVectors: List[FeatureVector] = pex.RunTeacher(p, PUTName, baseFeatures)
         allBaseFeatureVectors.extend(baseFeatureVectors)
-        featureSynthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName)
         
-        features = list()
-        
-        #list of derivedFeatures
-        derivedFeatures = featureSynthesizer.GenerateDerivedFeatures(baseFeatures)
-        # appending two list
+        derivedFeatures: List[PrecisFeature] = \
+                featureSynthesizer.synthesizeFeatures(baseFeatures, baseFeatureVectors) + \
+                featureSynthesizer.GenerateDerivedFeatures(baseFeatures)
 
+        features: List[PrecisFeature] =  baseFeatures + derivedFeatures
+        
+        # region Push all Feature vector transformation to a utility module instead of Houdini class
         houdini = Houdini()
-        derivedFeatureVectors = list()
+        derivedFeatureVectors: List[FeatureVector] = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, allBaseFeatureVectors)
+        
         # derivedFeatureVectors is a list of tuples of Z3 values
-        synthesizedFeatures = featureSynthesizer.synthesizeFeatures(baseFeatures, baseFeatureVectors)
-
-        derivedFeatures = synthesizedFeatures + derivedFeatures
-        features: list =  baseFeatures + derivedFeatures
-
-        derivedFeatureVectors = houdini.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, allBaseFeatureVectors)
-        # derivedFeatureVectors is a list of tuples of Z3 values
-        featureVectors = houdini.concatenateFeatureVectors(allBaseFeatureVectors, derivedFeatureVectors)
+        # Rename aggregateFeatureVectors to mergeXXX or aggregateXXX
+        featureVectors = houdini.aggregateFeatureVectors(allBaseFeatureVectors, derivedFeatureVectors)
         #print(featureVectors)
         
         boolFeatures, boolFeatureIndices = houdini.getBoolFeatures(features)
         boolFeatureVectors = houdini.getBoolFeatureVectors(featureVectors, boolFeatureIndices)
         
-        postcondition = None
+        #FixMe: initialize disjunctive learner with feature Synthesis Object
         disLearner = DisjunctiveLearner()
-        indices = list()
+        indices = []
         (postcondition, indices) = disLearner.learn2(k,boolFeatures, boolFeatureVectors,"root")
         #sys.exit(0)
         print("postcondition formulaZ3")
@@ -108,7 +113,6 @@ def learnPostUpToK(p,PUTName, outputFile, k):
         
         allPostconditions.append(postcondition.formula)
         rounds = rounds + 1
-        #assert(bfv[0] <--> dfv[0] )
 
 #todo: list of problems
 def runLearnPost(p, putList,projectName,outputFile):
