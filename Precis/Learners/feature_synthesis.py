@@ -5,6 +5,8 @@ from Learners.sygus import Sygus
 from os import sys, path
 from Data.shell import Shell
 from Learners.sygus_lia import SygusLIA
+
+from typing import List
 class FeatureSynthesis:
 
     #binary executable to run sygus solver
@@ -12,14 +14,19 @@ class FeatureSynthesis:
     temporaryFolder = ""
     sygusFileEndingPattern = '.*\.sl'
     sygusFileName = ""
-    def __init__(self, binaryExec, tempFolder, syguFileName):
+    # list of base features used to generate predicates and synthesize feature using a grammars
+    baseFeatures: List[PrecisFeature] = None
+    
+    def __init__(self, binaryExec, tempFolder, syguFileName, baseFeatures):
+        assert (baseFeatures != None)
         self.binary = binaryExec
         self.temporaryFolder = tempFolder
         self.sygusFileName = syguFileName
+        self.baseFeatures = baseFeatures
 
-    def GenerateDerivedFeatures(self,baseFeatures):
-        intFeatures = [f for f in baseFeatures if str(f.varZ3.sort())=="Int"]
-        boolFeatures = [f for f in baseFeatures if str(f.varZ3.sort())=="Bool"]
+    def GenerateDerivedFeatures(self):
+        intFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Int"]
+        boolFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Bool"]
         negationBaseBoolFeatures =[]
         
         #sygusLearner = SygusLIA("esolver", "learner/EnumerativeSolver/bin/starexec_run_Default", "grammar=True", "tempLocation")
@@ -36,9 +43,9 @@ class FeatureSynthesis:
         return negationBaseBoolFeatures+equalityFeatures
         #return equalityFeatures
         #Todo: call to sygus solvers can be placed here.
-    def synthesizeFeatures(self,baseFeatures, featureVectors):
-        intFeatures = [f for f in baseFeatures if str(f.varZ3.sort())=="Int"]
-        boolFeatures = [f for f in baseFeatures if str(f.varZ3.sort())=="Bool"]
+    def synthesizeFeatures(self, featureVectors):
+        intFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Int"]
+        boolFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Bool"]
         grammar = ""
         assert(len(intFeatures) > 0)
 
