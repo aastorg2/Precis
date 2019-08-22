@@ -22,7 +22,7 @@ class Instrumenter:
         buildCommand = self.getMsbuildCommand(problem)
         buildOutput = command_runner.runCommand(buildCommand)
         
-        print(buildOutput)
+        #print(buildOutput)
 
     def getInstrumentationCommand(self, problem, postcondition,PUTName):
         instruCommand = self.inserterExe + " --solution=" + problem.sln + \

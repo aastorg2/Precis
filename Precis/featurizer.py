@@ -10,39 +10,55 @@ import logging
 
 
 class Featurizer:
-    #this should be list of base plus derived features
+    baseFeatures = None
+    baseFVs = None
+    derivedFeatures = None
+    #this should be tuples of base plus derived features
     features = None
     boolFeatures = None
     boolFeaturesIndices = None
 
-    baseFVs = None
+    
+    
     derivedFVs = None
     #tuple of complete(base + derived) feature vectors
     completeFVs = None
     boolFVs = None
-    #mapping from complete feature vectors to base
-    mappingCompleteFvToBase = None
-    #mapping from complete feature vectors to derived 
-    mappingCompleteFvToDerived = None
-
+   
     
-    
-
+    # Todo: either derivedFeatures and basefeatures is redundant or features is
     def __init__(self, derivedFeatures, baseFeatures, baseFeatureVectors, features):
-        self.mappingCompleteFvToBase = {}
-        self.mappingCompleteFvToDerived = {}
         self.baseFVs = baseFeatureVectors
+        self.baseFeatures = baseFeatures
+        self.derivedFeatures = derivedFeatures
         self.features = features
-        self.createCompleteFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
-        
-    def createCompleteFeatureVectors(self, derivedFeatures, baseFeatures, baseFeatureVectors):
-        self.derivedFVs = self.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
-        self.completeFVs = self.aggregateFeatureVectors(baseFeatureVectors, self.derivedFVs)
-        
-        self.mappingCompleteFvToBase.update({self.completeFVs: baseFeatureVectors })
-        self.mappingCompleteFvToDerived.update({self.completeFVs: self.derivedFVs})
-        
-        (self.boolFeatures,self.boolFeaturesIndices ) = self.getBoolFeatures(self.features)
+
+    def getBaseFeaturesAndIndices(self,features):
+        indices = ()
+        base = ()
+        for idx in range(0,len(features)):
+            if not features[idx].isDerived:
+                indices += (idx,)
+                base += (features[idx],)
+        return (base,indices)
+    
+    def getBaseFVs(self, FeatureVectors, indices):
+        newBaseFeatureVectors = list()
+        if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
+            for fv in FeatureVectors:
+                newBaseFV = FeatureVector([], [], str(fv.testLabel))
+                newBaseFV.valuesZ3 = tuple(fv[i] for i in indices) 
+                newBaseFV.values = tuple(str(fv[i]) for i in indices)
+                newBaseFeatureVectors.append(newBaseFV)
+        else:
+            assert(False)
+        return newBaseFeatureVectors
+
+
+    def createCompleteFeatureVectors(self):
+        self.derivedFVs = self.generateDerivedFeatureVectors(self.derivedFeatures, self.baseFeatures, self.baseFVs)
+        self.completeFVs = self.aggregateFeatureVectors(self.baseFVs, self.derivedFVs)
+        (self.boolFeatures,self.boolFeaturesIndices) = self.getBoolFeatures(self.features)
         self.boolFVs = self.getBoolFeatureVectors(self.completeFVs,self.boolFeaturesIndices)
 
     # Inputs:
@@ -63,7 +79,7 @@ class Featurizer:
         allDerivedFeatureVectors = list()
         for f in baseFeatureVectors:
             #print("feature vec: " +str(f))
-            pairs = Houdini.generateFeatureValueMapping(baseFeatures,f)
+            pairs = Featurizer.generateFeatureValueMapping(baseFeatures,f)
             #print(pairs)
             #print(type(pairs))
             derivedTupleValuesZ3 = ()
@@ -86,17 +102,17 @@ class Featurizer:
     # assumes ith element in baseFeatureVectors corresponds to ith element in  derivedValuesZ3Tuples
     def aggregateFeatureVectors(self, baseFeatureVectors, derivedFeatureVector):
         featureVectors = ()
-        for i in range(len(baseFeatureVectors)):
+        for i in range(0,len(baseFeatureVectors)):
             concatenatedFv = baseFeatureVectors[i] + derivedFeatureVector[i]
             featureVectors += (concatenatedFv,)
         return featureVectors
     
     def getBoolFeatures(self, precisFeatureList):
-        boolFeatures = []
+        boolFeatures = ()
         boolFeatureIndices = []
-        for idx in range(len(precisFeatureList)):
+        for idx in range(0,len(precisFeatureList)):
             if is_bool(precisFeatureList[idx].varZ3):
-                boolFeatures.append(precisFeatureList[idx])
+                boolFeatures += (precisFeatureList[idx],)
                 boolFeatureIndices.append(idx)
         return boolFeatures, boolFeatureIndices
     

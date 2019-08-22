@@ -30,10 +30,10 @@ class Pex:
         self.time = 0.0
 
     def RunTeacher(self, problem, PUTName, precisFeatureList) -> List[FeatureVector]:
-        startTime = time.time()
+        
         args = self.GetExecCommand(problem.testDll, PUTName, problem.testNamespace, problem.testClass)
         pexOutput = command_runner.runCommand(args)
-        self.time = time.time() - startTime
+        
         #print (self.time)
 
         return self.ParseReport(problem.testDebugFolder, precisFeatureList)

@@ -3,8 +3,9 @@ from Data.precis_feature import PrecisFeature
 from Data.feature_vector import FeatureVector
 from Data.precis_formula import PrecisFormula
 from Learners.houdini import Houdini
+from featurizer import Featurizer
 from os import sys
-from typing import List
+from typing import List, Tuple
 import math
 import numpy
 import logging
@@ -23,7 +24,10 @@ class DisjunctiveLearner:
         self.useEntropy = entropy
         self.featureSynthesizer = featureSynthesizer 
 
-    def learn2(self,k, features, featureVectors, call):
+    def learn2(self,k, featurizer, call):
+        features = featurizer.features
+        featureVectors = featurizer.completeFVs
+        
         houdini = Houdini()
         
         if k == 0:
@@ -31,26 +35,42 @@ class DisjunctiveLearner:
             return (formula, indices)
         else:
 
-            reaminingEntriesFv =list()
+            
             (allTrueFormula, indicesAllwaysTrue) = houdini.learn2(features, featureVectors, call)
-            remainingFeatures: List[PrecisFeature] = self.removeFeatureFromFeaturelist(features,indicesAllwaysTrue)
-            reaminingEntriesFv = self.removeFeatureEntryInFeatureVectors(featureVectors, indicesAllwaysTrue)
+            #subject stack push: newContains is removed so cannot evaluate derived preds  
+            remainingBoolFeatures: Tuple[PrecisFeature] = self.removeFeatureFromFeaturelist(features,indicesAllwaysTrue)
+            reaminingEntriesBoolFv: List[FeatureVector] = self.removeFeatureEntryInFeatureVectors(featureVectors, indicesAllwaysTrue)
             
             #FIXME: allow chooseFeature to be overridden in derived classes
-            (f,idx, fposFv,fnegFv) = self.chooseFeature(remainingFeatures, reaminingEntriesFv, call)
-            conditionallyTrueFeatures = self.removeFeatureFromFeaturelist(remainingFeatures,[idx])
-            
+            (f,idx, fposFv,fnegFv) = self.chooseFeature(remainingBoolFeatures, reaminingEntriesBoolFv, call)
+            conditionallyTrueFeatures = self.removeFeatureFromFeaturelist(remainingBoolFeatures,[idx])
             posFv = self.removeFeatureEntryInFeatureVectors(fposFv, [idx])
             negFv = self.removeFeatureEntryInFeatureVectors(fnegFv, [idx])
-            #self.setBaseFeatureVector(posFv)
-            #posFeatures = self.featureSynthesizer.synthesizeFeatures()
-
-            #self.setBaseFeatureVector(negFv)
-            #negFeatures = self.featureSynthesizer.synthesizeFeatures()
-
-
-            (posPost,posIndices) = self.learn2(k-1,conditionallyTrueFeatures,posFv, "pos")
-            (negPost, negIndices) = self.learn2(k-1,conditionallyTrueFeatures,negFv, "neg")
+            
+            (baseFeatures, indices) = featurizer.getBaseFeaturesAndIndices(conditionallyTrueFeatures)
+            
+            basePosFv = featurizer.getBaseFVs(posFv, indices)
+            self.featureSynthesizer.updateBaseFeatures(baseFeatures)
+            self.featureSynthesizer.updateBaseFeatureVector(basePosFv)
+            posDerivedFeatures =  self.featureSynthesizer.synthesizeFeatures() + \
+                featurizer.derivedFeatures
+            posFeatures = baseFeatures + posDerivedFeatures
+            #posFeatures =  conditionallyTrueFeatures + posDerivedFeatures
+            posFeaturizer = Featurizer(posDerivedFeatures, baseFeatures, basePosFv, posFeatures)
+            posFeaturizer.createCompleteFeatureVectors()
+            (posPost,posIndices) = self.learn2(k-1, posFeaturizer, "pos")  #recursive call
+            
+            baseNegFv = featurizer.getBaseFVs(negFv, indices)
+            self.featureSynthesizer.updateBaseFeatures(baseFeatures)
+            self.featureSynthesizer.updateBaseFeatureVector(baseNegFv)
+            negDerivedFeatures =  self.featureSynthesizer.synthesizeFeatures() + \
+                featurizer.derivedFeatures
+            #negFeatures = baseFeatures + negDerivedFeatures
+            negFeatures = baseFeatures + negDerivedFeatures
+            negFeaturizer = Featurizer(negDerivedFeatures, baseFeatures,baseNegFv, negFeatures)
+            negFeaturizer.createCompleteFeatureVectors()
+            (negPost, negIndices) = self.learn2(k-1,negFeaturizer, "neg") #recursive call
+            
             print("for call "+call +" at k == "+str(k))
             print("choosen for split for :", f)
             #print("positive: ",posPost.formula )
@@ -61,7 +81,7 @@ class DisjunctiveLearner:
             print("result of conjunction")
             #Todo: missing conjunction with split predicate
             #disjunction = Or(And(posPost.formulaZ3, f.varZ3), negPost.formulaZ3)
-            disjunction  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3),negPost.formulaZ3))
+            disjunction  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3,Not(f.varZ3) )))
             #stringDisjunc = "(or(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (= Old_Top New_Top) (= Old_Top Old_x) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x ))(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not(= Old_s1Count Old_Top)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (not (= Old_Top New_Top)) (not(= Old_Top Old_x)) (not (= Old_Top New_x)) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x )))"
             #result = self.precisSimplify(stringDisjunc,['Old_s1Count', 'New_s1Count', 'Old_Top', 'New_Top', 'Old_x', 'New_x'],["Old_s1ContainsX", "New_s1ContainsX"])
             
@@ -140,9 +160,9 @@ class DisjunctiveLearner:
             print("for call "+call +" at k == "+str(k))
             print("choosen for split for :", f)
             #print("positive: ",posPost.formula )
-            print("positive: ",posPost.toInfix())
+            #print("positive: ",posPost.toInfix())
             #print("negative: ",negPost.formula)
-            print("negative: ",negPost.toInfix())
+            #print("negative: ",negPost.toInfix())
             print()
             print("result of conjunction")
             #Todo: missing conjunction with split predicate
@@ -167,6 +187,8 @@ class DisjunctiveLearner:
         
         allScores = []
         for idx in range(0, len(features)):
+            if is_int(features[idx].varZ3):
+                continue
             (fvPos, fvNeg) = self.splitSamples(features[idx], idx, featureVectors) 
             #skip always false predicates
             #if len(fvPos) == 0 and len(fvNeg)> 0:
@@ -177,7 +199,7 @@ class DisjunctiveLearner:
             allScores.append({'predicate': features[idx],'idx': idx, 'score': score , 'posData':fvPos, 'negData': fvNeg} )
             
         #experimental score metric incorporating length of formula- consider prioritizing  old_vars over new vars
-        sortedScores = sorted(allScores, key=lambda x: x['score'] + (x['score']/len(x['predicate'].varZ3.children())) )
+        sortedScores = sorted(allScores, key=lambda x: x['score'] + (x['score']/len( x['predicate'].varZ3.children())) )
         #sortedScores = sorted(allScores, key=lambda x: x['score'] )
         
         #for entry in sortedScores:
@@ -238,7 +260,7 @@ class DisjunctiveLearner:
     
     def removeFeatureFromFeaturelist(self,features,indices):
         
-        newFeatures = list(features)
+        newFeatures = tuple(features)
         if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
             
             for idx in reversed(indices):

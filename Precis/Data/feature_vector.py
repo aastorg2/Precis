@@ -66,8 +66,10 @@ class FeatureVector:
         
     def __len__(self):
         return len(self.valuesZ3)
+
     def __eq__(self, other):
-        return hasattr(other, 'valuesZ3') and hasattr(other, 'values') and self.valuesZ3 == other.valuesZ3
+        return hasattr(other, 'valuesZ3') and hasattr(other, 'values') and self.testLabel == other.testLabel \
+             and self.valuesZ3 == other.valuesZ3 # tuple equiality
 
     def __hash__(self):
         return hash(self.valuesZ3)
@@ -86,6 +88,7 @@ class FeatureVector:
     
      # otherFV: other feature vector
     def __add__(self, otherFV):
+        assert(otherFV.testLabel == self.testLabel)
         featureVector = FeatureVector([], [], str(self.testLabel))
         featureVector.values = self.values + otherFV.values
         featureVector.valuesZ3 = self.valuesZ3 + otherFV.valuesZ3

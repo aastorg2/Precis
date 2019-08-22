@@ -121,6 +121,10 @@ class Sygus:
         if regex:
             program  = regex.group(1)
             return program
+        elif result == '': # when calling solver with zero featureVectors
+            print("SHOULD NOT BE HERE!")
+            return "0"
+            #return "No Solutions!"
         else:
             raise(NameError("couldnot parse sygus output:" +result ))
             # shell.printExceptionAndExit(NameError("couldnot parse sygus output"), "output:" + result)

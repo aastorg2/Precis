@@ -53,10 +53,12 @@ class PrecisFeature:
     # for printing PrecisFeature in Lists
     def __repr__(self):
         return self.__str__()
+    
+    def __eq__(self, otherFeature):
+        hasattr(otherFeature, 'varZ3') and hasattr(otherFeature, 'varName') and self.varZ3.eq(otherFeature.varZ3)
 
-    #Consider adding hash function after getting implication check to work in z3 and then refactor houdini
-    #def ___hash__(self):
-    #    return hash()
+    def __hash__(self):
+        return self.varZ3.hash() 
 
 if __name__ == '__main__':
     precisFeature = PrecisFeature(False, 'New_s1Count', 'Int', True, None)

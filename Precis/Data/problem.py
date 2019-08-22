@@ -27,15 +27,15 @@ class Problem:
 
     # Read the output file and parse the observer methods
     def ReadObserversFromFile(self, outputFile):
-        precisFeatureList = []
+        precisFeatureTuple = ()
         with open(outputFile) as f:
             lines = f.readlines()
         for line in lines:
             line = line.strip().split()
             varName = line[0]
             varType = line[1]
-            precisFeatureList.append(PrecisFeature(False, varName, varType, varName.startswith("New_"), None))
-        return precisFeatureList
+            precisFeatureTuple += (PrecisFeature(False, varName, varType, varName.startswith("New_"), None),)
+        return precisFeatureTuple
 
 # if __name__ == '__main__':
 #     sln = os.path.abspath('../ContractsSubjects/Stack/Stack.sln')

@@ -1,5 +1,6 @@
 import os
 from os import sys, path
+import time
 from z3 import *
 from Data.problem import Problem
 from Data.precis_feature import PrecisFeature
@@ -18,34 +19,6 @@ from typing import List, Tuple, Type
 import logging
 
 
-def learnPost(p,PUTName, outputFile):
-    
-    r0 = -1
-    r1 = -1
-    r2 = -1
-    postK0 = PrecisFormula(BoolVal(True))
-    postK1 = PrecisFormula(BoolVal(True))
-    postK2 = PrecisFormula(BoolVal(True))
-    simpPostK0 = PrecisFormula(BoolVal(True))
-    simpPostK1 = PrecisFormula(BoolVal(True))
-    simpPostK2 = PrecisFormula(BoolVal(True))
-
-    #(postK2,simpPostK2,r2) = learnPostUpToK(p,PUTName, outputFile,2)
-    #print("smallest post up to k == 2", postK2.toInfix())
-    #sys.exit(0)
-    
-    (postK1,simpPostK1,r1) = learnPostUpToK(p,PUTName, outputFile,0)
-    #print("smallest post up to k == 2", postK1.toInfix())
-    #sys.exit(0)
-   
-    #(postK0,simpPostK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
-    #print("simplified: ", PrecisFormula(precisSimplify(postK0.formulaZ3)).toInfix() )
-    #print("smallest post up to k == 0", postK0.toInfix())
-    #sys.exit(0)
-    
-    return (postK0,simpPostK0, r0, postK1,simpPostK1, r1 , postK2,simpPostK2, r2)
-    
-    
 
 def learnPostUpToK(p,PUTName, outputFile, k):
     sygusExecutable = "Precis/Learners/EnumerativeSolver/bin/starexec_run_Default"
@@ -58,43 +31,50 @@ def learnPostUpToK(p,PUTName, outputFile, k):
     p.ExtractObservers(PUTName, outputFile)
 
     #returns list of base features
-    baseFeatures: List[PrecisFeature] = p.ReadObserversFromFile(outputFile)
+    baseFeatures: Tuple[PrecisFeature] = p.ReadObserversFromFile(outputFile)
     allPostconditions = []
     allBaseFeatureVectors = []
     
     # FixMe: feature synthesis object shoul be initialized with base features and the feature vector should be updated
-    featureSynthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName, baseFeatures)
+    synthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName, baseFeatures)
 
     initFormula = PrecisFormula(BoolVal(False))
     inst.instrumentPost(p,initFormula , PUTName)
     rounds = 1
     while True:
+        print("starting round: "+ str(rounds))
         pex = Pex()
         
+        startTimePex = time.time()
         baseFeatureVectors: List[FeatureVector] = pex.RunTeacher(p, PUTName, baseFeatures)
+        pexTime = time.time() - startTimePex
+        print("pex time: " + str(pexTime))
+
         allBaseFeatureVectors.extend(baseFeatureVectors)
 
-        featureSynthesizer.setBaseFeatureVector(baseFeatureVectors)
-        derivedFeatures: List[PrecisFeature] = \
-                featureSynthesizer.synthesizeFeatures() + \
-                featureSynthesizer.GenerateDerivedFeatures()
+        synthesizer.updateBaseFeatureVector(allBaseFeatureVectors) #
+        
+        startTimeSygus = time.time()
+        derivedFeatures: Tuple[PrecisFeature] = \
+                synthesizer.synthesizeFeatures() + \
+                synthesizer.GenerateDerivedFeatures()
+        sygustime = time.time()-startTimeSygus
+        print("sygus time: " + str(sygustime))
 
-        features: List[PrecisFeature] =  baseFeatures + derivedFeatures
+        features: Tuple[PrecisFeature] =  baseFeatures + derivedFeatures
         
         featurizer: Type[Featurizer] = Featurizer(derivedFeatures, baseFeatures, allBaseFeatureVectors, features)
+        featurizer.createCompleteFeatureVectors()
 
-        #boolFeatures, boolFeatureIndices = featurizer.getBoolFeatures(features)
-        #boolFeatureVectors = featurizer.getBoolFeatureVectors(featurizer.completeFVs, boolFeatureIndices)
-        #FixMe: initialize disjunctive learner with feature Synthesis Object
-        disLearner = DisjunctiveLearner(featureSynthesizer)
+        disLearner = DisjunctiveLearner(synthesizer)
         indices = []
-        
-        (postcondition, indices) = disLearner.learn2(k,featurizer.boolFeatures, featurizer.boolFVs ,"root")
+        startTimeLearn = time.time()
+        (postcondition, indices) = disLearner.learn2(k,featurizer ,"root")
+        learnTime = time.time() - startTimeLearn
+        print("learningTime: "+str(learnTime))
         #sys.exit(0)
-        print("postcondition formulaZ3")
-        print(postcondition.formulaZ3)
-        print("postcondition formula")
-        print(postcondition.formula)
+        #print("postcondition formula")
+        #print(postcondition.formula)
         print("postcondition infix")
         print(postcondition.toInfix())
         
@@ -102,14 +82,47 @@ def learnPostUpToK(p,PUTName, outputFile, k):
         inst = Instrumenter("MSBuild.exe","./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
         inst.instrumentPost(p, postcondition, PUTName)    
 
-        if postcondition.formula in allPostconditions:
+        #if postcondition.formula in allPostconditions:
+        #all(oldFeaturesIdxs[i][1] <= oldFeaturesIdxs[i+1][1] for i in range(len(oldFeaturesIdxs)-1))
+        if all(baseFeatureVectors[i].testLabel for i in range(0,len(baseFeatureVectors)) ):
             print("found it")
             simplifiedPost = PrecisFormula(precisSimplify(postcondition.formulaZ3))
             return postcondition, simplifiedPost, rounds
         
+        if postcondition.formula in allPostconditions:
+            print("BAD!")
+            simplifiedPost = PrecisFormula(precisSimplify(postcondition.formulaZ3))
+            return postcondition, simplifiedPost, rounds
+
         allPostconditions.append(postcondition.formula)
         rounds = rounds + 1
+        
+def learnPost(p,PUTName, outputFile):
+    
+    r0 = -1
+    r1 = -1
+    r2 = -1
+    postK0 = PrecisFormula(BoolVal(True))
+    postK1 = PrecisFormula(BoolVal(True))
+    postK2 = PrecisFormula(BoolVal(True))
+    simpPostK0 = PrecisFormula(BoolVal(True))
+    simpPostK1 = PrecisFormula(BoolVal(True))
+    simpPostK2 = PrecisFormula(BoolVal(True))
+   
+    (postK0,simpPostK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
+    #print("simplified: ", PrecisFormula(precisSimplify(postK0.formulaZ3)).toInfix() )
+    #print("smallest post up to k == 0", postK0.toInfix())
+    #sys.exit(0)
+    
+    (postK1,simpPostK1,r1) = learnPostUpToK(p,PUTName, outputFile,1)
+    #print("smallest post up to k == 2", postK1.toInfix())
+    #sys.exit(0)
 
+    (postK2,simpPostK2,r2) = learnPostUpToK(p,PUTName, outputFile,2)
+    #print("smallest post up to k == 2", postK2.toInfix())
+    #sys.exit(0)
+
+    return (postK0,simpPostK0, r0, postK1,simpPostK1, r1 , postK2,simpPostK2, r2)
 #todo: list of problems
 def runLearnPost(p, putList,projectName,outputFile):
     #assert puts in putList in problem
@@ -120,37 +133,28 @@ def runLearnPost(p, putList,projectName,outputFile):
         (postK0,simpPostK0,r0, postK1,simpPostK1,r1, postK2,simpPostK2,r2) = learnPost(p, PUTName, outputFile)
         logger1.info("postcondition k == 0\n "+ postK0.toInfix()+"\nrounds: "+str(r0)+"\n")
         logger1.info("simple   post k == 0\n "+ simpPostK0.toInfix()+"\nrounds: "+str(r0)+"\n")
-        logger1.info("postcondition k == 1\n "+ postK1.toInfix()+"\nrounds: "+str(r1)+"\n")
-        logger1.info("simple   post k == 1\n "+ simpPostK1.toInfix()+"\nrounds: "+str(r1)+"\n")
-        logger1.info("postcondition k == 2\n "+ postK2.toInfix()+"\nrounds: "+str(r2)+"\n")
-        logger1.info("simple   post k == 2\n "+ simpPostK2.toInfix()+"\nrounds: "+str(r2)+"\n")
-        print("postcondition k == 0 ", postK0.toInfix(), "rounds: ", r0)
-        print("simple   post k == 0 ", simpPostK0.toInfix(), "rounds: ", r0,"\n")
-        print("postcondition k == 1 ", postK1.toInfix(), "rounds: ", r1)
-        print("simple   post k == 1 ", simpPostK1.toInfix(), "rounds: ", r1,"\n")
-        print("postcondition k == 2 ", postK2.toInfix(), "rounds: ", r2)
-        print("simple   post k == 2 ", simpPostK2.toInfix(), "rounds: ", r2,"\n")
-        
         implication = Implies(postK0.formulaZ3,postK1.formulaZ3)
         solver0 = Solver()
         solver0.add(Not(implication)) # check (not (postK0 => postK1)) is unsat
         check0 = solver0.check()
-        #logger1.info("first check\n")
-        #logger1.info(solver0.to_smt2()+"\n")
         logger1.info("Not(k0 -> k1)? "+ str(check0)+"\n")
-        print("is it unsat?", check0 ) # if unsat, stop
+
+        logger1.info("postcondition k == 1\n "+ postK1.toInfix()+"\nrounds: "+str(r1)+"\n")
+        logger1.info("simple   post k == 1\n "+ simpPostK1.toInfix()+"\nrounds: "+str(r1)+"\n")
         nextImplication = Implies(postK1.formulaZ3,postK2.formulaZ3) # check (not (postK1 => postK2)) is unsat
         solver1 = Solver()
         solver1.add(Not(nextImplication))
         check1 = solver1.check()
-        logger1.info("Not(k1 -> k2)"+ str(check1)+"\n")
-        print("is it unsat?", check1)
+        logger1.info("Not(k1 -> k2)? "+ str(check1)+"\n")
+
+        logger1.info("postcondition k == 2\n "+ postK2.toInfix()+"\nrounds: "+str(r2)+"\n")
+        logger1.info("simple   post k == 2\n "+ simpPostK2.toInfix()+"\nrounds: "+str(r2)+"\n")
         nextNextImplication = Implies(postK0.formulaZ3,postK2.formulaZ3) # check (not (postK1 => postK2)) is unsat
         solver2 = Solver()
         solver2.add(Not(nextNextImplication))
         check2 = solver2.check()
-        logger1.info("Not(k0 -> k2)"+ str(check2)+"\n")
-        print("is it unsat?", check2)
+        logger1.info("Not(k0 -> k2)? "+ str(check2)+"\n")
+        
 
 def precisSimplify(postcondition):
         set_option(max_args = 10000000, max_lines = 1000000, max_depth = 10000000, max_visited = 1000000)
@@ -178,12 +182,12 @@ def precisSimplify(postcondition):
         
         OrElse(Tactic('ctx-solver-simplify'),Tactic('skip')),
         
-        # OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
-        # OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
-        # OrElse(Tactic('purify-arith'),Tactic('skip')),
-        # OrElse(Tactic('ctx-simplify'),Tactic('skip')),
-        # OrElse(Tactic('dom-simplify'),Tactic('skip')),
-        # OrElse(Tactic('propagate-values'),Tactic('skip')),
+        #OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
+        #OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
+        #OrElse(Tactic('purify-arith'),Tactic('skip')),
+        #OrElse(Tactic('ctx-simplify'),Tactic('skip')),
+        #OrElse(Tactic('dom-simplify'),Tactic('skip')),
+        #OrElse(Tactic('propagate-values'),Tactic('skip')),
         
         OrElse(Tactic('simplify'),Tactic('skip')),
         
@@ -269,7 +273,7 @@ if __name__ == '__main__':
     #PUTName = 'PUT_PopContract'
     outputFile = os.path.abspath('./typesOM.txt')
 
-    #stackPUTs = ['PUT_PushContract']
+    #stackPUTs = ['PUT_ContainsContract']
     p = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
     
     
@@ -291,9 +295,9 @@ if __name__ == '__main__':
     outputFile = os.path.abspath('./typesOM.txt')
 
     p1 = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
-    hashsetPUTs = ['PUT_AddContract']    
+    #hashsetPUTs = ['PUT_AddContract']    
     runLearnPost(p1,hashsetPUTs,projectName,outputFile)
-
+    
     ################ HashSet
 
 
