@@ -125,6 +125,19 @@ class Featurizer:
             boolFeatureVectors.append(boolFeatureVector)
         return boolFeatureVectors
 
+    @staticmethod
+    def mergeSynthesizedAndGeneratedFeatures(synthFeat, genFeat):
+        mergedFeatures = tuple(synthFeat)
+        if len(synthFeat) == 0:
+            return genFeat
+        else:
+            for f in genFeat:
+                if not (f in synthFeat): # this is a brittle check a != b and b != a returns false
+                    mergedFeatures += (f,)
+            return mergedFeatures
+                     
+
+            
     
 
     @staticmethod

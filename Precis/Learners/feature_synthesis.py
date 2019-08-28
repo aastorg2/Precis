@@ -114,8 +114,8 @@ class FeatureSynthesis:
         
         for (feat1,feat2) in allCombinations:
             #print (feat1, feat2)
-            notEqualExpr = feat1.varZ3 != feat2.varZ3
-            equalExpr = feat1.varZ3 == feat2.varZ3
+            notEqualExpr = feat2.varZ3 != feat1.varZ3 
+            equalExpr = feat2.varZ3  == feat1.varZ3 
             #print(notEqualExpr)
             #print(notEqualExpr.sort())
             #print(type(notEqualExpr))

@@ -43,6 +43,8 @@ class DisjunctiveLearner:
             
             #FIXME: allow chooseFeature to be overridden in derived classes
             (f,idx, fposFv,fnegFv) = self.chooseFeature(remainingBoolFeatures, reaminingEntriesBoolFv, call)
+            #if len(fposFv) == 0 or len(fnegFv)==0:
+            #    return (PrecisFormula(BoolVal(False)),[])
             conditionallyTrueFeatures = self.removeFeatureFromFeaturelist(remainingBoolFeatures,[idx])
             posFv = self.removeFeatureEntryInFeatureVectors(fposFv, [idx])
             negFv = self.removeFeatureEntryInFeatureVectors(fnegFv, [idx])
@@ -81,7 +83,9 @@ class DisjunctiveLearner:
             print("result of conjunction")
             #Todo: missing conjunction with split predicate
             #disjunction = Or(And(posPost.formulaZ3, f.varZ3), negPost.formulaZ3)
-            disjunction  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3,Not(f.varZ3) )))
+            #disjunction  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3,Not(f.varZ3) )))
+            disjunction  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), negPost.formulaZ3 ))
+            
             #stringDisjunc = "(or(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (= Old_Top New_Top) (= Old_Top Old_x) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x ))(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not(= Old_s1Count Old_Top)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (not (= Old_Top New_Top)) (not(= Old_Top Old_x)) (not (= Old_Top New_x)) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x )))"
             #result = self.precisSimplify(stringDisjunc,['Old_s1Count', 'New_s1Count', 'Old_Top', 'New_Top', 'Old_x', 'New_x'],["Old_s1ContainsX", "New_s1ContainsX"])
             
@@ -199,7 +203,9 @@ class DisjunctiveLearner:
             allScores.append({'predicate': features[idx],'idx': idx, 'score': score , 'posData':fvPos, 'negData': fvNeg} )
             
         #experimental score metric incorporating length of formula- consider prioritizing  old_vars over new vars
-        sortedScores = sorted(allScores, key=lambda x: x['score'] + (x['score']/len( x['predicate'].varZ3.children())) )
+        #sortedScores = sorted(allScores, key=lambda x: x['score'] + (x['score'] /  len([1]) if len(x['predicate'].varZ3.children())== 0 else len(x['predicate'].varZ3.children()) )  )
+        sortedScores = sorted(allScores, key=lambda x: x['score'] + (x['score'] / len(x['predicate'].varZ3.children()) ) )
+        
         #sortedScores = sorted(allScores, key=lambda x: x['score'] )
         
         #for entry in sortedScores:

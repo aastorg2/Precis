@@ -41,7 +41,7 @@ class SygusLIA(Sygus):
         return grammar
 
     def addSemanticConstraints(self, idxNewFeature, oldFeaturesIdxs , featureVectors):
-        
+        #assert(len(featureVectors)> 0)
         if not (all(oldFeaturesIdxs[i][1] <= oldFeaturesIdxs[i+1][1] for i in range(len(oldFeaturesIdxs)-1))):
             oldFeaturesIdxs = sorted(oldFeaturesIdxs, key=lambda tup: tup[1])
         

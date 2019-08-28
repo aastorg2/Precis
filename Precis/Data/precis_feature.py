@@ -54,8 +54,9 @@ class PrecisFeature:
     def __repr__(self):
         return self.__str__()
     
+    #TODO: consider implementing equality that checks Ast equality
     def __eq__(self, otherFeature):
-        hasattr(otherFeature, 'varZ3') and hasattr(otherFeature, 'varName') and self.varZ3.eq(otherFeature.varZ3)
+        return hasattr(otherFeature, 'varZ3') and hasattr(otherFeature, 'varName') and self.varZ3.eq(otherFeature.varZ3)
 
     def __hash__(self):
         return self.varZ3.hash() 

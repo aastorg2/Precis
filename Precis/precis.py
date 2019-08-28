@@ -55,9 +55,9 @@ def learnPostUpToK(p,PUTName, outputFile, k):
         synthesizer.updateBaseFeatureVector(allBaseFeatureVectors) #
         
         startTimeSygus = time.time()
-        derivedFeatures: Tuple[PrecisFeature] = \
-                synthesizer.synthesizeFeatures() + \
-                synthesizer.GenerateDerivedFeatures()
+        derivedFeatures: Tuple[PrecisFeature] = Featurizer.mergeSynthesizedAndGeneratedFeatures( \
+                synthesizer.synthesizeFeatures() , \
+                synthesizer.GenerateDerivedFeatures())
         sygustime = time.time()-startTimeSygus
         print("sygus time: " + str(sygustime))
 
@@ -89,7 +89,7 @@ def learnPostUpToK(p,PUTName, outputFile, k):
             simplifiedPost = PrecisFormula(precisSimplify(postcondition.formulaZ3))
             return postcondition, simplifiedPost, rounds
         
-        if postcondition.formula in allPostconditions:
+        if rounds == 16:
             print("BAD!")
             simplifiedPost = PrecisFormula(precisSimplify(postcondition.formulaZ3))
             return postcondition, simplifiedPost, rounds
@@ -109,12 +109,12 @@ def learnPost(p,PUTName, outputFile):
     simpPostK1 = PrecisFormula(BoolVal(True))
     simpPostK2 = PrecisFormula(BoolVal(True))
    
-    (postK0,simpPostK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
+    #(postK0,simpPostK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
     #print("simplified: ", PrecisFormula(precisSimplify(postK0.formulaZ3)).toInfix() )
     #print("smallest post up to k == 0", postK0.toInfix())
     #sys.exit(0)
     
-    (postK1,simpPostK1,r1) = learnPostUpToK(p,PUTName, outputFile,1)
+    #(postK1,simpPostK1,r1) = learnPostUpToK(p,PUTName, outputFile,1)
     #print("smallest post up to k == 2", postK1.toInfix())
     #sys.exit(0)
 
@@ -173,7 +173,7 @@ def precisSimplify(postcondition):
         #logger.info("############ z3 program")
         #logger.info("############ " + stringToParse)
     
-        #expr = parse_smt2_string(stringToParse)
+        #expr = parse_smt2_string(strinagToParse)
         
         g  = Goal()
         g.add(postcondition)
@@ -295,7 +295,9 @@ if __name__ == '__main__':
     outputFile = os.path.abspath('./typesOM.txt')
 
     p1 = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
-    #hashsetPUTs = ['PUT_AddContract']    
+    
+    #hashsetPUTs = ['PUT_ContainsContract']    
+    hashsetPUTs = ['PUT_AddContract']    
     runLearnPost(p1,hashsetPUTs,projectName,outputFile)
     
     ################ HashSet
