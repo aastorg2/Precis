@@ -36,8 +36,9 @@ def learnPostUpToK(p,PUTName, outputFile, k):
     allBaseFeatureVectors = []
     
     # FixMe: feature synthesis object shoul be initialized with base features and the feature vector should be updated
-    synthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName, baseFeatures)
-
+    #synthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName, baseFeatures)
+    synthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName)
+    
     initFormula = PrecisFormula(BoolVal(False))
     inst.instrumentPost(p,initFormula , PUTName)
     rounds = 1
@@ -49,38 +50,52 @@ def learnPostUpToK(p,PUTName, outputFile, k):
         baseFeatureVectors: List[FeatureVector] = pex.RunTeacher(p, PUTName, baseFeatures)
         pexTime = time.time() - startTimePex
         print("pex time: " + str(pexTime))
-
         allBaseFeatureVectors.extend(baseFeatureVectors)
 
-        synthesizer.updateBaseFeatureVector(allBaseFeatureVectors) #
-        
-        startTimeSygus = time.time()
-        derivedFeatures: Tuple[PrecisFeature] = Featurizer.mergeSynthesizedAndGeneratedFeatures( \
-                synthesizer.synthesizeFeatures() , \
-                synthesizer.GenerateDerivedFeatures())
-        sygustime = time.time()-startTimeSygus
-        print("sygus time: " + str(sygustime))
-
-        features: Tuple[PrecisFeature] =  baseFeatures + derivedFeatures
-        
-        featurizer: Type[Featurizer] = Featurizer(derivedFeatures, baseFeatures, allBaseFeatureVectors, features)
-        featurizer.createCompleteFeatureVectors()
-
-        disLearner = DisjunctiveLearner(synthesizer)
+        intBaseFeatures, boolBaseFeatures = Featurizer.getIntAndBoolFeatures(baseFeatures)
+        print(intBaseFeatures)
+        print(boolBaseFeatures)
         indices = []
-        startTimeLearn = time.time()
-        (postcondition, indices) = disLearner.learn2(k,featurizer ,"root")
-        learnTime = time.time() - startTimeLearn
-        print("learningTime: "+str(learnTime))
-        #sys.exit(0)
-        #print("postcondition formula")
-        #print(postcondition.formula)
-        print("postcondition infix")
+        disLearner = DisjunctiveLearner(synthesizer)
+        (postcondition, indices) = disLearner.learn3(k, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), "root")
         print(postcondition.toInfix())
-        
         # assumes ms build in path
         inst = Instrumenter("MSBuild.exe","./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
-        inst.instrumentPost(p, postcondition, PUTName)    
+        inst.instrumentPost(p, postcondition, PUTName)
+        #sys.exit(0)
+        #region oldCode
+        # synthesizer.updateBaseFeatureVector(allBaseFeatureVectors) #
+        
+        # startTimeSygus = time.time()
+        # derivedFeatures: Tuple[PrecisFeature] = Featurizer.mergeSynthesizedAndGeneratedFeatures( \
+        #         synthesizer.synthesizeFeatures() , \
+        #         synthesizer.GenerateDerivedFeatures())
+        # sygustime = time.time()-startTimeSygus
+        # print("sygus time: " + str(sygustime))
+
+        # features: Tuple[PrecisFeature] =  baseFeatures + derivedFeatures
+        
+        # featurizer: Type[Featurizer] = Featurizer(derivedFeatures, baseFeatures, allBaseFeatureVectors, features)
+        # featurizer.createCompleteFeatureVectors()
+
+        # disLearner = DisjunctiveLearner(synthesizer)
+        # indices = []
+        # startTimeLearn = time.time()
+        # (postcondition, indices) = disLearner.learn2(k,baseFeatures,allBaseFeatureVectors  ,"root")
+        
+        # learnTime = time.time() - startTimeLearn
+        # print("learningTime: "+str(learnTime))
+        # #sys.exit(0)
+        # #print("postcondition formula")
+        # #print(postcondition.formula)
+        # print("postcondition infix")
+        # print(postcondition.toInfix())
+        
+        # # assumes ms build in path
+        # inst = Instrumenter("MSBuild.exe","./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
+        # inst.instrumentPost(p, postcondition, PUTName)    
+        #endregion oldcode
+
 
         #if postcondition.formula in allPostconditions:
         #all(oldFeaturesIdxs[i][1] <= oldFeaturesIdxs[i+1][1] for i in range(len(oldFeaturesIdxs)-1))
@@ -109,7 +124,7 @@ def learnPost(p,PUTName, outputFile):
     simpPostK1 = PrecisFormula(BoolVal(True))
     simpPostK2 = PrecisFormula(BoolVal(True))
    
-    #(postK0,simpPostK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
+    (postK0,simpPostK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
     #print("simplified: ", PrecisFormula(precisSimplify(postK0.formulaZ3)).toInfix() )
     #print("smallest post up to k == 0", postK0.toInfix())
     #sys.exit(0)
@@ -118,7 +133,7 @@ def learnPost(p,PUTName, outputFile):
     #print("smallest post up to k == 2", postK1.toInfix())
     #sys.exit(0)
 
-    (postK2,simpPostK2,r2) = learnPostUpToK(p,PUTName, outputFile,2)
+    #(postK2,simpPostK2,r2) = learnPostUpToK(p,PUTName, outputFile,2)
     #print("smallest post up to k == 2", postK2.toInfix())
     #sys.exit(0)
 
@@ -243,7 +258,7 @@ def precisSimplify(postcondition):
 
 
 if __name__ == '__main__':
-
+    #region logger
     logger = logging.getLogger("Runner")
     logger.setLevel(logging.INFO)
     # create the logging file handler
@@ -259,7 +274,8 @@ if __name__ == '__main__':
     formatter1 = logging.Formatter('%(message)s')
     fh1.setFormatter(formatter1)
     logger1.addHandler(fh1)
-
+    #endregion
+    
     ################ Stack
     sln = os.path.abspath('../ContractsSubjects/Stack/Stack.sln')
     projectName =  'StackTest'
@@ -273,11 +289,11 @@ if __name__ == '__main__':
     #PUTName = 'PUT_PopContract'
     outputFile = os.path.abspath('./typesOM.txt')
 
-    #stackPUTs = ['PUT_ContainsContract']
+    stackPUTs = ['PUT_ContainsContract']
     p = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
     
     
-    #runLearnPost(p,stackPUTs,projectName, outputFile)
+    runLearnPost(p,stackPUTs,projectName, outputFile)
     
     ################ Stack
 
@@ -298,6 +314,7 @@ if __name__ == '__main__':
     
     #hashsetPUTs = ['PUT_ContainsContract']    
     hashsetPUTs = ['PUT_AddContract']    
+    
     runLearnPost(p1,hashsetPUTs,projectName,outputFile)
     
     ################ HashSet
@@ -357,4 +374,4 @@ if __name__ == '__main__':
     
     #runLearnPost(p4,arrayListPUTs,projectName,outputFile)
 
-    ################ ArrayList
+    ################ End ArrayList

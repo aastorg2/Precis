@@ -10,6 +10,7 @@ class FeatureVector:
     #passing or failing test
     testLabel = None
     
+    #TODO: need a way to construct a FeatureVector where the values are already Z3 boolref values
 
     def __init__(self, precisFeatureList, values, testLabel):
         self.values = values

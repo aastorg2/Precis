@@ -5,7 +5,7 @@ from Data.precis_formula import PrecisFormula
 from Learners.houdini import Houdini
 from featurizer import Featurizer
 from os import sys
-from typing import List, Tuple
+from typing import List, Tuple, Type
 import math
 import numpy
 import logging
@@ -24,22 +24,52 @@ class DisjunctiveLearner:
         self.useEntropy = entropy
         self.featureSynthesizer = featureSynthesizer 
 
-    def learn2(self,k, featurizer, call):
-        features = featurizer.features
-        featureVectors = featurizer.completeFVs
+    def learn3(self, k, intBaseFeat, boolBaseFeat,baseFeatureVectors, excluded, call):
+        
+        syntFeats : Tuple[PrecisFeature] = self.featureSynthesizer.synthesizeFeatures(intBaseFeat, boolBaseFeat, baseFeatureVectors)
+        genFeats : Tuple[PrecisFeature] = self.featureSynthesizer.GenerateDerivedFeatures(intBaseFeat, boolBaseFeat)
+        derivFeats : Tuple[PrecisFeature] = Featurizer.mergeSynthesizedAndGeneratedFeatures(syntFeats, genFeats)
+        
+        derivFeatVectors: List[FeatureVector] = Featurizer.generateDerivedFeatureVectors(derivFeats, intBaseFeat+boolBaseFeat,baseFeatureVectors )
+        #assert(len(baseFeatureVectors) == len(derivFeatVectors))
+
+        boolFeatVectors = Featurizer.getBoolFeatureVectors(boolBaseFeat, baseFeatureVectors)
+        print(boolFeatVectors)
+        print(len(boolFeatVectors[0]))
+        print(len(derivFeatVectors[0]))
+        print(derivFeatVectors)
+        print("")
+        boolFvs = Featurizer.mergebaseBoolAndDerivedBoolFVs(boolFeatVectors,derivFeatVectors)
+        
+        houdini = Houdini()
+        (formula, indices) = houdini.learn2( boolBaseFeat + derivFeats , boolFvs, call  )
+        if k == 0:
+            return (formula,indices)
+        else:
+            pass
+        #houdini.learn2(boolBaseFeat + derivFeats, Bool(baseFeatureVectors)+derivFeatsVectors )
+    #baseFeatures is a tuple
+    def learn2(self,k, baseFeatures, baseFeatureVectors, call):
+        self.featureSynthesizer.updateBaseFeatures(baseFeatures)
+        
+        derivedFeatures  = Featurizer.mergeSynthesizedAndGeneratedFeatures( \
+            self.featureSynthesizer.synthesizeFeatures(), self.featureSynthesizer.GenerateDerivedFeatures())
+        
+        features: Tuple[PrecisFeature] = baseFeatures + derivedFeatures
+        featureVectors = Featurizer.generateRemainingFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
         
         houdini = Houdini()
         
         if k == 0:
-            (formula, indices) = houdini.learn2(features, featureVectors, call)
+            (formula, indices) = houdini.learn2(baseFeatures, baseFeatureVectors, call)
             return (formula, indices)
         else:
 
             
-            (allTrueFormula, indicesAllwaysTrue) = houdini.learn2(features, featureVectors, call)
+            (allTrueFormula, indicesAllwaysTrue) = houdini.learn2(baseFeatures, baseFeatureVectors, call)
             #subject stack push: newContains is removed so cannot evaluate derived preds  
-            remainingBoolFeatures: Tuple[PrecisFeature] = self.removeFeatureFromFeaturelist(features,indicesAllwaysTrue)
-            reaminingEntriesBoolFv: List[FeatureVector] = self.removeFeatureEntryInFeatureVectors(featureVectors, indicesAllwaysTrue)
+            remainingBoolFeatures: Tuple[PrecisFeature] = self.removeFeatureFromFeaturelist(baseFeatures,indicesAllwaysTrue)
+            reaminingEntriesBoolFv: List[FeatureVector] = self.removeFeatureEntryInFeatureVectors(baseFeatureVectors, indicesAllwaysTrue)
             
             #FIXME: allow chooseFeature to be overridden in derived classes
             (f,idx, fposFv,fnegFv) = self.chooseFeature(remainingBoolFeatures, reaminingEntriesBoolFv, call)
@@ -49,29 +79,29 @@ class DisjunctiveLearner:
             posFv = self.removeFeatureEntryInFeatureVectors(fposFv, [idx])
             negFv = self.removeFeatureEntryInFeatureVectors(fnegFv, [idx])
             
-            (baseFeatures, indices) = featurizer.getBaseFeaturesAndIndices(conditionallyTrueFeatures)
+            # (baseFeatures, indices) = featurizer.getBaseFeaturesAndIndices(conditionallyTrueFeatures)
             
-            basePosFv = featurizer.getBaseFVs(posFv, indices)
-            self.featureSynthesizer.updateBaseFeatures(baseFeatures)
-            self.featureSynthesizer.updateBaseFeatureVector(basePosFv)
-            posDerivedFeatures =  self.featureSynthesizer.synthesizeFeatures() + \
-                featurizer.derivedFeatures
-            posFeatures = baseFeatures + posDerivedFeatures
-            #posFeatures =  conditionallyTrueFeatures + posDerivedFeatures
-            posFeaturizer = Featurizer(posDerivedFeatures, baseFeatures, basePosFv, posFeatures)
-            posFeaturizer.createCompleteFeatureVectors()
-            (posPost,posIndices) = self.learn2(k-1, posFeaturizer, "pos")  #recursive call
+            # basePosFv = featurizer.getBaseFVs(posFv, indices)
+            # self.featureSynthesizer.updateBaseFeatures(baseFeatures)
+            # self.featureSynthesizer.updateBaseFeatureVector(basePosFv)
+            # posDerivedFeatures =  self.featureSynthesizer.synthesizeFeatures() + \
+            #     featurizer.derivedFeatures
+            # posFeatures = baseFeatures + posDerivedFeatures
+            # #posFeatures =  conditionallyTrueFeatures + posDerivedFeatures
+            # posFeaturizer = Featurizer(posDerivedFeatures, baseFeatures, basePosFv, posFeatures)
+            # posFeaturizer.createCompleteFeatureVectors()
+            (posPost,posIndices) = self.learn2(k-1, conditionallyTrueFeatures, posFv, "left")  #recursive call
             
-            baseNegFv = featurizer.getBaseFVs(negFv, indices)
-            self.featureSynthesizer.updateBaseFeatures(baseFeatures)
-            self.featureSynthesizer.updateBaseFeatureVector(baseNegFv)
-            negDerivedFeatures =  self.featureSynthesizer.synthesizeFeatures() + \
-                featurizer.derivedFeatures
-            #negFeatures = baseFeatures + negDerivedFeatures
-            negFeatures = baseFeatures + negDerivedFeatures
-            negFeaturizer = Featurizer(negDerivedFeatures, baseFeatures,baseNegFv, negFeatures)
-            negFeaturizer.createCompleteFeatureVectors()
-            (negPost, negIndices) = self.learn2(k-1,negFeaturizer, "neg") #recursive call
+            # baseNegFv = featurizer.getBaseFVs(negFv, indices)
+            # self.featureSynthesizer.updateBaseFeatures(baseFeatures)
+            # self.featureSynthesizer.updateBaseFeatureVector(baseNegFv)
+            # negDerivedFeatures =  self.featureSynthesizer.synthesizeFeatures() + \
+            #     featurizer.derivedFeatures
+            # #negFeatures = baseFeatures + negDerivedFeatures
+            # negFeatures = baseFeatures + negDerivedFeatures
+            # negFeaturizer = Featurizer(negDerivedFeatures, baseFeatures,baseNegFv, negFeatures)
+            # negFeaturizer.createCompleteFeatureVectors()
+            (negPost, negIndices) = self.learn2(k-1,conditionallyTrueFeatures, negFv, "right") #recursive call
             
             print("for call "+call +" at k == "+str(k))
             print("choosen for split for :", f)
@@ -83,8 +113,8 @@ class DisjunctiveLearner:
             print("result of conjunction")
             #Todo: missing conjunction with split predicate
             #disjunction = Or(And(posPost.formulaZ3, f.varZ3), negPost.formulaZ3)
-            #disjunction  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3,Not(f.varZ3) )))
-            disjunction  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), negPost.formulaZ3 ))
+            disjunction  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3,Not(f.varZ3) )))
+            #disjunction  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), negPost.formulaZ3 ))
             
             #stringDisjunc = "(or(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (= Old_Top New_Top) (= Old_Top Old_x) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x ))(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not(= Old_s1Count Old_Top)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (not (= Old_Top New_Top)) (not(= Old_Top Old_x)) (not (= Old_Top New_x)) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x )))"
             #result = self.precisSimplify(stringDisjunc,['Old_s1Count', 'New_s1Count', 'Old_Top', 'New_Top', 'Old_x', 'New_x'],["Old_s1ContainsX", "New_s1ContainsX"])
@@ -200,13 +230,19 @@ class DisjunctiveLearner:
             posLabel = ['+'] * len(fvPos)
             negLabel = ['-'] * len(fvNeg)
             score = self.entropy(posLabel+negLabel)
-            allScores.append({'predicate': features[idx],'idx': idx, 'score': score , 'posData':fvPos, 'negData': fvNeg} )
+            multiplier = 0
+            if len(features[idx].varZ3.children()) == 0:
+                multiplier = 1
+            else:
+                multiplier = len(features[idx].varZ3.children()) + 1.0
+            rank = score + (score / multiplier )
+            allScores.append({'predicate': features[idx],'idx': idx, 'score': score ,'rank':rank , 'posData':fvPos, 'negData': fvNeg} )
             
         #experimental score metric incorporating length of formula- consider prioritizing  old_vars over new vars
         #sortedScores = sorted(allScores, key=lambda x: x['score'] + (x['score'] /  len([1]) if len(x['predicate'].varZ3.children())== 0 else len(x['predicate'].varZ3.children()) )  )
-        sortedScores = sorted(allScores, key=lambda x: x['score'] + (x['score'] / len(x['predicate'].varZ3.children()) ) )
-        
-        #sortedScores = sorted(allScores, key=lambda x: x['score'] )
+        #sortedScores = sorted(allScores, key=lambda x: x['score'] + (x['score'] / len(x['predicate'].varZ3.children()) ) )
+        sortedScores = sorted(allScores, key=lambda x: x['rank'])
+        #sortedScores = sorted(allScores, key=lambda x: x['rank'] )
         
         #for entry in sortedScores:
         #    logger.info("predicate: "+ str(entry['predicate']))

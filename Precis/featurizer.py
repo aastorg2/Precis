@@ -33,6 +33,17 @@ class Featurizer:
         self.derivedFeatures = derivedFeatures
         self.features = features
 
+    @staticmethod
+    def getIntAndBoolFeatures(baseFeatures):
+        intFeats = ()
+        boolFeats = ()
+        for f in baseFeatures:
+            if str(f.varZ3.sort()).upper() == 'INT':
+                intFeats = intFeats + (f,)
+            elif str(f.varZ3.sort()).upper() == 'BOOL':
+                boolFeats = boolFeats + (f,)
+        return intFeats, boolFeats
+
     def getBaseFeaturesAndIndices(self,features):
         indices = ()
         base = ()
@@ -54,12 +65,33 @@ class Featurizer:
             assert(False)
         return newBaseFeatureVectors
 
+    def generateRemainingFeatureVectors(self, derivedFeatures, baseFeatures, baseFVs):
+        derivedFVs = self.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFVs)
+        completeFVs = self.aggregateFeatureVectors(baseFVs, derivedFVs)
+        return completeFVs
 
     def createCompleteFeatureVectors(self):
         self.derivedFVs = self.generateDerivedFeatureVectors(self.derivedFeatures, self.baseFeatures, self.baseFVs)
         self.completeFVs = self.aggregateFeatureVectors(self.baseFVs, self.derivedFVs)
         (self.boolFeatures,self.boolFeaturesIndices) = self.getBoolFeatures(self.features)
         self.boolFVs = self.getBoolFeatureVectors(self.completeFVs,self.boolFeaturesIndices)
+    
+    @staticmethod
+    def getBoolFeatureVectors(boolFeats, baseFeatureVectors):
+        boolFVs = []
+        boolOnlyFV = None
+        for bf in baseFeatureVectors:
+            boolVal = ()
+            for fVal in bf:
+                #print(fVal)
+                if is_bool(fVal):
+                    boolVal += (str(fVal),)
+            boolOnlyFV = FeatureVector(boolFeats, boolVal, str(bf.testLabel))
+            #print(boolOnlyFV)
+            #print(bf)
+            boolFVs.append(boolOnlyFV)
+        
+        return boolFVs
 
     # Inputs:
     #   baseFeatures: list of PrecisFeature containing features provided by user in Parameterized Unit Test(i.e., PUTs)
@@ -68,14 +100,15 @@ class Featurizer:
     #   baseFeatureVectors: 
     # This funtion extends each FeatureVector object in baseFeatureVector(.i.e., list of FeatureObjects)
     # to contain entries of valuation of derivedFeatures(this shall be boolean features only)
-    def generateDerivedFeatureVectors(self, derivedFeatures, baseFeatures, baseFeatureVectors):
+    @staticmethod
+    def generateDerivedFeatureVectors( derivedFeatures, baseFeatures, baseFeatureVectors):
         
         #print(derivedFeatures)
         #print(baseFeatureVectors)
         #print ("here")
         #print(baseFeatures)
         pairs = list()
-        # consider
+        #consider
         allDerivedFeatureVectors = list()
         for f in baseFeatureVectors:
             #print("feature vec: " +str(f))
@@ -116,16 +149,17 @@ class Featurizer:
                 boolFeatureIndices.append(idx)
         return boolFeatures, boolFeatureIndices
     
-    def getBoolFeatureVectors(self, featureVectorList, boolFeatureIndices):
-        boolFeatureVectors = []
-        for featureVector in featureVectorList:
-            boolFeatureVector = FeatureVector([], [], str(featureVector.testLabel))
-            boolFeatureVector.valuesZ3 = tuple(featureVector.valuesZ3[i] for i in boolFeatureIndices)
-            boolFeatureVector.values = tuple(featureVector.values[i] for i in boolFeatureIndices)
-            boolFeatureVectors.append(boolFeatureVector)
-        return boolFeatureVectors
+    # def getBoolFeatureVectors(self, featureVectorList, boolFeatureIndices):
+    #     boolFeatureVectors = []
+    #     for featureVector in featureVectorList:
+    #         boolFeatureVector = FeatureVector([], [], str(featureVector.testLabel))
+    #         boolFeatureVector.valuesZ3 = tuple(featureVector.valuesZ3[i] for i in boolFeatureIndices)
+    #         boolFeatureVector.values = tuple(featureVector.values[i] for i in boolFeatureIndices)
+    #         boolFeatureVectors.append(boolFeatureVector)
+    #     return boolFeatureVectors
 
     @staticmethod
+    #checks for duplicates before merging
     def mergeSynthesizedAndGeneratedFeatures(synthFeat, genFeat):
         mergedFeatures = tuple(synthFeat)
         if len(synthFeat) == 0:
@@ -135,8 +169,15 @@ class Featurizer:
                 if not (f in synthFeat): # this is a brittle check a != b and b != a returns false
                     mergedFeatures += (f,)
             return mergedFeatures
-                     
 
+    @staticmethod
+    #checks for duplicates before merging
+    def mergebaseBoolAndDerivedBoolFVs(baseBoolFvs, derivBoolFvs):
+        mergedFvs = []
+        for i in range(0,len(baseBoolFvs)):
+            merged = baseBoolFvs[i]+ derivBoolFvs[i]
+            mergedFvs.append(merged)
+        return mergedFvs 
             
     
 

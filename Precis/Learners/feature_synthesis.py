@@ -18,12 +18,11 @@ class FeatureSynthesis:
     baseFeatures: Tuple[PrecisFeature] = None
     baseFeatureVectors = None
     
-    def __init__(self, binaryExec, tempFolder, syguFileName, baseFeatures):
-        assert (baseFeatures != None)
+    def __init__(self, binaryExec, tempFolder, syguFileName):
+        #assert (baseFeatures != None)
         self.binary = binaryExec
         self.temporaryFolder = tempFolder
         self.sygusFileName = syguFileName
-        self.baseFeatures = baseFeatures
 
     def updateBaseFeatureVector(self, baseFv):
         self.baseFeatureVectors = baseFv
@@ -31,9 +30,11 @@ class FeatureSynthesis:
     def updateBaseFeatures(self, features):
         self.baseFeatures = features
 
-    def GenerateDerivedFeatures(self):
-        intFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Int"]
-        boolFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Bool"]
+    def GenerateDerivedFeatures(self,intFeat, boolFeat):
+        #intFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Int"]
+        #boolFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Bool"]
+        intFeatures = intFeat
+        boolFeatures = boolFeat
         negationBaseBoolFeatures =()
         equalityFeatures = ()
         #sygusLearner = SygusLIA("esolver", "learner/EnumerativeSolver/bin/starexec_run_Default", "grammar=True", "tempLocation")
@@ -50,10 +51,12 @@ class FeatureSynthesis:
         return negationBaseBoolFeatures + equalityFeatures
         #return equalityFeatures
         #Todo: call to sygus solvers can be placed here.
-    def synthesizeFeatures(self):
-        assert( self.baseFeatureVectors != None)
-        intFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Int"]
-        boolFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Bool"]
+    def synthesizeFeatures(self,intFeat, boolFeat, baseFeatureVectors):
+        assert( baseFeatureVectors != None)
+        #intFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Int"]
+        #boolFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Bool"]
+        intFeatures = intFeat
+        boolFeatures = boolFeat
         grammar = ""
         assert(len(intFeatures) > 0)
 
@@ -77,7 +80,7 @@ class FeatureSynthesis:
             shell.removeSygusFile(self.temporaryFolder, self.sygusFileEndingPattern)
             
             grammar = sygusSynthesizer.constructGrammar(intOldVarFeatures, boolFeatures)
-            constraints = sygusSynthesizer.addSemanticConstraints(postFeaturesIdxs[1],intOldVarAndIdxs, self.baseFeatureVectors)
+            constraints = sygusSynthesizer.addSemanticConstraints(postFeaturesIdxs[1],intOldVarAndIdxs, baseFeatureVectors)
             sygusProblem = sygusSynthesizer.constructSygusProblem(logic, grammar, constraints,checkSynth)
             shell.writeToFile(self.temporaryFolder,self.sygusFileName, sygusProblem )
             synthizedExprStr = sygusSynthesizer.learn(self.temporaryFolder,self.sygusFileName)
