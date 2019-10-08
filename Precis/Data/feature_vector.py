@@ -1,5 +1,6 @@
 from z3 import *
 from precis_feature import PrecisFeature
+from typing import Type
 
 class FeatureVector:
 
@@ -37,6 +38,16 @@ class FeatureVector:
         elif is_bool(precisFeatureZ3):
             self.valuesZ3 += (BoolVal(value.upper() == 'TRUE'), )
     
+    @staticmethod
+    def copyFeatureVector(fv : 'FeatureVector'): 
+        if not isinstance(fv, FeatureVector):
+            assert False, "type of parameter fv is not FeatureVector"
+        else:
+            newFV = FeatureVector([], [], str(fv.testLabel))
+            newFV.values = tuple(fv.values)
+            newFV.valuesZ3 = tuple(fv.valuesZ3)
+            return newFV
+
     # DEBUG method
     def CheckValueType(self, precisFeatureZ3, value):
         # Check int

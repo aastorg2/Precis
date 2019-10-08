@@ -124,12 +124,12 @@ def learnPost(p,PUTName, outputFile):
     simpPostK1 = PrecisFormula(BoolVal(True))
     simpPostK2 = PrecisFormula(BoolVal(True))
    
-    (postK0,simpPostK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
+    #(postK0,simpPostK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
     #print("simplified: ", PrecisFormula(precisSimplify(postK0.formulaZ3)).toInfix() )
     #print("smallest post up to k == 0", postK0.toInfix())
     #sys.exit(0)
     
-    #(postK1,simpPostK1,r1) = learnPostUpToK(p,PUTName, outputFile,1)
+    (postK1,simpPostK1,r1) = learnPostUpToK(p,PUTName, outputFile,1)
     #print("smallest post up to k == 2", postK1.toInfix())
     #sys.exit(0)
 
@@ -294,7 +294,7 @@ if __name__ == '__main__':
     
     
     runLearnPost(p,stackPUTs,projectName, outputFile)
-    
+    sys.exit(0)
     ################ Stack
 
     ################ HashSet
@@ -315,7 +315,7 @@ if __name__ == '__main__':
     #hashsetPUTs = ['PUT_ContainsContract']    
     hashsetPUTs = ['PUT_AddContract']    
     
-    runLearnPost(p1,hashsetPUTs,projectName,outputFile)
+    #runLearnPost(p1,hashsetPUTs,projectName,outputFile)
     
     ################ HashSet
 

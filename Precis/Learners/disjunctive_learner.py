@@ -24,7 +24,7 @@ class DisjunctiveLearner:
         self.useEntropy = entropy
         self.featureSynthesizer = featureSynthesizer 
 
-    def learn3(self, k, intBaseFeat, boolBaseFeat,baseFeatureVectors, excluded, call):
+    def learn3(self, k, intBaseFeat, boolBaseFeat, baseFeatureVectors, excluded, call):
         
         syntFeats : Tuple[PrecisFeature] = self.featureSynthesizer.synthesizeFeatures(intBaseFeat, boolBaseFeat, baseFeatureVectors)
         genFeats : Tuple[PrecisFeature] = self.featureSynthesizer.GenerateDerivedFeatures(intBaseFeat, boolBaseFeat)
@@ -32,21 +32,23 @@ class DisjunctiveLearner:
         
         derivFeatVectors: List[FeatureVector] = Featurizer.generateDerivedFeatureVectors(derivFeats, intBaseFeat+boolBaseFeat,baseFeatureVectors )
         #assert(len(baseFeatureVectors) == len(derivFeatVectors))
-
-        boolFeatVectors = Featurizer.getBoolFeatureVectors(boolBaseFeat, baseFeatureVectors)
-        print(boolFeatVectors)
-        print(len(boolFeatVectors[0]))
-        print(len(derivFeatVectors[0]))
-        print(derivFeatVectors)
-        print("")
-        boolFvs = Featurizer.mergebaseBoolAndDerivedBoolFVs(boolFeatVectors,derivFeatVectors)
+        boolBaseFeatVectors = Featurizer.getBoolFeatureVectors(boolBaseFeat, baseFeatureVectors)
+        boolFvs = Featurizer.mergebaseBoolAndDerivedBoolFVs(boolBaseFeatVectors,derivFeatVectors)
+        
         
         houdini = Houdini()
-        (formula, indices) = houdini.learn2( boolBaseFeat + derivFeats , boolFvs, call  )
+        (formula, indicesAllwaysTrue) = houdini.learn2(boolBaseFeat + derivFeats , boolFvs, call)
+        print(indicesAllwaysTrue)
         if k == 0:
-            return (formula,indices)
+            return (formula,indicesAllwaysTrue)
         else:
-            pass
+            (remainingBaseBoolFeat, remainingDerivBoolFeat)  = self.removeFeatureFromFeaturelist(boolBaseFeat,derivFeats, indicesAllwaysTrue)
+            (reaminingEntriesBaseBoolFv, reaminingEntriesDerivBoolFv) = self.removeFeatureEntryInFeatureVectors(boolBaseFeatVectors,derivFeatVectors, indicesAllwaysTrue)
+            
+            #(f,idx, fposFv,fnegFv) = self.chooseFeature(remainingBoolFeatures, reaminingEntriesBoolFv, call)
+            
+            return (formula,indicesAllwaysTrue)
+            
         #houdini.learn2(boolBaseFeat + derivFeats, Bool(baseFeatureVectors)+derivFeatsVectors )
     #baseFeatures is a tuple
     def learn2(self,k, baseFeatures, baseFeatureVectors, call):
@@ -145,39 +147,7 @@ class DisjunctiveLearner:
             print(fnegFv)
             print()
             print( [ fv[idx]  for fv in fnegFv] )
-            #endregion
-            #region checking removal of feature
-
-            # print("before length: ",len(features))
-            # check = [ nf for nf in features if nf.varZ3 == f.varZ3] 
-            # print(check)
-            # features = features[0:idx]+ features[idx+1:]
-            # check = [ nf for nf in features if nf.varZ3 == f.varZ3] 
-            # print(check)
-            # print("length: ", len(features))
-            #endregion 
             
-            #region checking removal of value of feature at index in feature vector
-            #print("before removal")
-            # fvLens = [ len(fv) for fv in featureVectors ]
-            # print(fvLens)
-            
-            # valueAtIdx  = [ fv[idx] for fv in featureVectors ]
-            # print("feature value before removing:")
-            # print(valueAtIdx)
-
-            #for fv in featureVectors:
-            #    fv.values = fv.values[0:idx] + fv.values[idx+1:]
-            #    fv.valuesZ3 = fv.valuesZ3[0:idx] + fv.valuesZ3[idx+1:]
-            # nextfvLens = [ len(fv.values) for fv in featureVectors ]
-            # print("after removal")
-            # print(nextfvLens)
-            
-            # valueAtIdx  = [ fv[idx] for fv in featureVectors ]
-            # print("feature value after removing:")
-            # print(valueAtIdx)
-            #nextFeatureVector = FeatureVector([], [], str(.testLabel))
-            #endregion
             newFeatures = features[0:idx]+ features[idx+1:]
             
             for fv in fposFv:
@@ -284,34 +254,53 @@ class DisjunctiveLearner:
 
 
     #fix this
-    def removeFeatureEntryInFeatureVectors(self,featureVectors, indices):
-        newFeatureVectors = list()
+    def removeFeatureEntryInFeatureVectors(self,baseFvs, derivFvs, indices):
+        newBaseFvs = list()
+        newDerivFvs = list()
+        if len(baseFvs) == 0:
+            assert(False)
+        # len(baseFvs) == len(derivFvs) should hold when this function is called
+        #numOfFvs = len(baseFvs)
         if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
-            for fv in featureVectors:
-                newFeatureVector = FeatureVector([], [], str(fv.testLabel))
-                newFeatureVector.values = tuple(fv.values)
-                newFeatureVector.valuesZ3 = tuple(fv.valuesZ3)
+            for idxFV in range(0, len(baseFvs)):
+                derivIdx =-2
+                FeatureVector.copyFeatureVector(derivFvs[idxFV])
+                newDerivFv = FeatureVector.copyFeatureVector(derivFvs[idxFV])
+                newBaseFv = FeatureVector.copyFeatureVector(baseFvs[idxFV])
+                
                 for idx in reversed(indices):
-                        newFeatureVector.values = newFeatureVector.values[0:idx] + newFeatureVector.values[idx+1:]
-                        newFeatureVector.valuesZ3 = newFeatureVector.valuesZ3[0:idx] + newFeatureVector.valuesZ3[idx+1:]
-                newFeatureVectors.append(newFeatureVector)
+                    if idx >= len(baseFvs[idxFV]):
+                        #compute new index for removing entry in derivFV
+                        derivIdx = idx - len(baseFvs[idxFV]) 
+                        newDerivFv.values = newDerivFv.values[0:derivIdx] + newDerivFv.values[derivIdx+1:]
+                        newDerivFv.valuesZ3 = newDerivFv.valuesZ3[0:derivIdx] + newDerivFv.valuesZ3[derivIdx+1:]
+                    else:
+                        newBaseFv.values = newBaseFv.values[0:idx] + newBaseFv.values[idx+1:]
+                        newBaseFv.valuesZ3 = newBaseFv.valuesZ3[0:idx] + newBaseFv.valuesZ3[idx+1:]
+                        
+                newBaseFvs.append(newBaseFv)
+                newDerivFvs.append(newDerivFv)
         else:
             assert(False)
-        return newFeatureVectors
+        return (newBaseFvs, newDerivFvs)
 
     
-    def removeFeatureFromFeaturelist(self,features,indices):
+    def removeFeatureFromFeaturelist(self,baseFeatures,derivFeatures,indices):
         
-        newFeatures = tuple(features)
+        newBaseFeatures = tuple(baseFeatures)
+        newDerivFeatures = tuple(derivFeatures)
         if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
-            
             for idx in reversed(indices):
-                newFeatures = newFeatures[0:idx]+ newFeatures[idx+1:]
+                if idx >= len(baseFeatures):
+                    idx = idx - len(baseFeatures)
+                    newDerivFeatures = newDerivFeatures[0:idx]+ newDerivFeatures[idx+1:]
+                else:
+                    newBaseFeatures = newBaseFeatures[0:idx]+ newBaseFeatures[idx+1:]
             
         else:
             assert(False)
         
-        return newFeatures
+        return (newBaseFeatures, newDerivFeatures)
 
 if __name__ == '__main__':
 
