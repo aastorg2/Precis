@@ -48,7 +48,7 @@ class Houdini:
         #assert(len(featureVectors) > 0)
         if len(featureVectors) == 0:
             logger1.info("houdini Called with 0 feature vectors")
-            return (PrecisFormula(BoolVal(False)),[])
+            return (PrecisFormula(BoolVal(True)),[])
         #check datapoint are boolean --> currently assention doesnt work
         #assert(len(featureVectors) or all ( all( v == "True" or v == "False" for v in dp) for dp in featureVectors))
     
@@ -57,9 +57,7 @@ class Houdini:
         #workList = list(features)
         #oldCount = len(workList)
         for idx in range(0, len(features)):
-            if str(features[idx].varZ3.sort()) == "Int":
-                workList[idx] = False
-                continue
+            
             #fv is of type feature vector
             for fv in featureVectors:
                 assert(len(fv) == len(features) )

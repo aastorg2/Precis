@@ -24,167 +24,67 @@ class DisjunctiveLearner:
         self.useEntropy = entropy
         self.featureSynthesizer = featureSynthesizer 
 
-    def learn3(self, k, intBaseFeat, boolBaseFeat, baseFeatureVectors, excluded, call):
-        
+    def learn3(self, k, intBaseFeat, boolBaseFeat, baseFeatureVectors, exclude, call):
+        #on the empty set of data points, return true
+        if len(baseFeatureVectors) == 0:
+            return (PrecisFormula(BoolVal(True)), [])
+
         syntFeats : Tuple[PrecisFeature] = self.featureSynthesizer.synthesizeFeatures(intBaseFeat, boolBaseFeat, baseFeatureVectors)
         genFeats : Tuple[PrecisFeature] = self.featureSynthesizer.GenerateDerivedFeatures(intBaseFeat, boolBaseFeat)
         derivFeats : Tuple[PrecisFeature] = Featurizer.mergeSynthesizedAndGeneratedFeatures(syntFeats, genFeats)
-        
+        derivFeats = tuple([f for f in derivFeats if f not in exclude])
+
         derivFeatVectors: List[FeatureVector] = Featurizer.generateDerivedFeatureVectors(derivFeats, intBaseFeat+boolBaseFeat,baseFeatureVectors )
         #assert(len(baseFeatureVectors) == len(derivFeatVectors))
-        boolBaseFeatVectors = Featurizer.getBoolFeatureVectors(boolBaseFeat, baseFeatureVectors)
-        boolFvs = Featurizer.mergebaseBoolAndDerivedBoolFVs(boolBaseFeatVectors,derivFeatVectors)
+        (intBaseFeatVectors, boolBaseFeatVectors) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeat, boolBaseFeat, baseFeatureVectors)
+        boolFvs = Featurizer.mergeFeatureVectors(boolBaseFeatVectors,derivFeatVectors)
         
         
         houdini = Houdini()
-        (formula, indicesAllwaysTrue) = houdini.learn2(boolBaseFeat + derivFeats , boolFvs, call)
+        (allTrueFormula, indicesAllwaysTrue) = houdini.learn2(boolBaseFeat + derivFeats , boolFvs, call)
         print(indicesAllwaysTrue)
         if k == 0:
-            return (formula,indicesAllwaysTrue)
+            return (allTrueFormula,indicesAllwaysTrue)
         else:
-            (remainingBaseBoolFeat, remainingDerivBoolFeat)  = self.removeFeatureFromFeaturelist(boolBaseFeat,derivFeats, indicesAllwaysTrue)
-            (reaminingEntriesBaseBoolFv, reaminingEntriesDerivBoolFv) = self.removeFeatureEntryInFeatureVectors(boolBaseFeatVectors,derivFeatVectors, indicesAllwaysTrue)
+            #removing features returned by houdini and their corresponding feature vector entries. 
+            (remainingBaseBoolFeat, remainingDerivBoolFeat, featuresRemoved)  = \
+                self.removeFeatureFromFeaturelist(boolBaseFeat, derivFeats, indicesAllwaysTrue)
             
-            #(f,idx, fposFv,fnegFv) = self.chooseFeature(remainingBoolFeatures, reaminingEntriesBoolFv, call)
+            (reaminingEntriesBaseBoolFv, reaminingEntriesDerivBoolFv) = \
+                self.removeFeatureEntryInFeatureVectors(boolBaseFeatVectors, derivFeatVectors, indicesAllwaysTrue)
             
-            return (formula,indicesAllwaysTrue)
+            # features that are true on parent node should not be passed down to children;(they are redundantly also true in child nodes)
+            exclude = exclude + featuresRemoved
+            lookAhead = len(intBaseFeatVectors[0])
+            #TODO: choose should return boolBasePosFv and intBasePosFv ...
+            (f,idx, posBaseFv, negBaseFv) = \
+                self.chooseFeature(remainingBaseBoolFeat + remainingDerivBoolFeat, \
+                    Featurizer.mergeFeatureVectors(intBaseFeatVectors,reaminingEntriesBaseBoolFv), reaminingEntriesDerivBoolFv, call, lookAhead)
             
-        #houdini.learn2(boolBaseFeat + derivFeats, Bool(baseFeatureVectors)+derivFeatsVectors )
-    #baseFeatures is a tuple
-    def learn2(self,k, baseFeatures, baseFeatureVectors, call):
-        self.featureSynthesizer.updateBaseFeatures(baseFeatures)
-        
-        derivedFeatures  = Featurizer.mergeSynthesizedAndGeneratedFeatures( \
-            self.featureSynthesizer.synthesizeFeatures(), self.featureSynthesizer.GenerateDerivedFeatures())
-        
-        features: Tuple[PrecisFeature] = baseFeatures + derivedFeatures
-        featureVectors = Featurizer.generateRemainingFeatureVectors(derivedFeatures, baseFeatures, baseFeatureVectors)
-        
-        houdini = Houdini()
-        
-        if k == 0:
-            (formula, indices) = houdini.learn2(baseFeatures, baseFeatureVectors, call)
-            return (formula, indices)
-        else:
+            #featureSplitRemoved == f 
+            (newBoolBaseFeat, newDeriveBaseFeat, featureSplitRemoved) = \
+                self.removeFeatureFromFeaturelist(remainingBaseBoolFeat, remainingDerivBoolFeat, [idx])
+            # if predicate to split on is in derivedFeatures, then add to exclude list; 
+            if len(remainingBaseBoolFeat) == len(newBoolBaseFeat):
+                exclude = exclude + (f,)
+            else:
+                # if predicate to split is in baseFeatures, the update posBaseFv and negBaseFv feature vectors
+                posBaseFv = self.removeFeatureEntryInFv(posBaseFv,[idx+lookAhead])
+                negBaseFv = self.removeFeatureEntryInFv(negBaseFv,[idx+lookAhead])
 
-            
-            (allTrueFormula, indicesAllwaysTrue) = houdini.learn2(baseFeatures, baseFeatureVectors, call)
-            #subject stack push: newContains is removed so cannot evaluate derived preds  
-            remainingBoolFeatures: Tuple[PrecisFeature] = self.removeFeatureFromFeaturelist(baseFeatures,indicesAllwaysTrue)
-            reaminingEntriesBoolFv: List[FeatureVector] = self.removeFeatureEntryInFeatureVectors(baseFeatureVectors, indicesAllwaysTrue)
-            
-            #FIXME: allow chooseFeature to be overridden in derived classes
-            (f,idx, fposFv,fnegFv) = self.chooseFeature(remainingBoolFeatures, reaminingEntriesBoolFv, call)
-            #if len(fposFv) == 0 or len(fnegFv)==0:
-            #    return (PrecisFormula(BoolVal(False)),[])
-            conditionallyTrueFeatures = self.removeFeatureFromFeaturelist(remainingBoolFeatures,[idx])
-            posFv = self.removeFeatureEntryInFeatureVectors(fposFv, [idx])
-            negFv = self.removeFeatureEntryInFeatureVectors(fnegFv, [idx])
-            
-            # (baseFeatures, indices) = featurizer.getBaseFeaturesAndIndices(conditionallyTrueFeatures)
-            
-            # basePosFv = featurizer.getBaseFVs(posFv, indices)
-            # self.featureSynthesizer.updateBaseFeatures(baseFeatures)
-            # self.featureSynthesizer.updateBaseFeatureVector(basePosFv)
-            # posDerivedFeatures =  self.featureSynthesizer.synthesizeFeatures() + \
-            #     featurizer.derivedFeatures
-            # posFeatures = baseFeatures + posDerivedFeatures
-            # #posFeatures =  conditionallyTrueFeatures + posDerivedFeatures
-            # posFeaturizer = Featurizer(posDerivedFeatures, baseFeatures, basePosFv, posFeatures)
-            # posFeaturizer.createCompleteFeatureVectors()
-            (posPost,posIndices) = self.learn2(k-1, conditionallyTrueFeatures, posFv, "left")  #recursive call
-            
-            # baseNegFv = featurizer.getBaseFVs(negFv, indices)
-            # self.featureSynthesizer.updateBaseFeatures(baseFeatures)
-            # self.featureSynthesizer.updateBaseFeatureVector(baseNegFv)
-            # negDerivedFeatures =  self.featureSynthesizer.synthesizeFeatures() + \
-            #     featurizer.derivedFeatures
-            # #negFeatures = baseFeatures + negDerivedFeatures
-            # negFeatures = baseFeatures + negDerivedFeatures
-            # negFeaturizer = Featurizer(negDerivedFeatures, baseFeatures,baseNegFv, negFeatures)
-            # negFeaturizer.createCompleteFeatureVectors()
-            (negPost, negIndices) = self.learn2(k-1,conditionallyTrueFeatures, negFv, "right") #recursive call
-            
-            print("for call "+call +" at k == "+str(k))
-            print("choosen for split for :", f)
-            #print("positive: ",posPost.formula )
-            print("positive: ",posPost.toInfix())
-            #print("negative: ",negPost.formula)
-            print("negative: ",negPost.toInfix())
-            print()
-            print("result of conjunction")
-            #Todo: missing conjunction with split predicate
-            #disjunction = Or(And(posPost.formulaZ3, f.varZ3), negPost.formulaZ3)
-            disjunction  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3,Not(f.varZ3) )))
-            #disjunction  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), negPost.formulaZ3 ))
-            
-            #stringDisjunc = "(or(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (= Old_Top New_Top) (= Old_Top Old_x) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x ))(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not(= Old_s1Count Old_Top)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (not (= Old_Top New_Top)) (not(= Old_Top Old_x)) (not (= Old_Top New_x)) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x )))"
-            #result = self.precisSimplify(stringDisjunc,['Old_s1Count', 'New_s1Count', 'Old_Top', 'New_Top', 'Old_x', 'New_x'],["Old_s1ContainsX", "New_s1ContainsX"])
-            
-            #for conjuct in result:
-            #    print(type(conjuct))
-            #    print(conjuct)
-            #nextFeatureVector.values =  
-            #nextFeatureVector.valuesZ3 = self.valuesZ3 + derivedValuesZ3
-            return PrecisFormula(disjunction), posIndices + negIndices
+            (posPost, posIndices) = self.learn3( k-1,\
+                intBaseFeat, newBoolBaseFeat, posBaseFv, exclude, "left")  #recursive call
 
-    def learn(self,k, features, featureVectors, call):
-        houdini = Houdini()
-        
-        if k == 0:
-            return houdini.learn(features, featureVectors, call)
-        else:
-            (f,idx, fposFv,fnegFv) = self.chooseFeature(features, featureVectors, call)
-            
-            #region
-            print("feature:", f)
-            print("index: ", idx)
-            print()
-            print(fposFv)
-            print()
-            print( [ fv[idx]  for fv in fposFv] )
-            print()
-            print(fnegFv)
-            print()
-            print( [ fv[idx]  for fv in fnegFv] )
-            
-            newFeatures = features[0:idx]+ features[idx+1:]
-            
-            for fv in fposFv:
-                fv.values = fv.values[0:idx] + fv.values[idx+1:]
-                fv.valuesZ3 = fv.valuesZ3[0:idx] + fv.valuesZ3[idx+1:] # this assignments affect the variable featureVectors
-            
-            for fv in fnegFv:
-                fv.values = fv.values[0:idx] + fv.values[idx+1:]
-                fv.valuesZ3 = fv.valuesZ3[0:idx] + fv.valuesZ3[idx+1:]
-            #print( [ len(fv)  for fv in fposFv] )
-            #print( [ len(fv)  for fv in fnegFv] )
-            posPost = self.learn(k-1,newFeatures,fposFv, "pos")
-            negPost = self.learn(k-1,newFeatures,fnegFv, "neg")
-            print("for call "+call +" at k == "+str(k))
-            print("choosen for split for :", f)
-            #print("positive: ",posPost.formula )
-            #print("positive: ",posPost.toInfix())
-            #print("negative: ",negPost.formula)
-            #print("negative: ",negPost.toInfix())
-            print()
-            print("result of conjunction")
-            #Todo: missing conjunction with split predicate
-            disjunction = Or(And(posPost.formulaZ3, f.varZ3), negPost.formulaZ3)
-            #disjunction = 
-            #stringDisjunc = "(or(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (= Old_Top New_Top) (= Old_Top Old_x) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x ))(and New_s1ContainsX (not (= Old_s1Count New_s1Count)) (not(= Old_s1Count Old_Top)) (not (= New_s1Count Old_Top)) (not (= New_s1Count New_Top)) (not ( = New_s1Count  Old_x)) (not (= New_s1Count New_x)) (not (= Old_Top New_Top)) (not(= Old_Top Old_x)) (not (= Old_Top New_x)) (= New_Top Old_x) (= New_Top New_x) (= Old_x  New_x )))"
-            #result = self.precisSimplify(stringDisjunc,['Old_s1Count', 'New_s1Count', 'Old_Top', 'New_Top', 'Old_x', 'New_x'],["Old_s1ContainsX", "New_s1ContainsX"])
-            
-            #for conjuct in result:
-            #    print(type(conjuct))
-            #    print(conjuct)
-            #nextFeatureVector.values =  
-            #nextFeatureVector.valuesZ3 = self.valuesZ3 + derivedValuesZ3
-            return PrecisFormula(disjunction)
+            (negPost, negIndices) = self.learn3( k-1,\
+                intBaseFeat, newBoolBaseFeat, negBaseFv, exclude, "right") #recursive call
 
+            disjunctivePost  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3,Not(f.varZ3) )))
             
+            return PrecisFormula(disjunctivePost), posIndices + negIndices
+
     #return feature along with index
-    def chooseFeature(self, features, featureVectors, call):
+    #baseFv -> feature vector with only boolean entries
+    def chooseFeature(self, features, baseFv, derivFv, call, skipAhead=0):
         # TODO: figure is removing always false predicates will lead to optimizations
         fvPos = list()
         fvNeg = list()
@@ -192,8 +92,8 @@ class DisjunctiveLearner:
         allScores = []
         for idx in range(0, len(features)):
             if is_int(features[idx].varZ3):
-                continue
-            (fvPos, fvNeg) = self.splitSamples(features[idx], idx, featureVectors) 
+                assert(False)
+            (fvPos, fvNeg) = self.splitSamples(features[idx], idx + skipAhead, baseFv, derivFv) 
             #skip always false predicates
             #if len(fvPos) == 0 and len(fvNeg)> 0:
             #    continue
@@ -221,18 +121,28 @@ class DisjunctiveLearner:
         return (sortedScores[-1]['predicate'], sortedScores[-1]['idx'], sortedScores[-1]['posData'], sortedScores[-1]['negData']) 
 
     # f is for feature of PrecisFeature type
-    def splitSamples(self, f, idx, featureVectors):
+    def splitSamples(self, f, idx, baseFv, derivFv):
         posF = list()
         negF = list()
+        if len(baseFv) == 0:
+            assert(False)
+        #assert(len(baseFv)== len(derivFv))
+        fv = baseFv
+        if idx >= len(baseFv[0]):
+            idx = idx - len(baseFv[0])
+            fv = derivFv
         # add assertion check that every entry  in feature vector, fv, in list, featureVectors, is of type z3.z3.BoolRef
         # is_true(True) returns False; True is a python boolean expression. is_true(BoolVal(True)) returns True 
         #print(len(featureVectors))
-        for fv in featureVectors:
-            if is_true(fv[idx]):
-                posF.append(fv)
+        for idxFv in range(0, len(fv)):
+            if is_true(fv[idxFv][idx]):
+                posF.append(baseFv[idxFv])
+            elif is_int(fv[idxFv][idx]):
+                assert(False)
             else:
-                negF.append(fv)
-        #assert(len(featureVectors) == len(posF)+ len(negF))
+                negF.append(baseFv[idxFv])
+        
+        #assert(len(baseFv) == len(posF)+ len(negF))
         return (posF, negF)
 
 
@@ -252,6 +162,28 @@ class DisjunctiveLearner:
         # Note: I believe this implementation is missing an additional multiplication
         #return - ((probability_value_attribute/initialTotalSample)* probability_value_attribute * numpy.log(probability_value_attribute) / numpy.log(base)).sum()
 
+    def removeFeatureEntryInFv(self ,baseFvs, indices):
+        newBaseFvs = list()
+        if len(baseFvs) == 0:
+            assert(False)
+        # len(baseFvs) == len(derivFvs) should hold when this function is called
+        #numOfFvs = len(baseFvs)
+        if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
+            for idxFV in range(0, len(baseFvs)):
+                newBaseFv = FeatureVector.copyFeatureVector(baseFvs[idxFV])
+                
+                for idx in reversed(indices):
+                    if idx >= len(baseFvs[idxFV]):
+                        assert(False)
+                    else:
+                        newBaseFv.values = newBaseFv.values[0:idx] + newBaseFv.values[idx+1:]
+                        newBaseFv.valuesZ3 = newBaseFv.valuesZ3[0:idx] + newBaseFv.valuesZ3[idx+1:]
+                        
+                newBaseFvs.append(newBaseFv)
+                
+        else:
+            assert(False)
+        return newBaseFvs
 
     #fix this
     def removeFeatureEntryInFeatureVectors(self,baseFvs, derivFvs, indices):
@@ -264,7 +196,6 @@ class DisjunctiveLearner:
         if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
             for idxFV in range(0, len(baseFvs)):
                 derivIdx =-2
-                FeatureVector.copyFeatureVector(derivFvs[idxFV])
                 newDerivFv = FeatureVector.copyFeatureVector(derivFvs[idxFV])
                 newBaseFv = FeatureVector.copyFeatureVector(baseFvs[idxFV])
                 
@@ -289,18 +220,24 @@ class DisjunctiveLearner:
         
         newBaseFeatures = tuple(baseFeatures)
         newDerivFeatures = tuple(derivFeatures)
+        featuresRemoved = ()
         if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
             for idx in reversed(indices):
+                #removing from derived features
                 if idx >= len(baseFeatures):
                     idx = idx - len(baseFeatures)
+                    featuresRemoved = featuresRemoved + (newDerivFeatures[idx],)
                     newDerivFeatures = newDerivFeatures[0:idx]+ newDerivFeatures[idx+1:]
+                # removing from base features
                 else:
+                    featuresRemoved = featuresRemoved + (newBaseFeatures[idx],)
                     newBaseFeatures = newBaseFeatures[0:idx]+ newBaseFeatures[idx+1:]
+
             
         else:
             assert(False)
         
-        return (newBaseFeatures, newDerivFeatures)
+        return (newBaseFeatures, newDerivFeatures, featuresRemoved)
 
 if __name__ == '__main__':
 

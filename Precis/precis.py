@@ -19,101 +19,70 @@ from typing import List, Tuple, Type
 import logging
 
 
-
-def learnPostUpToK(p,PUTName, outputFile, k):
+def learnPostUpToK(p, PUTName, outputFile, k):
     sygusExecutable = "Precis/Learners/EnumerativeSolver/bin/starexec_run_Default"
     tempLocation = "tempLocation"
     sygusFileName = "postcondition.sl"
-    
-    #assumes MSBuils.exe in path
-    inst = Instrumenter("MSBuild.exe","./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
+
+    # assumes MSBuils.exe in path
+    inst = Instrumenter(
+        "MSBuild.exe", "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
 
     p.ExtractObservers(PUTName, outputFile)
 
-    #returns list of base features
+    # returns list of base features
     baseFeatures: Tuple[PrecisFeature] = p.ReadObserversFromFile(outputFile)
     allPostconditions = []
     allBaseFeatureVectors = []
-    
+
     # FixMe: feature synthesis object shoul be initialized with base features and the feature vector should be updated
     #synthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName, baseFeatures)
-    synthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName)
-    
+    synthesizer = FeatureSynthesis(
+        sygusExecutable, tempLocation, sygusFileName)
+
     initFormula = PrecisFormula(BoolVal(False))
-    inst.instrumentPost(p,initFormula , PUTName)
+    inst.instrumentPost(p, initFormula, PUTName)
     rounds = 1
     while True:
-        print("starting round: "+ str(rounds))
+        print("starting round: " + str(rounds))
         pex = Pex()
-        
+
         startTimePex = time.time()
-        baseFeatureVectors: List[FeatureVector] = pex.RunTeacher(p, PUTName, baseFeatures)
+        baseFeatureVectors: List[FeatureVector] = pex.RunTeacher(
+            p, PUTName, baseFeatures)
         pexTime = time.time() - startTimePex
         print("pex time: " + str(pexTime))
         allBaseFeatureVectors.extend(baseFeatureVectors)
 
-        intBaseFeatures, boolBaseFeatures = Featurizer.getIntAndBoolFeatures(baseFeatures)
-        print(intBaseFeatures)
-        print(boolBaseFeatures)
+        intBaseFeatures, boolBaseFeatures = Featurizer.getIntAndBoolFeatures(
+            baseFeatures)
+
         indices = []
         disLearner = DisjunctiveLearner(synthesizer)
-        (postcondition, indices) = disLearner.learn3(k, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), "root")
+        (postcondition, indices) = disLearner.learn3(
+            k, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), "root")
         print(postcondition.toInfix())
         # assumes ms build in path
-        inst = Instrumenter("MSBuild.exe","./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
+        inst = Instrumenter(
+            "MSBuild.exe", "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
         inst.instrumentPost(p, postcondition, PUTName)
-        #sys.exit(0)
-        #region oldCode
-        # synthesizer.updateBaseFeatureVector(allBaseFeatureVectors) #
-        
-        # startTimeSygus = time.time()
-        # derivedFeatures: Tuple[PrecisFeature] = Featurizer.mergeSynthesizedAndGeneratedFeatures( \
-        #         synthesizer.synthesizeFeatures() , \
-        #         synthesizer.GenerateDerivedFeatures())
-        # sygustime = time.time()-startTimeSygus
-        # print("sygus time: " + str(sygustime))
 
-        # features: Tuple[PrecisFeature] =  baseFeatures + derivedFeatures
-        
-        # featurizer: Type[Featurizer] = Featurizer(derivedFeatures, baseFeatures, allBaseFeatureVectors, features)
-        # featurizer.createCompleteFeatureVectors()
-
-        # disLearner = DisjunctiveLearner(synthesizer)
-        # indices = []
-        # startTimeLearn = time.time()
-        # (postcondition, indices) = disLearner.learn2(k,baseFeatures,allBaseFeatureVectors  ,"root")
-        
-        # learnTime = time.time() - startTimeLearn
-        # print("learningTime: "+str(learnTime))
-        # #sys.exit(0)
-        # #print("postcondition formula")
-        # #print(postcondition.formula)
-        # print("postcondition infix")
-        # print(postcondition.toInfix())
-        
-        # # assumes ms build in path
-        # inst = Instrumenter("MSBuild.exe","./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
-        # inst.instrumentPost(p, postcondition, PUTName)    
-        #endregion oldcode
-
-
-        #if postcondition.formula in allPostconditions:
-        #all(oldFeaturesIdxs[i][1] <= oldFeaturesIdxs[i+1][1] for i in range(len(oldFeaturesIdxs)-1))
-        if all(baseFeatureVectors[i].testLabel for i in range(0,len(baseFeatureVectors)) ):
+        if all(baseFeatureVectors[i].testLabel for i in range(0, len(baseFeatureVectors))):
             print("found it")
-            simplifiedPost = PrecisFormula(precisSimplify(postcondition.formulaZ3))
+            simplifiedPost = PrecisFormula(postcondition.precisSimplify())
             return postcondition, simplifiedPost, rounds
-        
+
         if rounds == 16:
             print("BAD!")
-            simplifiedPost = PrecisFormula(precisSimplify(postcondition.formulaZ3))
+            simplifiedPost = PrecisFormula(postcondition.precisSimplify())
             return postcondition, simplifiedPost, rounds
 
         allPostconditions.append(postcondition.formula)
         rounds = rounds + 1
-        
-def learnPost(p,PUTName, outputFile):
-    
+
+
+def learnPost(p, PUTName, outputFile):
+
     r0 = -1
     r1 = -1
     r2 = -1
@@ -123,142 +92,68 @@ def learnPost(p,PUTName, outputFile):
     simpPostK0 = PrecisFormula(BoolVal(True))
     simpPostK1 = PrecisFormula(BoolVal(True))
     simpPostK2 = PrecisFormula(BoolVal(True))
-   
-    #(postK0,simpPostK0,r0) = learnPostUpToK(p,PUTName,outputFile,0)
+
+    (postK0, simpPostK0, r0) = learnPostUpToK(p, PUTName, outputFile, 0)
     #print("simplified: ", PrecisFormula(precisSimplify(postK0.formulaZ3)).toInfix() )
     #print("smallest post up to k == 0", postK0.toInfix())
-    #sys.exit(0)
-    
-    (postK1,simpPostK1,r1) = learnPostUpToK(p,PUTName, outputFile,1)
+    # sys.exit(0)
+
+    (postK1, simpPostK1, r1) = learnPostUpToK(p, PUTName, outputFile, 1)
     #print("smallest post up to k == 2", postK1.toInfix())
-    #sys.exit(0)
+    # sys.exit(0)
 
     #(postK2,simpPostK2,r2) = learnPostUpToK(p,PUTName, outputFile,2)
     #print("smallest post up to k == 2", postK2.toInfix())
-    #sys.exit(0)
+    # sys.exit(0)
 
-    return (postK0,simpPostK0, r0, postK1,simpPostK1, r1 , postK2,simpPostK2, r2)
-#todo: list of problems
-def runLearnPost(p, putList,projectName,outputFile):
+    return (postK0, simpPostK0, r0, postK1, simpPostK1, r1, postK2, simpPostK2, r2)
+# todo: list of problems
+
+
+def runLearnPost(p, putList, projectName, outputFile):
     #assert puts in putList in problem
     logger1.info("Problem: "+projectName+"\n")
     for PUTName in putList:
         # post = learnPost(p,PUTName, outputFile)
         logger1.info("PUT: "+PUTName+"\n")
-        (postK0,simpPostK0,r0, postK1,simpPostK1,r1, postK2,simpPostK2,r2) = learnPost(p, PUTName, outputFile)
-        logger1.info("postcondition k == 0\n "+ postK0.toInfix()+"\nrounds: "+str(r0)+"\n")
-        logger1.info("simple   post k == 0\n "+ simpPostK0.toInfix()+"\nrounds: "+str(r0)+"\n")
-        implication = Implies(postK0.formulaZ3,postK1.formulaZ3)
+        (postK0, simpPostK0, r0, postK1, simpPostK1, r1, postK2,
+         simpPostK2, r2) = learnPost(p, PUTName, outputFile)
+        logger1.info("postcondition k == 0\n " +
+                     postK0.toInfix()+"\nrounds: "+str(r0)+"\n")
+        logger1.info("simple   post k == 0\n " +
+                     simpPostK0.toInfix()+"\nrounds: "+str(r0)+"\n")
+        implication = Implies(postK0.formulaZ3, postK1.formulaZ3)
         solver0 = Solver()
-        solver0.add(Not(implication)) # check (not (postK0 => postK1)) is unsat
+        # check (not (postK0 => postK1)) is unsat
+        solver0.add(Not(implication))
         check0 = solver0.check()
-        logger1.info("Not(k0 -> k1)? "+ str(check0)+"\n")
+        logger1.info("Not(k0 -> k1)? " + str(check0)+"\n")
 
-        logger1.info("postcondition k == 1\n "+ postK1.toInfix()+"\nrounds: "+str(r1)+"\n")
-        logger1.info("simple   post k == 1\n "+ simpPostK1.toInfix()+"\nrounds: "+str(r1)+"\n")
-        nextImplication = Implies(postK1.formulaZ3,postK2.formulaZ3) # check (not (postK1 => postK2)) is unsat
+        logger1.info("postcondition k == 1\n " +
+                     postK1.toInfix()+"\nrounds: "+str(r1)+"\n")
+        logger1.info("simple   post k == 1\n " +
+                     simpPostK1.toInfix()+"\nrounds: "+str(r1)+"\n")
+        # check (not (postK1 => postK2)) is unsat
+        nextImplication = Implies(postK1.formulaZ3, postK2.formulaZ3)
         solver1 = Solver()
         solver1.add(Not(nextImplication))
         check1 = solver1.check()
-        logger1.info("Not(k1 -> k2)? "+ str(check1)+"\n")
+        logger1.info("Not(k1 -> k2)? " + str(check1)+"\n")
 
-        logger1.info("postcondition k == 2\n "+ postK2.toInfix()+"\nrounds: "+str(r2)+"\n")
-        logger1.info("simple   post k == 2\n "+ simpPostK2.toInfix()+"\nrounds: "+str(r2)+"\n")
-        nextNextImplication = Implies(postK0.formulaZ3,postK2.formulaZ3) # check (not (postK1 => postK2)) is unsat
+        logger1.info("postcondition k == 2\n " +
+                     postK2.toInfix()+"\nrounds: "+str(r2)+"\n")
+        logger1.info("simple   post k == 2\n " +
+                     simpPostK2.toInfix()+"\nrounds: "+str(r2)+"\n")
+        # check (not (postK1 => postK2)) is unsat
+        nextNextImplication = Implies(postK0.formulaZ3, postK2.formulaZ3)
         solver2 = Solver()
         solver2.add(Not(nextNextImplication))
         check2 = solver2.check()
-        logger1.info("Not(k0 -> k2)? "+ str(check2)+"\n")
-        
-
-def precisSimplify(postcondition):
-        set_option(max_args = 10000000, max_lines = 1000000, max_depth = 10000000, max_visited = 1000000)
-        set_option(html_mode=False)
-        set_fpa_pretty(flag=False)
-        
-        #intVars = [ Int(var) for var in intVariables]
-        #boolVars = [ Bool(var) for var in boolVariables]
-    
-        #declareInts = "\n".join([ "(declare-const " + var + " Int)" for var in intVariables ])
-        #declareBools = "\n".join([ "(declare-const " + var + " Bool)" for var in boolVariables ])
-        #stringToParse = "\n".join([declareInts,  declareBools, "( assert " + precondition + ")"])
-    
-        #logger = logging.getLogger("Framework.z3Simplify")
-    
-        #logger.info("############ z3 program")
-        #logger.info("############ " + stringToParse)
-    
-        #expr = parse_smt2_string(strinagToParse)
-        
-        g  = Goal()
-        g.add(postcondition)
-        
-        works = Repeat(Then( 
-        
-        OrElse(Tactic('ctx-solver-simplify'),Tactic('skip')),
-        
-        #OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
-        #OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
-        #OrElse(Tactic('purify-arith'),Tactic('skip')),
-        #OrElse(Tactic('ctx-simplify'),Tactic('skip')),
-        #OrElse(Tactic('dom-simplify'),Tactic('skip')),
-        #OrElse(Tactic('propagate-values'),Tactic('skip')),
-        
-        OrElse(Tactic('simplify'),Tactic('skip')),
-        
-        # OrElse(Tactic('aig'),Tactic('skip')),
-        # OrElse(Tactic('degree-shift'),Tactic('skip')),
-        # OrElse(Tactic('factor'),Tactic('skip')),
-        # OrElse(Tactic('lia2pb'),Tactic('skip')),
-        # OrElse(Tactic('recover-01'),Tactic('skip')),
-        
-        OrElse(Tactic('elim-term-ite'),Tactic('skip')), #must to remove ite
-        
-        # OrElse(Tactic('injectivity'),Tactic('skip')),
-        # OrElse(Tactic('snf'),Tactic('skip')),
-        # OrElse(Tactic('reduce-args'),Tactic('skip')),
-        # OrElse(Tactic('elim-and'),Tactic('skip')),
-        # OrElse(Tactic('symmetry-reduce'),Tactic('skip')),
-        # OrElse(Tactic('macro-finder'),Tactic('skip')),
-        # OrElse(Tactic('quasi-macros'),Tactic('skip')),
-        
-        Repeat(OrElse(Tactic('split-clause'),Tactic('skip'))),
-        ))
-        #works1 = Tactic('simplify')    
-
-        result = works(g)
-        #result = works1(g)
-        # split_all = 
-
-        # print str(result)
-        # result = [[ "d1", "d2", "d3"], #= conjunct && conjunct
-        #           [ "d4", "d5", "d6"]]
-        
-        #remove empty subgoals and check if resultant list is empty.
-        result = filter(None, result)
-        if not result:
-            return "true" 
-        #return result
-        
-        completeConjunct = []
-        for conjunct in result: 
-            completeDisjunct = []
-            for disjunct in conjunct:
-                    completeDisjunct.append(disjunct)
-                    
-            completeConjunct.append(And(completeDisjunct) )
-        
-        simplifiedPrecondition = Or(completeConjunct)
-        
-        #simplifiedPrecondition = simplifiedPrecondition.replace("Not", " ! ")
-        #simplifiedPrecondition = simplifiedPrecondition.replace("False", " false ")
-        #simplifiedPrecondition = simplifiedPrecondition.replace("True", " true ")
-        #simplifiedPrecondition = simplifiedPrecondition.replace("\n", "  ")
-        return simplifiedPrecondition
+        logger1.info("Not(k0 -> k2)? " + str(check2)+"\n")
 
 
 if __name__ == '__main__':
-    #region logger
+    # region logger
     logger = logging.getLogger("Runner")
     logger.setLevel(logging.INFO)
     # create the logging file handler
@@ -274,104 +169,112 @@ if __name__ == '__main__':
     formatter1 = logging.Formatter('%(message)s')
     fh1.setFormatter(formatter1)
     logger1.addHandler(fh1)
-    #endregion
-    
-    ################ Stack
+    # endregion
+
+    # Stack
     sln = os.path.abspath('../ContractsSubjects/Stack/Stack.sln')
-    projectName =  'StackTest'
+    projectName = 'StackTest'
     testDebugFolder = '../ContractsSubjects/Stack/StackTest/bin/Debug/'
     testDll = testDebugFolder + 'StackTest.dll'
-    testFileName = 'StackContractTest.cs' 
+    testFileName = 'StackContractTest.cs'
     testNamepace = 'Stack.Test'
     testClass = 'StackContractTest'
-    stackPUTs = ['PUT_PushContract', 'PUT_PopContract', 'PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract'] 
+    stackPUTs = ['PUT_PushContract', 'PUT_PopContract',
+                 'PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract']
     #PUTName = 'PUT_PushContract'
     #PUTName = 'PUT_PopContract'
     outputFile = os.path.abspath('./typesOM.txt')
 
     stackPUTs = ['PUT_ContainsContract']
-    p = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
-    
-    
-    runLearnPost(p,stackPUTs,projectName, outputFile)
-    sys.exit(0)
-    ################ Stack
+    p = Problem(sln, projectName, testDebugFolder, testDll,
+                testFileName, testNamepace, testClass)
 
-    ################ HashSet
+    #runLearnPost(p,stackPUTs,projectName, outputFile)
+    # sys.exit(0)
+    # Stack
+
+    # HashSet
     sln = os.path.abspath('../ContractsSubjects/HashSet/HashSet.sln')
-    projectName =  'HashSetTest'
+    projectName = 'HashSetTest'
     testDebugFolder = '../ContractsSubjects/HashSet/HashSetTest/bin/Debug/'
     testDll = testDebugFolder + 'HashSetTest.dll'
-    testFileName = 'HashSetContractTest.cs' 
+    testFileName = 'HashSetContractTest.cs'
     testNamepace = 'HashSet.Test'
     testClass = 'HashSetContractTest'
-    hashsetPUTs = ['PUT_AddContract', 'PUT_RemoveContract', 'PUT_CountContract', 'PUT_ContainsContract'] 
+    hashsetPUTs = ['PUT_AddContract', 'PUT_RemoveContract',
+                   'PUT_CountContract', 'PUT_ContainsContract']
     #PUTName = 'PUT_PushContract'
     #PUTName = 'PUT_PopContract'
     outputFile = os.path.abspath('./typesOM.txt')
 
-    p1 = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
-    
-    #hashsetPUTs = ['PUT_ContainsContract']    
-    hashsetPUTs = ['PUT_AddContract']    
-    
-    #runLearnPost(p1,hashsetPUTs,projectName,outputFile)
-    
-    ################ HashSet
+    p1 = Problem(sln, projectName, testDebugFolder, testDll,
+                 testFileName, testNamepace, testClass)
 
+    #hashsetPUTs = ['PUT_ContainsContract']
+    hashsetPUTs = ['PUT_AddContract']
 
-    ################ Dictionary
+    # runLearnPost(p1,hashsetPUTs,projectName,outputFile)
+
+    # HashSet
+
+    # Dictionary
 
     sln = os.path.abspath('../ContractsSubjects/Dictionary/Dictionary.sln')
-    projectName =  'DictionaryTest'
+    projectName = 'DictionaryTest'
     testDebugFolder = '../ContractsSubjects/Dictionary/DictionaryTest/bin/Debug/'
     testDll = testDebugFolder + 'DictionaryTest.dll'
-    testFileName = 'DictionaryContractTest.cs' 
+    testFileName = 'DictionaryContractTest.cs'
     testNamepace = 'Dictionary.Test'
     testClass = 'DictionaryContractTest'
-    dictionaryPUTs = ['PUT_AddContract', 'PUT_RemoveContract', 'PUT_GetContract', 'PUT_SetContract','PUT_ContainsKeyContract','PUT_ContainsValueContract','PUT_CountContract'] 
+    dictionaryPUTs = ['PUT_AddContract', 'PUT_RemoveContract', 'PUT_GetContract', 'PUT_SetContract',
+                      'PUT_ContainsKeyContract', 'PUT_ContainsValueContract', 'PUT_CountContract']
     #PUTName = 'PUT_PushContract'
     #PUTName = 'PUT_PopContract'
-    p2 = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
+    p2 = Problem(sln, projectName, testDebugFolder, testDll,
+                 testFileName, testNamepace, testClass)
     outputFile = os.path.abspath('./typesOM.txt')
-    
-    #runLearnPost(p2,dictionaryPUTs, projectName, outputFile)
+    dictionaryPUTs = ['PUT_RemoveContract']
+    runLearnPost(p2,dictionaryPUTs, projectName, outputFile)
+    sys.exit(0)
+    # End of Dictionary
 
-    ################ Dictionary
-
-    ################ Queue
+    # Queue
     sln = os.path.abspath('../ContractsSubjects/Queue/Queue.sln')
-    projectName =  'QueueTest'
+    projectName = 'QueueTest'
     testDebugFolder = '../ContractsSubjects/Queue/QueueTest/bin/Debug/'
     testDll = testDebugFolder + 'QueueTest.dll'
-    testFileName = 'QueueContractTest.cs' 
+    testFileName = 'QueueContractTest.cs'
     testNamepace = 'Queue.Test'
     testClass = 'QueueContractTest'
-    queuePUTs = ['PUT_EnqueueContract', 'PUT_DequeueContract', 'PUT_PeekContract', 'PUT_CountContract','PUT_ContainsContract'] 
+    queuePUTs = ['PUT_EnqueueContract', 'PUT_DequeueContract',
+                 'PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract']
     #PUTName = 'PUT_PushContract'
     #PUTName = 'PUT_PopContract'
-    p3 = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
+    p3 = Problem(sln, projectName, testDebugFolder, testDll,
+                 testFileName, testNamepace, testClass)
     outputFile = os.path.abspath('./typesOM.txt')
-    
-    #runLearnPost(p3,queuePUTs,projectName,outputFile)
+    queuePUTs = ['PUT_EnqueueContract']
+    #runLearnPost(p3, queuePUTs, projectName, outputFile)
+    #sys.exit(0)
+    # End Queue
 
-    ################ Queue
-
-    ################ ArrayList
+    # ArrayList
     sln = os.path.abspath('../ContractsSubjects/ArrayList/ArrayList.sln')
-    projectName =  'ArrayListTest'
+    projectName = 'ArrayListTest'
     testDebugFolder = '../ContractsSubjects/ArrayList/ArrayListTest/bin/Debug/'
     testDll = testDebugFolder + 'ArrayListTest.dll'
-    testFileName = 'ArrayListContractTest.cs' 
+    testFileName = 'ArrayListContractTest.cs'
     testNamepace = 'ArrayList.Test'
     testClass = 'ArrayListContractTest'
-    arrayListPUTs = ['PUT_AddContract', 'PUT_RemoveContract','PUT_InsertContract', 'PUT_SetContract','PUT_GetContract','PUT_ContainsContract','PUT_IndexOfContract','PUT_LastIndexOfContract','PUT_CountContract'] 
+    arrayListPUTs = ['PUT_AddContract', 'PUT_RemoveContract', 'PUT_InsertContract', 'PUT_SetContract',
+                     'PUT_GetContract', 'PUT_ContainsContract', 'PUT_IndexOfContract', 'PUT_LastIndexOfContract', 'PUT_CountContract']
     #PUTName = 'PUT_PushContract'
     #PUTName = 'PUT_PopContract'
-    #arrayListPUTs = ['PUT_ContainsKeyContract','PUT_ContainsValueContract','PUT_CountContract'] 
-    p4 = Problem(sln, projectName, testDebugFolder, testDll, testFileName, testNamepace, testClass)
+    #arrayListPUTs = ['PUT_ContainsKeyContract','PUT_ContainsValueContract','PUT_CountContract']
+    p4 = Problem(sln, projectName, testDebugFolder, testDll,
+                 testFileName, testNamepace, testClass)
     outputFile = os.path.abspath('./typesOM.txt')
-    
-    #runLearnPost(p4,arrayListPUTs,projectName,outputFile)
 
-    ################ End ArrayList
+    # runLearnPost(p4,arrayListPUTs,projectName,outputFile)
+
+    # End ArrayList

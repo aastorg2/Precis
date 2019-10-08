@@ -52,7 +52,7 @@ class FeatureSynthesis:
         #return equalityFeatures
         #Todo: call to sygus solvers can be placed here.
     def synthesizeFeatures(self,intFeat, boolFeat, baseFeatureVectors):
-        assert( baseFeatureVectors != None)
+        #assert( baseFeatureVectors != None)
         #intFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Int"]
         #boolFeatures = [f for f in self.baseFeatures if str(f.varZ3.sort())=="Bool"]
         intFeatures = intFeat
