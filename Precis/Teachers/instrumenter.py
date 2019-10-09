@@ -17,7 +17,7 @@ class Instrumenter:
         
         instCommand =self.getInstrumentationCommand(problem, post, PUTName)
         instOutput = command_runner.runCommand(instCommand)
-        print(instOutput)
+        
         
         buildCommand = self.getMsbuildCommand(problem)
         buildOutput = command_runner.runCommand(buildCommand)

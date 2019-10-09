@@ -9,7 +9,7 @@ from z3 import *
 # Can be implemented as client C# code!!!
 
 class Problem:
-    def __init__(self, sln, projectName, testDebugFolder, testDll, testFileName, testNamespace, testClass):
+    def __init__(self, sln, projectName, testDebugFolder, testDll, testFileName, testNamespace, testClass, puts):
         self.sln = sln
         self.projectName = projectName
         self.testDebugFolder = testDebugFolder
@@ -17,6 +17,7 @@ class Problem:
         self.testFileName = testFileName
         self.testNamespace = testNamespace
         self.testClass = testClass
+        self.puts = puts
 
     # Use C# code to extract the observer methods and corresponding types to an output file
     def ExtractObservers(self, PUTName, outputFile):

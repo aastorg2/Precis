@@ -11,7 +11,7 @@ import numpy
 import logging
 
 
-logger = logging.getLogger("Runner.DisjunctiveLearner")
+logger = logging.getLogger("Results.DisjunctiveLearner")
 
 class DisjunctiveLearner:
 
@@ -42,7 +42,8 @@ class DisjunctiveLearner:
         
         houdini = Houdini()
         (allTrueFormula, indicesAllwaysTrue) = houdini.learn2(boolBaseFeat + derivFeats , boolFvs, call)
-        print(indicesAllwaysTrue)
+        logger.info("Houdini AlwaysTrue for k="+str(k)+" : "+ allTrueFormula.toInfix()+"\n")
+        
         if k == 0:
             return (allTrueFormula,indicesAllwaysTrue)
         else:
@@ -58,8 +59,10 @@ class DisjunctiveLearner:
             lookAhead = len(intBaseFeatVectors[0])
             #TODO: choose should return boolBasePosFv and intBasePosFv ...
             (f,idx, posBaseFv, negBaseFv) = \
-                self.chooseFeature(remainingBaseBoolFeat + remainingDerivBoolFeat, \
+                self.chooseFeature2(remainingBaseBoolFeat + remainingDerivBoolFeat, \
                     Featurizer.mergeFeatureVectors(intBaseFeatVectors,reaminingEntriesBaseBoolFv), reaminingEntriesDerivBoolFv, call, lookAhead)
+            logger.info("Predicate: "+ call + " for k = "+ str(k)+" : "+ str(f)+"\n")
+            print("Predicate chosen at "+ call+" : "+str(f))
             
             #featureSplitRemoved == f 
             (newBoolBaseFeat, newDeriveBaseFeat, featureSplitRemoved) = \
@@ -73,14 +76,44 @@ class DisjunctiveLearner:
                 negBaseFv = self.removeFeatureEntryInFv(negBaseFv,[idx+lookAhead])
 
             (posPost, posIndices) = self.learn3( k-1,\
-                intBaseFeat, newBoolBaseFeat, posBaseFv, exclude, "left")  #recursive call
+                intBaseFeat, newBoolBaseFeat, posBaseFv, exclude, call + " left")  #recursive call
+            
+            logger.info("Left: "+ call + " for k = "+ str(k)+" : "+ posPost.toInfix())
 
             (negPost, negIndices) = self.learn3( k-1,\
-                intBaseFeat, newBoolBaseFeat, negBaseFv, exclude, "right") #recursive call
+                intBaseFeat, newBoolBaseFeat, negBaseFv, exclude, call +" right") #recursive call
+
+            logger.info("Right: "+ call + " for k = "+ str(k)+" : "+ negPost.toInfix())
 
             disjunctivePost  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3,Not(f.varZ3) )))
+            precisPost = PrecisFormula(disjunctivePost)
             
-            return PrecisFormula(disjunctivePost), posIndices + negIndices
+            logger.info("unsimplified post: "+ precisPost.toInfix())
+            return precisPost , posIndices + negIndices
+
+    def chooseFeature2(self, features, baseFv, derivFv, call, skipAhead=0):
+        # TODO: figure is removing always false predicates will lead to optimizations
+        fvPos = list()
+        fvNeg = list()
+        
+        allScores = []
+        for idx in range(0, len(features)):
+            if is_int(features[idx].varZ3):
+                assert(False)
+            (fvPos, fvNeg) = self.splitSamples(features[idx], idx + skipAhead, baseFv, derivFv) 
+  
+            if len(fvPos) == 0 or len(fvNeg) == 0:
+                score = 0
+            else:
+                assert(len(fvPos) != 0)
+                assert(len(fvNeg) != 0)
+                score = self.scoreE(len(fvPos), len(fvNeg))
+            astLength = len(features[idx].varZ3.children()) + 1.0
+            rank = (score / astLength )
+            allScores.append({'predicate': features[idx],'idx': idx, 'score': score, 'rank':rank , 'posData':fvPos, 'negData': fvNeg} )
+            
+        sortedScores = sorted(allScores, key=lambda x: (x['score'], x['rank']))
+        return (sortedScores[-1]['predicate'], sortedScores[-1]['idx'], sortedScores[-1]['posData'], sortedScores[-1]['negData']) 
 
     #return feature along with index
     #baseFv -> feature vector with only boolean entries
@@ -97,15 +130,18 @@ class DisjunctiveLearner:
             #skip always false predicates
             #if len(fvPos) == 0 and len(fvNeg)> 0:
             #    continue
-            posLabel = ['+'] * len(fvPos)
-            negLabel = ['-'] * len(fvNeg)
-            score = self.entropy(posLabel+negLabel)
-            multiplier = 0
-            if len(features[idx].varZ3.children()) == 0:
-                multiplier = 1
+            #posLabel = ['+'] * len(fvPos)
+            #negLabel = ['-'] * len(fvNeg)
+            #score = self.entropy(posLabel+negLabel)
+            
+            if len(fvPos) == 0 or len(fvNeg) == 0:
+                score = 0
             else:
-                multiplier = len(features[idx].varZ3.children()) + 1.0
-            rank = score + (score / multiplier )
+                assert(len(fvPos) != 0)
+                assert(len(fvNeg) != 0)
+                score = self.scoreE(len(fvPos), len(fvNeg))
+            astLength = len(features[idx].varZ3.children()) + 1.0
+            rank = score + (score / astLength )
             allScores.append({'predicate': features[idx],'idx': idx, 'score': score ,'rank':rank , 'posData':fvPos, 'negData': fvNeg} )
             
         #experimental score metric incorporating length of formula- consider prioritizing  old_vars over new vars
@@ -145,6 +181,9 @@ class DisjunctiveLearner:
         #assert(len(baseFv) == len(posF)+ len(negF))
         return (posF, negF)
 
+    def scoreE(self,l1, l2):
+        l3 = l1 + l2
+        return -1*(((l1/l3)*(math.log(l1/l3)/math.log(math.e))) + ((l2/l3)* (math.log(l2/l3)/math.log(math.e))))
 
     # labels is a list of all class labels 
     def entropy(self, labels, base = None):
