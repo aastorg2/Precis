@@ -13,6 +13,7 @@ from Learners.disjunctive_learner import DisjunctiveLearner
 from Teachers.instrumenter import Instrumenter
 from featurizer import Featurizer
 import command_runner
+import shutil
 from typing import List, Tuple, Type
 
 
@@ -62,7 +63,11 @@ def learnPostUpToK(p, PUTName, outputFile, k):
         logger1.info("#############\nRound: "+str(rounds)+"\n")
         (postcondition, indices) = disLearner.learn3(
             k, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), "root")
+        logger1.info("unsimplified post: "+ postcondition.toInfix())
+        
         print("unsimplified post "+ postcondition.toInfix())
+        print("")
+        print("simplified post "+ PrecisFormula(postcondition.precisSimplify()).toInfix() )
         # assumes ms build in path
         inst = Instrumenter(
             "MSBuild.exe", "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
@@ -81,11 +86,13 @@ def learnPostUpToK(p, PUTName, outputFile, k):
         allPostconditions.append(postcondition.formula)
         rounds = rounds + 1
 
-def runLearnPost(p, putList, projectName, outputFile, k = 1):
+def runLearnPost(p, putList, projectName, outputFile, k ):
     #assert puts in putList in problem
     logger1.info("Problem: "+projectName+"\n")
     
     for PUTName in putList:
+        # delete old pex files first
+        shutil.rmtree(p.testDebugFolder)
         # post = learnPost(p,PUTName, outputFile)
         logger1.info("PUT: "+PUTName+"\n")
         results = []
@@ -98,43 +105,62 @@ def runLearnPost(p, putList, projectName, outputFile, k = 1):
             logger1.info("simple   post k == " + str(i) + "\n" +
                         simplePost.toInfix()+"\nrounds: "+str(rounds)+"\n")
             
+            
             results.append((post, simplePost, rounds))
-            if i > 0:
+            
+            if i == 2:
+                implication2 = Implies(results[i-2][0].formulaZ3, results[i][0].formulaZ3)
+                solver2 = Solver()
+                # check (not (postK0 => postK1)) is unsat
+                solver2.add(Not(implication2))
+                check2 = solver2.check()
+                logger1.info("Not(k"+str(i-2)+" -> k" + str(i) +")? " + str(check2)+"\n")
+
+                implication3 = Implies(results[i-1][0].formulaZ3, results[i][0].formulaZ3)
+                solver3 = Solver()
+                solver3.add(Not(implication3))
+                check3 = solver3.check()
+                logger1.info("Not(k"+str(i-1)+" -> k" + str(i) +")? " + str(check3)+"\n")
+
+            
+            elif i == 1:
                 implication = Implies(results[i-1][0].formulaZ3, results[i][0].formulaZ3)
-                implication1 = Implies(results[i][0].formulaZ3, results[i-1][0].formulaZ3)
-                solver1 = Solver()
-                solver1.add(Not(implication1))
-                check1 = solver1.check()
-                logger1.info("Not(k"+str(i)+" -> k" + str(i-1) +"? " + str(check1)+"\n")
-                
                 solver = Solver()
                 # check (not (postK0 => postK1)) is unsat
                 solver.add(Not(implication))
                 check = solver.check()
-                logger1.info("Not(k"+str(i-1)+" -> k" + str(i) +"? " + str(check)+"\n")
-        
-        sys.exit(0)
+                logger1.info("Not(k"+str(i-1)+" -> k" + str(i) +")? " + str(check)+"\n")
+            
+def runLearnPostTest(p, putList, projectName, outputFile, k = 1):
+    #assert puts in putList in problem
+    logger1.info("Problem: "+projectName+"\n")
+    
+    # delete old pex files first
+    shutil.rmtree(p.testDebugFolder)
 
+    for PUTName in putList:
+        # post = learnPost(p,PUTName, outputFile)
+        logger1.info("PUT: "+PUTName+"\n")
+        results = []
+        
+        logger1.info("=====\nCase: k == "+str(k)+"\n")
+        (post, simplePost, rounds) = learnPostUpToK(p, PUTName, outputFile,k)
+        logger1.info("===== Final Result\n")
+        logger1.info("postcondition k == "+str(k)+"\n" +
+                    post.toInfix()+"\nrounds: " + str(rounds) + "\n")
+        logger1.info("simplified postcondition k == " + str(k) + "\n" +
+                    simplePost.toInfix()+"\nrounds: "+str(rounds)+"\n")
+    
+
+        
             
 
 
 if __name__ == '__main__':
     # region logger
-    logger = logging.getLogger("Runner")
-    logger.setLevel(logging.INFO)
-    # create the logging file handler
-    fh = logging.FileHandler("information")
-    formatter = logging.Formatter('%(message)s')
-    fh.setFormatter(formatter)
-    # add handler to logger object
-    logger.addHandler(fh)
+    
 
-    logger1 = logging.getLogger("Results")
-    logger1.setLevel(logging.INFO)
-    fh1 = logging.FileHandler("results")
-    formatter1 = logging.Formatter('%(message)s')
-    fh1.setFormatter(formatter1)
-    logger1.addHandler(fh1)
+    
     # endregion
     outputFileType = os.path.abspath('./typesOM.txt')
     subjects = []
@@ -203,10 +229,10 @@ if __name__ == '__main__':
     testClass = 'QueueContractTest'
     queuePUTs = ['PUT_EnqueueContract', 'PUT_DequeueContract',
                  'PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract']
-    #PUTName = 'PUT_PushContract'
-    #PUTName = 'PUT_PopContract'
+    
     p3 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,queuePUTs )
+    
     subjects.append(p3)
     
     # End Queue
@@ -221,21 +247,33 @@ if __name__ == '__main__':
     testClass = 'ArrayListContractTest'
     arrayListPUTs = ['PUT_AddContract', 'PUT_RemoveContract', 'PUT_InsertContract', 'PUT_SetContract',
                      'PUT_GetContract', 'PUT_ContainsContract', 'PUT_IndexOfContract', 'PUT_LastIndexOfContract', 'PUT_CountContract']
-    #PUTName = 'PUT_PushContract'
-    #PUTName = 'PUT_PopContract'
-    #arrayListPUTs = ['PUT_ContainsKeyContract','PUT_ContainsValueContract','PUT_CountContract']
+    
     p4 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,arrayListPUTs)
     
     subjects.append(p4)
 
-    #TODO: Add PUT fields to Problem 
 
-    for prob in subjects:
-        prob = p3
-        #prob.puts = whatever i want
-        runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 1)
+    logger1 = logging.getLogger("Results")
+    logger1.setLevel(logging.INFO)
+    
+    
+    #stackPUTs = ['PUT_PushContract']
+    #for prob in subjects:
+    for idx in range(0, len(subjects)):
+        prob = subjects[idx]
+        #prob = p
+        fh1 = logging.FileHandler("results_"+str(prob.projectName))
+        #fh1 = logging.FileHandler("results")
+        formatter1 = logging.Formatter('%(message)s')
+        fh1.setFormatter(formatter1)
+        logger1.addHandler(fh1)
+    
+        print(prob.puts)
+        #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
+        runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
+        break
         #learnPostUpToK(prob,prob.puts[0],outputFileType,1)
         #Testing: just call learnUpToK
-        sys.exit(0)
+        #sys.exit(0)
     # End ArrayList

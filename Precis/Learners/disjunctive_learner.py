@@ -88,7 +88,6 @@ class DisjunctiveLearner:
             disjunctivePost  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3,Not(f.varZ3) )))
             precisPost = PrecisFormula(disjunctivePost)
             
-            logger.info("unsimplified post: "+ precisPost.toInfix())
             return precisPost , posIndices + negIndices
 
     def chooseFeature2(self, features, baseFv, derivFv, call, skipAhead=0):
