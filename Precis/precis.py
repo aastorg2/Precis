@@ -91,8 +91,9 @@ def runLearnPost(p, putList, projectName, outputFile, k ):
     logger1.info("Problem: "+projectName+"\n")
     
     for PUTName in putList:
-        # delete old pex files first
         shutil.rmtree(p.testDebugFolder)
+
+        # delete old pex files first
         # post = learnPost(p,PUTName, outputFile)
         logger1.info("PUT: "+PUTName+"\n")
         results = []
@@ -261,17 +262,17 @@ if __name__ == '__main__':
     #stackPUTs = ['PUT_PushContract']
     #for prob in subjects:
     for idx in range(0, len(subjects)):
-        prob = subjects[idx]
-        #prob = p
+        #prob = subjects[idx]
+        prob = p4
         fh1 = logging.FileHandler("results_"+str(prob.projectName))
         #fh1 = logging.FileHandler("results")
         formatter1 = logging.Formatter('%(message)s')
         fh1.setFormatter(formatter1)
         logger1.addHandler(fh1)
-    
+        #prob.puts = ['PUT_AddContract']
         print(prob.puts)
-        #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
-        runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
+        runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
+        #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
         break
         #learnPostUpToK(prob,prob.puts[0],outputFileType,1)
         #Testing: just call learnUpToK

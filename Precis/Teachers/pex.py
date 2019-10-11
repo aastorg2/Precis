@@ -48,6 +48,9 @@ class Pex:
             # REMIENDER: will need to add more cases for pex internal failures such as the above. We do not want to create feature from these values
             if test.get('status') == 'assumptionviolation' or test.get('status') == 'minimizationrequest':
                 continue
+            if test.get('status') == 'pathboundsexceeded':
+                print("ideally, this test should be re-ran since path bounds exceeded")
+                continue
             singlePoint = ()
             for value in test.xpath('./value'):
                 if re.match("^\$.*", value.xpath('./@name')[0]):
@@ -61,7 +64,9 @@ class Pex:
                 featureValues = FeatureVector(precisFeatureList, singlePoint, 'True')
             else:
                 #singlePoint = singlePoint +('False',)
-                #TODO: don't forget to add pex check for TermFailure 
+                # check for TermFailure exception
+                if test.get('name').find("TermDestruction") != -1:
+                    continue
                 featureValues = FeatureVector(precisFeatureList, singlePoint, 'False')
 
             if len(singlePoint) < len(precisFeatureList):
