@@ -167,6 +167,7 @@ class Featurizer:
     @staticmethod
     #checks for duplicates before merging
     def mergeFeatureVectors(baseBoolFvs, derivBoolFvs):
+        #Add case if any one of the inputs is empty
         mergedFvs = []
         for i in range(0,len(baseBoolFvs)):
             merged = baseBoolFvs[i]+ derivBoolFvs[i]
