@@ -263,13 +263,16 @@ if __name__ == '__main__':
     #for prob in subjects:
     for idx in range(0, len(subjects)):
         #prob = subjects[idx]
-        prob = p4
-        fh1 = logging.FileHandler("results_"+str(prob.projectName))
-        #fh1 = logging.FileHandler("results")
+        prob = p
+        #resultFileName = "results"
+        #resultFileName = "results_"+str(prob.projectName)
+        resultFileName = "regression_results_"+str(prob.projectName)
+        fh1 = logging.FileHandler(resultFileName)
         formatter1 = logging.Formatter('%(message)s')
         fh1.setFormatter(formatter1)
         logger1.addHandler(fh1)
-        #prob.puts = ['PUT_AddContract']
+        
+        prob.puts = ['PUT_PushContract']
         print(prob.puts)
         runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
         #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
