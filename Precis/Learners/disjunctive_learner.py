@@ -24,15 +24,19 @@ class DisjunctiveLearner:
         self.useEntropy = entropy
         self.featureSynthesizer = featureSynthesizer 
 
+    def synthesizeUniqueFeatures(self, intBaseFeat, boolBaseFeat, baseFeatureVectors, exclude):
+        syntFeats : Tuple[PrecisFeature] = self.featureSynthesizer.synthesizeFeatures(intBaseFeat, boolBaseFeat, baseFeatureVectors)
+        genFeats : Tuple[PrecisFeature] = self.featureSynthesizer.GenerateDerivedFeatures(intBaseFeat, boolBaseFeat)
+        derivFeats : Tuple[PrecisFeature] = Featurizer.mergeSynthesizedAndGeneratedFeatures(syntFeats, genFeats)
+        uniqueDerivFeats = tuple([f for f in derivFeats if f not in exclude])
+        return uniqueDerivFeats
+
     def learn3(self, k, intBaseFeat, boolBaseFeat, baseFeatureVectors, exclude, call):
         #on the empty set of data points, return true
         if len(baseFeatureVectors) == 0:
             return (PrecisFormula(BoolVal(True)), [])
 
-        syntFeats : Tuple[PrecisFeature] = self.featureSynthesizer.synthesizeFeatures(intBaseFeat, boolBaseFeat, baseFeatureVectors)
-        genFeats : Tuple[PrecisFeature] = self.featureSynthesizer.GenerateDerivedFeatures(intBaseFeat, boolBaseFeat)
-        derivFeats : Tuple[PrecisFeature] = Featurizer.mergeSynthesizedAndGeneratedFeatures(syntFeats, genFeats)
-        derivFeats = tuple([f for f in derivFeats if f not in exclude])
+        derivFeats = self.synthesizeUniqueFeatures(intBaseFeat, boolBaseFeat, baseFeatureVectors, exclude)
 
         derivFeatVectors: List[FeatureVector] = Featurizer.generateDerivedFeatureVectors(derivFeats, intBaseFeat+boolBaseFeat,baseFeatureVectors )
         #assert(len(baseFeatureVectors) == len(derivFeatVectors))
