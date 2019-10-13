@@ -78,7 +78,7 @@ class FeatureSynthesis:
         for postFeaturesIdxs  in [ (intFeatures[newIdx], newIdx) for newIdx in range(len(intFeatures)) if intFeatures[newIdx].isNew != None and intFeatures[newIdx].isNew]:
             #print(postFeaturesIdxs[0].varName)
             shell.removeSygusFile(self.temporaryFolder, self.sygusFileEndingPattern)
-            
+            # Don't need bool features
             grammar = sygusSynthesizer.constructGrammar(intOldVarFeatures, boolFeatures)
             constraints = sygusSynthesizer.addSemanticConstraints(postFeaturesIdxs[1],intOldVarAndIdxs, baseFeatureVectors)
             sygusProblem = sygusSynthesizer.constructSygusProblem(logic, grammar, constraints,checkSynth)

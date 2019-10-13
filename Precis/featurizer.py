@@ -87,6 +87,7 @@ class Featurizer:
                 elif is_int(fVal):
                     intVal +=(str(fVal),)
             intOnlyFV = FeatureVector(intFeats, intVal, str(bf.testLabel))
+            #check for empty boolVal tuple when there are 0 boolean base features
             boolOnlyFV = FeatureVector(boolFeats, boolVal, str(bf.testLabel))
             #print(boolOnlyFV)
             #print(bf)
