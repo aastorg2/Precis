@@ -178,12 +178,6 @@ class DisjunctiveLearner:
         #sortedScores = sorted(allScores, key=lambda x: x['score'] + (x['score'] /  len([1]) if len(x['predicate'].varZ3.children())== 0 else len(x['predicate'].varZ3.children()) )  )
         #sortedScores = sorted(allScores, key=lambda x: x['score'] + (x['score'] / len(x['predicate'].varZ3.children()) ) )
         sortedScores = sorted(allScores, key=lambda x: x['rank'])
-        #sortedScores = sorted(allScores, key=lambda x: x['rank'] )
-        
-        #for entry in sortedScores:
-        #    logger.info("predicate: "+ str(entry['predicate']))
-        #    logger.info("predicate: "+ str(entry['score']))
-        #return highest entropy
         return (sortedScores[-1]['predicate'], sortedScores[-1]['idx'], sortedScores[-1]['posData'], sortedScores[-1]['negData']) 
 
 
