@@ -62,8 +62,8 @@ class FeatureVector:
         output = '('
         for value in self.values:
             output += value + ', '
-        output += str(self.testLabel) + ', '
-        output += str(self.counterexampleLabel) + ')'
+        output += "TL="+str(self.testLabel) + ', '
+        output += "L="+str(self.counterexampleLabel) + ')'
         return output
     
     # for printing FeatureVector in Lists
