@@ -43,33 +43,6 @@ class Featurizer:
             elif str(f.varZ3.sort()).upper() == 'BOOL':
                 boolFeats = boolFeats + (f,)
         return intFeats, boolFeats
-
-    def getBaseFeaturesAndIndices(self,features):
-        indices = ()
-        base = ()
-        for idx in range(0,len(features)):
-            if not features[idx].isDerived:
-                indices += (idx,)
-                base += (features[idx],)
-        return (base,indices)
-    
-    def getBaseFVs(self, FeatureVectors, indices):
-        newBaseFeatureVectors = list()
-        if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
-            for fv in FeatureVectors:
-                newBaseFV = FeatureVector([], [], str(fv.testLabel))
-                newBaseFV.valuesZ3 = tuple(fv[i] for i in indices) 
-                newBaseFV.values = tuple(str(fv[i]) for i in indices)
-                newBaseFeatureVectors.append(newBaseFV)
-        else:
-            assert(False)
-        return newBaseFeatureVectors
-
-    def generateRemainingFeatureVectors(self, derivedFeatures, baseFeatures, baseFVs):
-        derivedFVs = self.generateDerivedFeatureVectors(derivedFeatures, baseFeatures, baseFVs)
-        completeFVs = self.aggregateFeatureVectors(baseFVs, derivedFVs)
-        return completeFVs
-
     
     @staticmethod
     def getBoolAndIntFeatureVectors(intFeats, boolFeats, baseFeatureVectors):
@@ -133,25 +106,6 @@ class Featurizer:
         
         #print(allDerivedFeatureVectors)
         return allDerivedFeatureVectors
-
-    # assumes ith element in baseFeatureVectors corresponds to ith element in  derivedValuesZ3Tuples
-    def aggregateFeatureVectors(self, baseFeatureVectors, derivedFeatureVector):
-        featureVectors = ()
-        for i in range(0,len(baseFeatureVectors)):
-            concatenatedFv = baseFeatureVectors[i] + derivedFeatureVector[i]
-            featureVectors += (concatenatedFv,)
-        return featureVectors
-    
-    
-    
-    # def getBoolFeatureVectors(self, featureVectorList, boolFeatureIndices):
-    #     boolFeatureVectors = []
-    #     for featureVector in featureVectorList:
-    #         boolFeatureVector = FeatureVector([], [], str(featureVector.testLabel))
-    #         boolFeatureVector.valuesZ3 = tuple(featureVector.valuesZ3[i] for i in boolFeatureIndices)
-    #         boolFeatureVector.values = tuple(featureVector.values[i] for i in boolFeatureIndices)
-    #         boolFeatureVectors.append(boolFeatureVector)
-    #     return boolFeatureVectors
 
     @staticmethod
     #checks for duplicates before merging
