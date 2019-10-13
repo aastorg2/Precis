@@ -43,7 +43,6 @@ class DisjunctiveLearner:
         (intBaseFeatVectors, boolBaseFeatVectors) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeat, boolBaseFeat, baseFeatureVectors)
         boolFvs = Featurizer.mergeFeatureVectors(boolBaseFeatVectors,derivFeatVectors)
         
-        
         houdini = Houdini()
         (allTrueFormula, indicesAllwaysTrue) = houdini.learn2(boolBaseFeat + derivFeats , boolFvs, call)
         logger.info("Houdini AlwaysTrue for k="+str(k)+" : "+ allTrueFormula.toInfix()+"\n")
@@ -93,31 +92,60 @@ class DisjunctiveLearner:
             precisPost = PrecisFormula(disjunctivePost)
             return precisPost
 
-    def chooseFeature2(self, features, baseFv, derivFv, call, skipAhead=0):
+    def chooseFeature2(self, features, baseFv, derivFv, call, skipAhead):
         # TODO: figure is removing always false predicates will lead to optimizations
         fvPos = list()
         fvNeg = list()
-        
         allScores = []
         for idx in range(0, len(features)):
             if is_int(features[idx].varZ3):
                 assert(False)
-            (fvPos, fvNeg) = self.splitSamples(features[idx], idx + skipAhead, baseFv, derivFv) 
-  
-            if len(fvPos) == 0 or len(fvNeg) == 0:
-                score = 0
-            else:
-                assert(len(fvPos) != 0)
-                assert(len(fvNeg) != 0)
-                score = self.scoreE(len(fvPos), len(fvNeg))
-            astLength = len(features[idx].varZ3.children()) + 1.0
-            rank = (score / astLength )
+            (fvPos, fvNeg, score, rank) = self.scoreFeature2(features[idx], idx, baseFv, derivFv, skipAhead)
             allScores.append({'predicate': features[idx],'idx': idx, 'score': score, 'rank':rank , 'posData':fvPos, 'negData': fvNeg} )
             
         sortedScores = sorted(allScores, key=lambda x: (x['score'], x['rank']))
         return (sortedScores[-1]['predicate'], sortedScores[-1]['idx'], sortedScores[-1]['posData'], sortedScores[-1]['negData']) 
+    
+    def scoreFeature2(self, f, idx, baseFv, derivFv, skipAhead):
+        (fvPos, fvNeg) = self.splitSamples(f, idx + skipAhead, baseFv, derivFv) 
+  
+        if len(fvPos) == 0 or len(fvNeg) == 0:
+            score = 0
+        else:
+            assert(len(fvPos) != 0)
+            assert(len(fvNeg) != 0)
+            score = self.scoreE(len(fvPos), len(fvNeg))
+        astLength = len(f.varZ3.children()) + 1.0
+        rank = (score / astLength )
+        
+        return (fvPos, fvNeg, score, rank)
 
-    #return feature along with index
+    # f is for feature of PrecisFeature type
+    def splitSamples(self, f, idx, baseFv, derivFv):
+        posF = list()
+        negF = list()
+        if len(baseFv) == 0:
+            assert(False)
+        #assert(len(baseFv)== len(derivFv))
+        fv = baseFv
+        if idx >= len(baseFv[0]):
+            idx = idx - len(baseFv[0])
+            fv = derivFv
+        # add assertion check that every entry  in feature vector, fv, in list, featureVectors, is of type z3.z3.BoolRef
+        # is_true(True) returns False; True is a python boolean expression. is_true(BoolVal(True)) returns True 
+        #print(len(featureVectors))
+        for idxFv in range(0, len(fv)):
+            if is_true(fv[idxFv][idx]):
+                posF.append(baseFv[idxFv])
+            elif is_int(fv[idxFv][idx]):
+                assert(False)
+            else:
+                negF.append(baseFv[idxFv])
+        
+        #assert(len(baseFv) == len(posF)+ len(negF))
+        return (posF, negF)
+
+        #return feature along with index
     #baseFv -> feature vector with only boolean entries
     def chooseFeature(self, features, baseFv, derivFv, call, skipAhead=0):
         # TODO: figure is removing always false predicates will lead to optimizations
@@ -158,30 +186,6 @@ class DisjunctiveLearner:
         #return highest entropy
         return (sortedScores[-1]['predicate'], sortedScores[-1]['idx'], sortedScores[-1]['posData'], sortedScores[-1]['negData']) 
 
-    # f is for feature of PrecisFeature type
-    def splitSamples(self, f, idx, baseFv, derivFv):
-        posF = list()
-        negF = list()
-        if len(baseFv) == 0:
-            assert(False)
-        #assert(len(baseFv)== len(derivFv))
-        fv = baseFv
-        if idx >= len(baseFv[0]):
-            idx = idx - len(baseFv[0])
-            fv = derivFv
-        # add assertion check that every entry  in feature vector, fv, in list, featureVectors, is of type z3.z3.BoolRef
-        # is_true(True) returns False; True is a python boolean expression. is_true(BoolVal(True)) returns True 
-        #print(len(featureVectors))
-        for idxFv in range(0, len(fv)):
-            if is_true(fv[idxFv][idx]):
-                posF.append(baseFv[idxFv])
-            elif is_int(fv[idxFv][idx]):
-                assert(False)
-            else:
-                negF.append(baseFv[idxFv])
-        
-        #assert(len(baseFv) == len(posF)+ len(negF))
-        return (posF, negF)
 
     def scoreE(self,l1, l2):
         l3 = l1 + l2

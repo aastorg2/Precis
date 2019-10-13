@@ -256,6 +256,8 @@ if __name__ == '__main__':
                  testFileName, testNamepace, testClass,arrayListPUTs)
     
     subjects.append(p4)
+    # End of ArrayList
+
 
 
     logger1 = logging.getLogger("Results")
@@ -283,9 +285,9 @@ if __name__ == '__main__':
         #prob.puts = ['PUT_AddContract']
         print(prob.puts)
         # run all cases up to k
-        #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
+        runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
         #Run one test and one case
-        runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 1)
+        #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 1)
         break
         #learnPostUpToK(prob,prob.puts[0],outputFileType,1)
         #Testing: just call learnUpToK
