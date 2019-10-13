@@ -53,6 +53,7 @@ def learnPostUpToK(p, PUTName, outputFile, k):
             p, PUTName, baseFeatures)
         pexTime = time.time() - startTimePex
         print("pex time: " + str(pexTime))
+        
         allBaseFeatureVectors.extend(baseFeatureVectors)
 
         intBaseFeatures, boolBaseFeatures = Featurizer.getIntAndBoolFeatures(
@@ -61,8 +62,10 @@ def learnPostUpToK(p, PUTName, outputFile, k):
         indices = []
         disLearner = DisjunctiveLearner(synthesizer)
         logger1.info("#############\nRound: "+str(rounds)+"\n")
-        (postcondition, indices) = disLearner.learn3(
+        # Learn function
+        postcondition = disLearner.learn3(
             k, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), "root")
+        
         logger1.info("unsimplified post: "+ postcondition.toInfix())
         
         print("unsimplified post "+ postcondition.toInfix())
@@ -103,8 +106,8 @@ def runLearnPost(p, putList, projectName, outputFile, k ):
             logger1.info("===== Final Result\n")
             logger1.info("postcondition k == "+str(i)+"\n" +
                         post.toInfix()+"\nrounds: " + str(rounds) + "\n")
-            logger1.info("simple   post k == " + str(i) + "\n" +
-                        simplePost.toInfix()+"\nrounds: "+str(rounds)+"\n")
+            logger1.info("simplified post k == " + str(i) + "\n"+
+                        simplePost.toInfix())
             
             
             results.append((post, simplePost, rounds))
@@ -132,7 +135,7 @@ def runLearnPost(p, putList, projectName, outputFile, k ):
                 check = solver.check()
                 logger1.info("Not(k"+str(i-1)+" -> k" + str(i) +")? " + str(check)+"\n")
             
-def runLearnPostTest(p, putList, projectName, outputFile, k = 1):
+def runLearnPostTest(p, putList, projectName, outputFile, k):
     #assert puts in putList in problem
     logger1.info("Problem: "+projectName+"\n")
     
@@ -149,8 +152,8 @@ def runLearnPostTest(p, putList, projectName, outputFile, k = 1):
         logger1.info("===== Final Result\n")
         logger1.info("postcondition k == "+str(k)+"\n" +
                     post.toInfix()+"\nrounds: " + str(rounds) + "\n")
-        logger1.info("simplified postcondition k == " + str(k) + "\n" +
-                    simplePost.toInfix()+"\nrounds: "+str(rounds)+"\n")
+        logger1.info("simplified post k == " + str(k) + "\n"+
+                        simplePost.toInfix())
     
 
         
@@ -263,7 +266,10 @@ if __name__ == '__main__':
     #for prob in subjects:
     for idx in range(0, len(subjects)):
         #prob = subjects[idx]
+        #stack
         prob = p
+        #hashSet
+        #prob = p1
         #resultFileName = "results"
         #resultFileName = "results_"+str(prob.projectName)
         resultFileName = "regression_results_"+str(prob.projectName)
@@ -271,11 +277,15 @@ if __name__ == '__main__':
         formatter1 = logging.Formatter('%(message)s')
         fh1.setFormatter(formatter1)
         logger1.addHandler(fh1)
-        
+        #stack method
         prob.puts = ['PUT_PushContract']
+        #hashSet
+        #prob.puts = ['PUT_AddContract']
         print(prob.puts)
-        runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
-        #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
+        # run all cases up to k
+        #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
+        #Run one test and one case
+        runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 1)
         break
         #learnPostUpToK(prob,prob.puts[0],outputFileType,1)
         #Testing: just call learnUpToK

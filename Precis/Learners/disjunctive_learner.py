@@ -25,8 +25,9 @@ class DisjunctiveLearner:
         self.featureSynthesizer = featureSynthesizer 
 
     def synthesizeUniqueFeatures(self, intBaseFeat, boolBaseFeat, baseFeatureVectors, exclude):
-        syntFeats : Tuple[PrecisFeature] = self.featureSynthesizer.synthesizeFeatures(intBaseFeat, boolBaseFeat, baseFeatureVectors)
-        genFeats : Tuple[PrecisFeature] = self.featureSynthesizer.GenerateDerivedFeatures(intBaseFeat, boolBaseFeat)
+        syntFeats : Tuple[PrecisFeature] = self.featureSynthesizer.synthesizeFeatures(intBaseFeat, boolBaseFeat, baseFeatureVectors)  
+        # if boolBaseFeat empty, no derived bool features will be generated -> consider refactor
+        genFeats : Tuple[PrecisFeature] = self.featureSynthesizer.GenerateDerivedFeatures(intBaseFeat, boolBaseFeat) 
         derivFeats : Tuple[PrecisFeature] = Featurizer.mergeSynthesizedAndGeneratedFeatures(syntFeats, genFeats)
         uniqueDerivFeats = tuple([f for f in derivFeats if f not in exclude])
         return uniqueDerivFeats
@@ -34,10 +35,9 @@ class DisjunctiveLearner:
     def learn3(self, k, intBaseFeat, boolBaseFeat, baseFeatureVectors, exclude, call):
         #on the empty set of data points, return true
         if len(baseFeatureVectors) == 0:
-            return (PrecisFormula(BoolVal(True)), [])
+            return PrecisFormula(BoolVal(True))
 
         derivFeats = self.synthesizeUniqueFeatures(intBaseFeat, boolBaseFeat, baseFeatureVectors, exclude)
-
         derivFeatVectors: List[FeatureVector] = Featurizer.generateDerivedFeatureVectors(derivFeats, intBaseFeat+boolBaseFeat,baseFeatureVectors )
         #assert(len(baseFeatureVectors) == len(derivFeatVectors))
         (intBaseFeatVectors, boolBaseFeatVectors) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeat, boolBaseFeat, baseFeatureVectors)
@@ -49,7 +49,7 @@ class DisjunctiveLearner:
         logger.info("Houdini AlwaysTrue for k="+str(k)+" : "+ allTrueFormula.toInfix()+"\n")
         
         if k == 0:
-            return (allTrueFormula,indicesAllwaysTrue)
+            return allTrueFormula
         else:
             #removing features returned by houdini and their corresponding feature vector entries. 
             (remainingBaseBoolFeat, remainingDerivBoolFeat, featuresRemoved)  = \
@@ -79,20 +79,20 @@ class DisjunctiveLearner:
                 posBaseFv = self.removeFeatureEntryInFv(posBaseFv,[idx+lookAhead])
                 negBaseFv = self.removeFeatureEntryInFv(negBaseFv,[idx+lookAhead])
 
-            (posPost, posIndices) = self.learn3( k-1,\
-                intBaseFeat, newBoolBaseFeat, posBaseFv, exclude, call + " left")  #recursive call
+            posPost = self.learn3( k-1,\
+                intBaseFeat, newBoolBaseFeat, posBaseFv, exclude, call + " Left")  #recursive call
             
-            logger.info("Left: "+ call + " for k = "+ str(k)+" : "+ posPost.toInfix())
+            logger.info(call +" Left: " + " for k = "+ str(k)+" : "+ posPost.toInfix())
 
-            (negPost, negIndices) = self.learn3( k-1,\
-                intBaseFeat, newBoolBaseFeat, negBaseFv, exclude, call +" right") #recursive call
+            negPost = self.learn3( k-1,\
+                intBaseFeat, newBoolBaseFeat, negBaseFv, exclude, call +" Right") #recursive call
 
-            logger.info("Right: "+ call + " for k = "+ str(k)+" : "+ negPost.toInfix())
+            logger.info(call +" Right: " + " for k = "+ str(k)+" : "+ negPost.toInfix())
 
-            disjunctivePost  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3,Not(f.varZ3) )))
+            disjunctivePost  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3, Not(f.varZ3) )))
             precisPost = PrecisFormula(disjunctivePost)
             
-            return precisPost , posIndices + negIndices
+            return precisPost
 
     def chooseFeature2(self, features, baseFv, derivFv, call, skipAhead=0):
         # TODO: figure is removing always false predicates will lead to optimizations
@@ -236,6 +236,7 @@ class DisjunctiveLearner:
         # len(baseFvs) == len(derivFvs) should hold when this function is called
         #numOfFvs = len(baseFvs)
         if all(indices[i] <= indices[i+1] for i in range(len(indices)-1)):
+            #for idx in reversed(indices):
             for idxFV in range(0, len(baseFvs)):
                 derivIdx =-2
                 newDerivFv = FeatureVector.copyFeatureVector(derivFvs[idxFV])
@@ -274,8 +275,6 @@ class DisjunctiveLearner:
                 else:
                     featuresRemoved = featuresRemoved + (newBaseFeatures[idx],)
                     newBaseFeatures = newBaseFeatures[0:idx]+ newBaseFeatures[idx+1:]
-
-            
         else:
             assert(False)
         
