@@ -75,8 +75,8 @@ class DisjunctiveLearner:
                 exclude = exclude + (f,)
             else:
                 # if predicate to split is in baseFeatures, the update posBaseFv and negBaseFv feature vectors
-                posBaseFv = self.removeFeatureEntryInFv(posBaseFv,[idx+lookAhead])
-                negBaseFv = self.removeFeatureEntryInFv(negBaseFv,[idx+lookAhead])
+                posBaseFv = self.removeFeatureEntryInBaseFv(posBaseFv,[idx+lookAhead])
+                negBaseFv = self.removeFeatureEntryInBaseFv(negBaseFv,[idx+lookAhead])
 
             posPost = self.learn3( k-1,\
                 intBaseFeat, newBoolBaseFeat, posBaseFv, exclude, call + " Left")  #recursive call
@@ -104,6 +104,7 @@ class DisjunctiveLearner:
             allScores.append({'predicate': features[idx],'idx': idx, 'score': score, 'rank':rank , 'posData':fvPos, 'negData': fvNeg} )
             
         sortedScores = sorted(allScores, key=lambda x: (x['score'], x['rank']))
+        #consider adding a case to check if chosen predicate is always false (i.e., score == 0) should return negative index.
         return (sortedScores[-1]['predicate'], sortedScores[-1]['idx'], sortedScores[-1]['posData'], sortedScores[-1]['negData']) 
     
     def scoreFeature2(self, f, idx, baseFv, derivFv, skipAhead):
@@ -146,8 +147,9 @@ class DisjunctiveLearner:
         return (posF, negF)
 
         #return feature along with index
+        
     #baseFv -> feature vector with only boolean entries
-    def chooseFeature(self, features, baseFv, derivFv, call, skipAhead=0):
+    def chooseFeature(self, features, baseFv, derivFv, call, skipAhead):
         # TODO: figure is removing always false predicates will lead to optimizations
         fvPos = list()
         fvNeg = list()
@@ -170,14 +172,14 @@ class DisjunctiveLearner:
                 assert(len(fvPos) != 0)
                 assert(len(fvNeg) != 0)
                 score = self.scoreE(len(fvPos), len(fvNeg))
+                #score = self.entropy(posLabel+negLabel)
             astLength = len(features[idx].varZ3.children()) + 1.0
-            rank = score + (score / astLength )
+            rank = (score / astLength )
             allScores.append({'predicate': features[idx],'idx': idx, 'score': score ,'rank':rank , 'posData':fvPos, 'negData': fvNeg} )
             
-        #experimental score metric incorporating length of formula- consider prioritizing  old_vars over new vars
-        #sortedScores = sorted(allScores, key=lambda x: x['score'] + (x['score'] /  len([1]) if len(x['predicate'].varZ3.children())== 0 else len(x['predicate'].varZ3.children()) )  )
-        #sortedScores = sorted(allScores, key=lambda x: x['score'] + (x['score'] / len(x['predicate'].varZ3.children()) ) )
-        sortedScores = sorted(allScores, key=lambda x: x['rank'])
+        # ranking by x['score'] + x['rank'] is wrong; 
+        # Feature oldContainsX is chosen over New_x == Old_Top even though New_x == Old_Top is correct.
+        sortedScores = sorted(allScores, key=lambda x: (x['score'], x['rank']))
         return (sortedScores[-1]['predicate'], sortedScores[-1]['idx'], sortedScores[-1]['posData'], sortedScores[-1]['negData']) 
 
 
@@ -201,7 +203,7 @@ class DisjunctiveLearner:
         # Note: I believe this implementation is missing an additional multiplication
         #return - ((probability_value_attribute/initialTotalSample)* probability_value_attribute * numpy.log(probability_value_attribute) / numpy.log(base)).sum()
 
-    def removeFeatureEntryInFv(self ,baseFvs, indices):
+    def removeFeatureEntryInBaseFv(self ,baseFvs, indices):
         newBaseFvs = list()
         if len(baseFvs) == 0:
             assert(False)
