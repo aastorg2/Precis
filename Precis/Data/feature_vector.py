@@ -10,7 +10,7 @@ class FeatureVector:
     values = ()
     #passing or failing test
     testLabel = None
-    
+    #kinds = ()
     #TODO: need a way to construct a FeatureVector where the values are already Z3 boolref values
 
     def __init__(self, precisFeatureList, values, testLabel):
