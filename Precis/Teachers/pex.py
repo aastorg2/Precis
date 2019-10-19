@@ -26,22 +26,27 @@ class Pex:
         self.arguments = ['/nor']
         self.pexReportFormat = 'Xml'
         self.rn = "XmlReport"  
-        self.ro = "r1" 
+        self.ro = "root" 
         self.time = 0.0
+        self.reportLocation = ""
+        self.testsLocation = ""
+    #def CreateTopLevelDirectories(problem, case)
+    
 
     def RunTeacher(self, problem, PUTName, precisFeatureList) -> List[FeatureVector]:
-        
         args = self.GetExecCommand(problem.testDll, PUTName, problem.testNamespace, problem.testClass)
         pexOutput = command_runner.runCommand(args)
         
+        self.reportBaseLocation = problem.testDebugFolder
+        self.reportLocation = os.path.join(self.reportBaseLocation, self.ro, self.rn, "report.per")
+        self.testsLocation = os.path.join(self.reportBaseLocation, self.ro, self.rn, "tests")
         #print (self.time)
 
         return self.ParseReport(problem.testDebugFolder, precisFeatureList)
 
     def ParseReport(self, pexReportFolder, precisFeatureList):
         #This function should label the field testLabel for a feature vector object
-        pexReportFile = os.path.join(pexReportFolder, self.ro, self.rn, "report.per")
-        tree = etree.parse(pexReportFile)
+        tree = etree.parse(self.reportLocation)
         dataPoints = list()
         featureValues = None
         for test in tree.xpath('//generatedTest'):

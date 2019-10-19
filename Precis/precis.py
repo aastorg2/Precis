@@ -15,58 +15,47 @@ from featurizer import Featurizer
 import command_runner
 import shutil
 from typing import List, Tuple, Type
-
-
 import logging
+import evaluation
 
 
-def learnPostUpToK(p, PUTName, outputFile, k):
+def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
     sygusExecutable = "Precis/Learners/EnumerativeSolver/bin/starexec_run_Default"
     tempLocation = "tempLocation"
     sygusFileName = "postcondition.sl"
-
-    # assumes MSBuils.exe in path
-    inst = Instrumenter(
-        "MSBuild.exe", "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
-
+    #assumes MSBuils.exe in path
+    inst = Instrumenter("MSBuild.exe", "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
     p.ExtractObservers(PUTName, outputFile)
-
+    
     # returns list of base features
     baseFeatures: Tuple[PrecisFeature] = p.ReadObserversFromFile(outputFile)
     allPostconditions = []
     allBaseFeatureVectors = []
 
-    # FixMe: feature synthesis object shoul be initialized with base features and the feature vector should be updated
-    #synthesizer = FeatureSynthesis(sygusExecutable,tempLocation,sygusFileName, baseFeatures)
-    synthesizer = FeatureSynthesis(
-        sygusExecutable, tempLocation, sygusFileName)
-
+    synthesizer = FeatureSynthesis(sygusExecutable, tempLocation, sygusFileName)
     initFormula = PrecisFormula(BoolVal(False))
     inst.instrumentPost(p, initFormula, PUTName)
     rounds = 1
     while True:
         print("starting round: " + str(rounds))
         pex = Pex()
-
+        
         startTimePex = time.time()
-        baseFeatureVectors: List[FeatureVector] = pex.RunTeacher(
-            p, PUTName, baseFeatures)
+        baseFeatureVectors: List[FeatureVector] = pex.RunTeacher(p, PUTName, baseFeatures)
         pexTime = time.time() - startTimePex
         print("pex time: " + str(pexTime))
         
+        evaluation.copyTestFilesToEvaluationDir(pex.testsLocation,destinationOfTests, rounds)
+        #sys.exit(0)
+
         allBaseFeatureVectors.extend(baseFeatureVectors)
-
-        intBaseFeatures, boolBaseFeatures = Featurizer.getIntAndBoolFeatures(
-            baseFeatures)
-
-        indices = []
+        intBaseFeatures, boolBaseFeatures = Featurizer.getIntAndBoolFeatures(baseFeatures)
         disLearner = DisjunctiveLearner(synthesizer)
         logger1.info("#############\nRound: "+str(rounds)+"\n")
-        # Learn function
-        postcondition = disLearner.learn3(
-            k, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), "root")
+        # Learning function
+        postcondition = disLearner.learn3( k, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), "root")
         
-        logger1.info("unsimplified post: "+ postcondition.toInfix())
+        logger1.info("unsimplified post:\n"+ postcondition.toInfix()+"\n")
         
         print("unsimplified post "+ postcondition.toInfix())
         print("")
@@ -89,20 +78,29 @@ def learnPostUpToK(p, PUTName, outputFile, k):
         allPostconditions.append(postcondition.formula)
         rounds = rounds + 1
 
+
+
 def runLearnPost(p, putList, projectName, outputFile, k ):
     #assert puts in putList in problem
     logger1.info("Problem: "+projectName+"\n")
     
     for PUTName in putList:
-        shutil.rmtree(p.testDebugFolder)
+        #delete directory where pex initially stores tests -> we don't want old test seeding pex
+        if os.path.exists(p.testDebugFolder):
+            shutil.rmtree(p.testDebugFolder)
 
-        # delete old pex files first
-        # post = learnPost(p,PUTName, outputFile)
         logger1.info("PUT: "+PUTName+"\n")
         results = []
         for i in range(0, k+1):
+            
+            locationOfTests = evaluation.createDirectoryForTests("../evaluation", p.projectName, PUTName,"Case"+str(i))
+            assert(locationOfTests != None)
+            
+            print(locationOfTests)
+            #sys.exit(0)
+
             logger1.info("=====\nCase: k == "+str(i)+"\n")
-            (post, simplePost, rounds) = learnPostUpToK(p, PUTName, outputFile,i)
+            (post, simplePost, rounds) = learnPostUpToK(p, PUTName, outputFile, i, locationOfTests)
             logger1.info("===== Final Result\n")
             logger1.info("postcondition k == "+str(i)+"\n" +
                         post.toInfix()+"\nrounds: " + str(rounds) + "\n")
@@ -140,15 +138,19 @@ def runLearnPostTest(p, putList, projectName, outputFile, k):
     logger1.info("Problem: "+projectName+"\n")
     
     # delete old pex files first
-    shutil.rmtree(p.testDebugFolder)
+    if os.path.exists(p.testDebugFolder):
+        shutil.rmtree(p.testDebugFolder)
 
     for PUTName in putList:
-        # post = learnPost(p,PUTName, outputFile)
+        
+        locationOfTests = evaluation.createDirectoryForTests("../evaluation", p.projectName, PUTName,"Case"+str(k))
+        assert(locationOfTests != None)
+        
         logger1.info("PUT: "+PUTName+"\n")
         results = []
         
         logger1.info("=====\nCase: k == "+str(k)+"\n")
-        (post, simplePost, rounds) = learnPostUpToK(p, PUTName, outputFile,k)
+        (post, simplePost, rounds) = learnPostUpToK(p, PUTName, outputFile,k,locationOfTests)
         logger1.info("===== Final Result\n")
         logger1.info("postcondition k == "+str(k)+"\n" +
                     post.toInfix()+"\nrounds: " + str(rounds) + "\n")
@@ -263,33 +265,46 @@ if __name__ == '__main__':
     logger1 = logging.getLogger("Results")
     logger1.setLevel(logging.INFO)
     
-    
-    #stackPUTs = ['PUT_PushContract']
-    #for prob in subjects:
-    for idx in range(0, len(subjects)):
-        #prob = subjects[idx]
-        #stack
-        prob = p
-        #hashSet
-        #prob = p1
-        #resultFileName = "results"
-        #resultFileName = "results_"+str(prob.projectName)
-        resultFileName = "regression_results_"+str(prob.projectName)
-        fh1 = logging.FileHandler(resultFileName)
-        formatter1 = logging.Formatter('%(message)s')
-        fh1.setFormatter(formatter1)
-        logger1.addHandler(fh1)
-        #stack method
-        prob.puts = ['PUT_PushContract']
-        #hashSet
-        #prob.puts = ['PUT_AddContract']
-        print(prob.puts)
-        # run all cases up to k
-        runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
-        #Run one test and one case
-        #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 1)
-        break
-        #learnPostUpToK(prob,prob.puts[0],outputFileType,1)
-        #Testing: just call learnUpToK
-        #sys.exit(0)
-    # End ArrayList
+    evalutating = False 
+    if evalutating:
+        #stackPUTs = ['PUT_PushContract']
+        #for prob in subjects:
+        for idx in range(0, (len(subjects))):
+            prob = subjects[idx]
+            
+            #resultFileName = "results"
+            #resultFileName = "results_"+str(prob.projectName)
+            resultFileName = "regression_results_"+str(prob.projectName)
+            fh1 = logging.FileHandler(resultFileName)
+            formatter1 = logging.Formatter('%(message)s')
+            fh1.setFormatter(formatter1)
+            logger1.addHandler(fh1)
+            
+            print(prob.projectName)
+            print(prob.puts)
+            # run all cases up to k
+            runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
+            #Run one test and one case
+            #break
+            #learnPostUpToK(prob,prob.puts[0],outputFileType,1)
+            #Testing: just call learnUpToK
+            #sys.exit(0)
+        # End ArrayList
+
+    else:
+        #unit tests
+        unitTests = [(p,['PUT_PushContract']), (p, ['PUT_ContainsContract']), (p1, ['PUT_AddContract']), (p3,['PUT_DequeueContract']),(p2,['PUT_ContainsValueContract']) ]
+        for t in unitTests:
+            resultFileName = "regression_results_2"+str(t[0].projectName)
+            fh1 = logging.FileHandler(resultFileName)
+            formatter1 = logging.Formatter('%(message)s')
+            fh1.setFormatter(formatter1)
+            logger1.addHandler(fh1)
+            prob = t[0]
+            prob.puts = t[1]
+            print(prob.projectName)
+            print(prob.puts)
+            # run all cases up to k
+            runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 1)
+            #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
+            break
