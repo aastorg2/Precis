@@ -24,23 +24,25 @@ class DisjunctiveLearner:
         self.useEntropy = entropy
         self.featureSynthesizer = featureSynthesizer 
 
-    def synthesizeUniqueFeatures(self, intBaseFeat, boolBaseFeat, baseFeatureVectors, exclude):
-        syntFeats : Tuple[PrecisFeature] = self.featureSynthesizer.synthesizeFeatures(intBaseFeat, boolBaseFeat, baseFeatureVectors)  
+    def synthesizeUniqueFeatures(self, intBaseFeat, boolBaseFeat, baseFeatureValues, exclude):
+        syntFeats : Tuple[PrecisFeature] = self.featureSynthesizer.synthesizeFeatures(intBaseFeat, boolBaseFeat, baseFeatureValues)  
         # if boolBaseFeat empty, no derived bool features will be generated -> consider refactor
         genFeats : Tuple[PrecisFeature] = self.featureSynthesizer.GenerateDerivedFeatures(intBaseFeat, boolBaseFeat) 
         derivFeats : Tuple[PrecisFeature] = Featurizer.mergeSynthesizedAndGeneratedFeatures(syntFeats, genFeats)
         uniqueDerivFeats = tuple([f for f in derivFeats if f not in exclude])
         return uniqueDerivFeats
-
-    def learn3(self, k, intBaseFeat, boolBaseFeat, baseFeatureVectors, exclude, call):
+    #baseFeartureVectors : List of lists but the inner list are FeatureVector datatype
+    def learn3(self, k, intBaseFeat, boolBaseFeat, baseFeatureValues, exclude, call):
         #on the empty set of data points, return true
-        if len(baseFeatureVectors) == 0:
+        if len(baseFeatureValues) == 0:
+            print("called learn3 with 0 feature vectors")
             return PrecisFormula(BoolVal(True))
+        # rename  splitIntoBoolAndIntFeatureVectors
+        (intBaseFeatVectors, boolBaseFeatVectors) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeat, boolBaseFeat, baseFeatureValues)
 
-        derivFeats = self.synthesizeUniqueFeatures(intBaseFeat, boolBaseFeat, baseFeatureVectors, exclude)
-        derivFeatVectors: List[FeatureVector] = Featurizer.generateDerivedFeatureVectors(derivFeats, intBaseFeat+boolBaseFeat,baseFeatureVectors )
-        #assert(len(baseFeatureVectors) == len(derivFeatVectors))
-        (intBaseFeatVectors, boolBaseFeatVectors) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeat, boolBaseFeat, baseFeatureVectors)
+        derivFeats = self.synthesizeUniqueFeatures(intBaseFeat, boolBaseFeat, baseFeatureValues, exclude)
+        derivFeatVectors: List[FeatureVector] = Featurizer.generateDerivedFeatureVectors(derivFeats, intBaseFeat+boolBaseFeat,baseFeatureValues )
+        #assert(len(baseFeatureValues) == len(derivFeatVectors))
         boolFvs = Featurizer.mergeFeatureVectors(boolBaseFeatVectors,derivFeatVectors)
         
         houdini = Houdini()
@@ -60,10 +62,21 @@ class DisjunctiveLearner:
             # features that are true on parent node should not be passed down to children;(they are redundantly also true in child nodes)
             exclude = exclude + featuresRemoved
             lookAhead = len(intBaseFeatVectors[0])
+            
+            ######################################
+            #bug: chooseFeatureImplication does not update reamining bool features or feature vectors. Idx is with respect to updates
+            (f,idx, posBaseFv, negBaseFv, remainingBaseBoolFeat, remainingDerivBoolFeat ) = \
+                self.chooseFeatureImplication(allTrueFormula,intBaseFeat,remainingBaseBoolFeat , remainingDerivBoolFeat, \
+                    Featurizer.mergeFeatureVectors(intBaseFeatVectors,reaminingEntriesBaseBoolFv) , reaminingEntriesDerivBoolFv, lookAhead, call )
+            ######################################
+            if idx < 0:
+                print("Predicate: "+ call + " for k = "+ str(k)+" : None")
+                logger.info("Predicate: "+ call + " for k = "+ str(k)+" : None"+"\n")
+                return allTrueFormula
             #TODO: choose should return boolBasePosFv and intBasePosFv ...
-            (f,idx, posBaseFv, negBaseFv) = \
-                self.chooseFeature2(remainingBaseBoolFeat + remainingDerivBoolFeat, \
-                    Featurizer.mergeFeatureVectors(intBaseFeatVectors,reaminingEntriesBaseBoolFv), reaminingEntriesDerivBoolFv, call, lookAhead)
+            #(f,idx, posBaseFv, negBaseFv) = \
+            #    self.chooseFeature2(remainingBaseBoolFeat + remainingDerivBoolFeat, \
+            #        Featurizer.mergeFeatureVectors(intBaseFeatVectors,reaminingEntriesBaseBoolFv), reaminingEntriesDerivBoolFv, call, lookAhead)
             logger.info("Predicate: "+ call + " for k = "+ str(k)+" : "+ str(f)+"\n")
             print("Predicate chosen at "+ call+" : "+str(f))
             
@@ -82,15 +95,123 @@ class DisjunctiveLearner:
                 intBaseFeat, newBoolBaseFeat, posBaseFv, exclude, call + " Left")  #recursive call
             
             logger.info(call +" Left: " + " for k = "+ str(k)+" : "+ posPost.toInfix())
+            print(call +" Left: " + " for k = "+ str(k)+" : "+ posPost.toInfix())
 
             negPost = self.learn3( k-1,\
                 intBaseFeat, newBoolBaseFeat, negBaseFv, exclude, call +" Right") #recursive call
 
             logger.info(call +" Right: " + " for k = "+ str(k)+" : "+ negPost.toInfix())
+            print(call +" Right: " + " for k = "+ str(k)+" : "+ negPost.toInfix())
 
             disjunctivePost  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3, Not(f.varZ3) )))
             precisPost = PrecisFormula(disjunctivePost)
             return precisPost
+
+    #Features only contains bool features
+    def chooseFeatureImplication(self, alwaysTrueFormula, intBaseFeatures, baseBoolFeatures, \
+         derivBoolFeatures, baseFv, derivFv, lookAhead, call ):
+        houdini = Houdini()
+        fvPos = list()
+        fvPosDeriv = list()
+        fvNeg = list()
+        fvNegDeriv = list()
+        irrelevantFeatures = ()
+        irrelevantIndices = []
+        boolFeatures = baseBoolFeatures + derivBoolFeatures
+        for idx in range(0, len(boolFeatures)):
+            #region pruneFunction
+            feature = boolFeatures[idx]
+            if is_int(feature.varZ3):
+                assert(False)
+            (fvPos,fvPosDeriv,fvNeg,fvNegDeriv) = self.splitSamplesImplication(feature, idx + lookAhead, baseFv, derivFv)
+            
+            (posIntBaseFv, posBoolBaseFv) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeatures, baseBoolFeatures, fvPos)
+            (negIntBaseFv, negBoolBaseFv) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeatures, baseBoolFeatures, fvNeg)
+
+            posFvs = Featurizer.mergeFeatureVectors(posBoolBaseFv, fvPosDeriv)
+            negFvs = Featurizer.mergeFeatureVectors(negBoolBaseFv, fvNegDeriv)
+            
+        
+            (posAllTrueFormula, posIndicesAllwaysTrue) = houdini.learn2(boolFeatures , posFvs, call)
+            (negAllTrueFormula, negIndicesAllwaysTrue) = houdini.learn2(boolFeatures , negFvs, call)
+            #disjunct z3 type
+            disjunct = Or(And(posAllTrueFormula.formulaZ3, feature.varZ3 ) , And(negAllTrueFormula.formulaZ3, Not(feature.varZ3)))
+            implication = Implies(alwaysTrueFormula.formulaZ3 , disjunct)
+            solver = Solver()
+            # check (not (postK0 => postK1)) is unsat
+            solver.add(Not(implication))
+            check = solver.check()
+            #splitting on `feature does not` add new information: alwaysTrueFormula -> (OR(f and posSplit, ~f and negSplit)) is valid
+            if str(check) == 'unsat':
+                #collect irrelevant features and indices to remove
+                irrelevantFeatures = irrelevantFeatures + (feature,)
+                irrelevantIndices.append(idx)
+            #splitting adds new information
+            elif str(check) == 'sat':
+                pass
+            else:
+                # solver does not know
+                assert(False)
+            #endregion
+        
+        copyBaseIntFeat = tuple(intBaseFeatures)
+        copyBaseBoolFeat = tuple(baseBoolFeatures)
+        copyDerivFeat = tuple(derivBoolFeatures)
+        #(remainingBaseBoolFeat, remainingDerivBoolFeat, featuresRemoved)  = \
+        #    self.removeFeatureFromFeaturelist(boolBaseFeat, derivFeats, indicesAllwaysTrue)
+        (intBaseFv, boolBaseFv) = Featurizer.getBoolAndIntFeatureVectors(copyBaseIntFeat, copyBaseBoolFeat, baseFv)
+        
+        (copyRemainingBaseBoolFeat, copyRemainingDerivBoolFeat, featuresRemoved) = \
+            self.removeFeatureFromFeaturelist(copyBaseBoolFeat, copyDerivFeat, irrelevantIndices)
+
+        #boolFvs = Featurizer.mergeFeatureVectors(boolBaseFv, derivFv)
+        (copyReaminingEntriesBaseBoolFv, reaminingEntriesDerivBoolFv) = \
+            self.removeFeatureEntryInFeatureVectors(boolBaseFv, derivFv, irrelevantIndices)
+        #Debug Check
+        if (len(copyRemainingBaseBoolFeat) + len(copyRemainingDerivBoolFeat)) == 0:
+            return (None, -1,None, None, None, None)
+        skipAhead = len(intBaseFv[0])
+        newBaseFv = Featurizer.mergeFeatureVectors(intBaseFv,copyReaminingEntriesBaseBoolFv)
+
+        (f,idx, posBaseFv, negBaseFv) = self.chooseFeature2(copyRemainingBaseBoolFeat + copyRemainingDerivBoolFeat,newBaseFv,reaminingEntriesDerivBoolFv, call, skipAhead)
+        #print(irrelevantIndices)
+        
+        #intBaseFeatures = copyBaseIntFeat
+        #baseBoolFeatures = copyRemainingBaseBoolFeat
+        #erivBoolFeatures = copyDerivFeat
+        #baseFv = newBaseFv
+        #derivFv = reaminingEntriesDerivBoolFv
+        return (f, idx, posBaseFv, negBaseFv, copyRemainingBaseBoolFeat, copyRemainingDerivBoolFeat)
+
+        # f is for feature of PrecisFeature type
+    def splitSamplesImplication(self, f, idx, baseFv, derivFv):
+        posF = list()
+        posFDeriv = list()
+        negF = list()
+        negFDeriv = list()
+        if len(baseFv) == 0:
+            assert(False)
+        #assert(len(baseFv)== len(derivFv))
+        fv = baseFv
+        if idx >= len(baseFv[0]):
+            idx = idx - len(baseFv[0])
+            fv = derivFv
+        # add assertion check that every entry  in feature vector, fv, in list, featureVectors, is of type z3.z3.BoolRef
+        # is_true(True) returns False; True is a python boolean expression. is_true(BoolVal(True)) returns True 
+        #print(len(featureVectors))
+        for idxFv in range(0, len(fv)):
+            if is_true(fv[idxFv][idx]):
+                posF.append(baseFv[idxFv])
+                posFDeriv.append(derivFv[idxFv])
+            elif is_int(fv[idxFv][idx]):
+                assert(False)
+            else:
+                negF.append(baseFv[idxFv])
+                negFDeriv.append(derivFv[idxFv])
+        
+        #assert(len(baseFv) == len(posF)+ len(negF))
+        return (posF,posFDeriv,negF,negFDeriv)
+
 
     def chooseFeature2(self, features, baseFv, derivFv, call, skipAhead):
         # TODO: figure is removing always false predicates will lead to optimizations
@@ -147,7 +268,7 @@ class DisjunctiveLearner:
         return (posF, negF)
 
         #return feature along with index
-        
+
     #baseFv -> feature vector with only boolean entries
     def chooseFeature(self, features, baseFv, derivFv, call, skipAhead):
         # TODO: figure is removing always false predicates will lead to optimizations

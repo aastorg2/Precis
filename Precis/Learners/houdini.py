@@ -5,8 +5,8 @@ from Data.feature_vector import FeatureVector
 from Data.precis_formula import PrecisFormula
 import logging
 
-logger = logging.getLogger("Runner.Houdini")
-logger1 = logging.getLogger("Results.Houdini")
+
+logger1 = logging.getLogger("Results.DisjunctiveLearner.Houdini")
 class Houdini:
     
     useBounds = False
