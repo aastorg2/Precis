@@ -24,6 +24,9 @@ class Case:
 class PUT:
     putName = ""
     cases = []
+    k1 = False
+    k2 = False
+    onlyk2 = False
 
     def __init__(self, name: str):
         self.putName = name
@@ -36,6 +39,11 @@ class PUT:
 
     def getCases(self):
         return self.cases
+    
+    def __str__(self):
+        return self.putName+"\nk1 disjunctive: "+str(self.k1)+\
+            "\nk2 disjunctive: "+ str(self.k2)+\
+                "\nOnlyK2: "+str(self.onlyk2)
 
 def ParseResults(resultsFile):
     f = open(resultsFile, 'r') 
@@ -57,6 +65,10 @@ def ParseResults(resultsFile):
     put = None
     puts = []
     cases = []
+    k1Disjunctive = False
+    k2Disjunctive = False
+    onlyK2Disjunctive = False
+    forRealAddCase = False
     for i in range(0, len(lines)):
         line = lines[i]
         
@@ -73,6 +85,9 @@ def ParseResults(resultsFile):
             puts.append(put)
             #reset cases for new PUT
             cases = []
+            k1Disjunctive = False
+            k2Disjunctive = False
+            onlyK2Disjunctive = False
 
         if 'Case: k ==' in line and newCase:
             newCase = False
@@ -110,14 +125,42 @@ def ParseResults(resultsFile):
             #case = Case(k,rounds,post,simplePost)
             #print(case)
             #print("\n")
+        
+        #consider refactoring so that the results of the implication are output at the end
+        if 'Not(k0 -> k1)?' in line:
+            questionIdx = line.find('?')
+            res = line[questionIdx+1 : -1]
+            res = res.strip()
+            k1Disjunctive = (res == "sat")
+            
 
-        if addCase:
+        if 'Not(k0 -> k2)?' in line:
+            forRealAddCase = True
+            questionIdx = line.find('?')
+            res = line[questionIdx+1 : -1]
+            res = res.strip()
+            onlyK2Disjunctive = (res == "sat")
+            
+
+        if 'Not(k1 -> k2)?' in line:
+            questionIdx = line.find('?')
+            res = line[questionIdx+1 : -1]
+            res = res.strip()
+            k2Disjunctive = (res == "sat")
+            
+        
+
+        if addCase and forRealAddCase:
+            # safe to assume implication results are ready to store
             addCase = False
+            forRealAddCase = False
             case = Case(k,rounds,post,simplePost)
             cases.append(case)
             #update current PUT
             puts[len(puts)-1].addCases(cases)
-
+            puts[len(puts)-1].k1 = k1Disjunctive
+            puts[len(puts)-1].k2 = k2Disjunctive
+            puts[len(puts)-1].onlyk2 = onlyK2Disjunctive 
     return puts
 
 def printResults(puts: List[PUT] ):
@@ -180,13 +223,25 @@ def getPut(name: str, basePut: List[PUT]):
             ret =  base
     return ret
 
+
+
 if __name__ == '__main__':
     resultFile = sys.argv[1]
     regressionResultFile = sys.argv[2]
+    mode = sys.argv[3]
 
-    puts = ParseResults(resultFile)
-    regrePuts = ParseResults(regressionResultFile)
-    checkResults(regrePuts, puts)
+    if str(mode).upper() == "CHECK":
+        puts = ParseResults(resultFile)
+        regrePuts = ParseResults(regressionResultFile)
+        checkResults(regrePuts, puts)
+    
+    if str(mode).upper() == "DISJUNC":
+        puts = ParseResults(resultFile)
+        for p in puts:
+            print(p)
+            print("")
+    
+    
     #printResults(puts)
 
 
