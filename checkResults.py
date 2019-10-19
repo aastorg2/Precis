@@ -1,6 +1,7 @@
 import csv
 import sys
 from typing import List, Type
+import argparse
 
 class Case:
     k = ""
@@ -223,23 +224,56 @@ def getPut(name: str, basePut: List[PUT]):
             ret =  base
     return ret
 
-
+def getNumberOfKDisjunctive(puts):
+    k1 = 0
+    k2 = 0
+    onlyk2 =0
+    for p in puts:
+        if p.k1:
+            k1+=1
+        if p.k2:
+            k2+=1
+        if p.onlyk2:
+            onlyk2+=1
+    
+    return(k1,k2,onlyk2)
 
 if __name__ == '__main__':
-    resultFile = sys.argv[1]
-    regressionResultFile = sys.argv[2]
-    mode = sys.argv[3]
 
-    if str(mode).upper() == "CHECK":
-        puts = ParseResults(resultFile)
-        regrePuts = ParseResults(regressionResultFile)
-        checkResults(regrePuts, puts)
+    parser = argparse.ArgumentParser()
     
-    if str(mode).upper() == "DISJUNC":
-        puts = ParseResults(resultFile)
-        for p in puts:
-            print(p)
-            print("")
+    parser.add_argument('--runMode' , choices =['check', 'disjunc'], default = None)
+    parser.add_argument('--base' )
+    parser.add_argument('--regression')
+    args = parser.parse_args()
+
+    if args.runMode.upper() == 'CHECK':
+        baseResults = args.base
+        regressionResults = args.regression
+        if baseResults == None or regressionResults == None:
+            print("--runMode check command must be used with --baseResults and --regression")
+            sys.exit(-1)
+        puts = ParseResults(baseResults)
+        regrePuts = ParseResults(regressionResults)
+        checkResults(regrePuts, puts)
+
+    elif args.runMode.upper() == 'DISJUNC':
+        baseResults = args.base
+        if baseResults == None:
+            print("--runMode disjunc command must be used with --base")
+            sys.exit(-1)
+        puts = ParseResults(baseResults)
+        (k1,k2,onlyK2) = getNumberOfKDisjunctive(puts)
+        print("k1 disj: "+str(k1),"k2 disj: "+str(k2),"only k2 disj: "+str(onlyK2))
+        print("")
+    else:
+        pass
+
+    sys.exit(0)
+    
+
+
+    
     
     
     #printResults(puts)
