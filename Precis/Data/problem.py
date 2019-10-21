@@ -32,6 +32,7 @@ class Problem:
         with open(outputFile) as f:
             lines = f.readlines()
         for line in lines:
+            #consider checking that all variables start with "Old" or "New"
             line = line.strip().split()
             varName = line[0]
             varType = line[1]

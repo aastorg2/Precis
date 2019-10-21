@@ -98,9 +98,9 @@ class PrecisFormula:
             OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
             # OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
             # OrElse(Tactic('purify-arith'),Tactic('skip')),
-            #OrElse(Tactic('ctx-simplify'),Tactic('skip')),
-            #OrElse(Tactic('dom-simplify'),Tactic('skip')),
-            #OrElse(Tactic('propagate-values'),Tactic('skip')),
+            OrElse(Tactic('ctx-simplify'),Tactic('skip')),
+            OrElse(Tactic('dom-simplify'),Tactic('skip')),
+            OrElse(Tactic('propagate-values'),Tactic('skip')),
 
             OrElse(Tactic('simplify'), Tactic('skip')),
 
