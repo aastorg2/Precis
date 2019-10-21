@@ -33,9 +33,11 @@ def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
     allBaseFeatureVectors = []
 
     synthesizer = FeatureSynthesis(sygusExecutable, tempLocation, sygusFileName)
-    initFormula = PrecisFormula(BoolVal(False))
-    inst.instrumentPost(p, initFormula, PUTName)
+    currentPostcondition = PrecisFormula(BoolVal(False))
+    inst.instrumentPost(p, currentPostcondition, PUTName)
     rounds = 1
+    totalPexTime = 0.0
+    totalLearningTime = 0.0
     while True:
         print("starting round: " + str(rounds))
         pex = Pex()
@@ -43,18 +45,38 @@ def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
         startTimePex = time.time()
         baseFeatureVectors: List[FeatureVector] = pex.RunTeacher(p, PUTName, baseFeatures)
         pexTime = time.time() - startTimePex
-        print("pex time: " + str(pexTime))
-        
+        totalPexTime += pexTime
+        print("pex time: " + str(totalPexTime))
+        print("learning time: "+ str(totalLearningTime))
+
         evaluation.copyTestFilesToEvaluationDir(pex.testsLocation,destinationOfTests, rounds)
         #sys.exit(0)
-
         allBaseFeatureVectors.extend(baseFeatureVectors)
+
+        if all(baseFeatureVectors[i].testLabel for i in range(0, len(baseFeatureVectors))):
+            print("found it")
+            simplifiedPost = PrecisFormula(currentPostcondition.precisSimplify())
+            return currentPostcondition, simplifiedPost, rounds, totalPexTime, totalLearningTime, len(allBaseFeatureVectors)
+
+        if rounds == 16:
+            print("BAD!")
+            simplifiedPost = PrecisFormula(currentPostcondition.precisSimplify())
+            return currentPostcondition, simplifiedPost, rounds, totalPexTime, totalLearningTime, len(allBaseFeatureVectors)
+
+        if len(baseFeatureVectors) == 0:
+            logger1.info("process TERMINATED with TG not generating any test! DEBUG ME!\n")
+            simplifiedPost = PrecisFormula(currentPostcondition.precisSimplify())
+            return currentPostcondition, simplifiedPost, rounds , totalPexTime, totalLearningTime, len(allBaseFeatureVectors)
+
         intBaseFeatures, boolBaseFeatures = Featurizer.getIntAndBoolFeatures(baseFeatures)
         disLearner = DisjunctiveLearner(synthesizer)
         logger1.info("#############\nRound: "+str(rounds)+"\n")
         # Learning function
+        startLearningTime = time.time()
         postcondition = disLearner.learn3( k, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), "root")
-        
+        learningTime = time.time() - startLearningTime
+        totalLearningTime += learningTime
+
         logger1.info("unsimplified post:\n"+ postcondition.toInfix()+"\n")
         
         print("unsimplified post "+ postcondition.toInfix())
@@ -64,18 +86,9 @@ def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
         inst = Instrumenter(
             "MSBuild.exe", "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
         inst.instrumentPost(p, postcondition, PUTName)
-
-        if all(baseFeatureVectors[i].testLabel for i in range(0, len(baseFeatureVectors))):
-            print("found it")
-            simplifiedPost = PrecisFormula(postcondition.precisSimplify())
-            return postcondition, simplifiedPost, rounds
-
-        if rounds == 16:
-            print("BAD!")
-            simplifiedPost = PrecisFormula(postcondition.precisSimplify())
-            return postcondition, simplifiedPost, rounds
-
-        allPostconditions.append(postcondition.formula)
+        
+        currentPostcondition = PrecisFormula(postcondition.formulaZ3)
+        allPostconditions.append(postcondition.formulaZ3)
         rounds = rounds + 1
 
 
@@ -100,13 +113,15 @@ def runLearnPost(p, putList, projectName, outputFile, k ):
             #sys.exit(0)
 
             logger1.info("=====\nCase: k == "+str(i)+"\n")
-            (post, simplePost, rounds) = learnPostUpToK(p, PUTName, outputFile, i, locationOfTests)
-            logger1.info("===== Final Result\n")
+            (post, simplePost, rounds, pexTime, learnTime, totalSamples) = learnPostUpToK(p, PUTName, outputFile, i, locationOfTests)
+            logger1.info("===== Final Result for "+PUTName +"\n")
             logger1.info("postcondition k == "+str(i)+"\n" +
                         post.toInfix()+"\nrounds: " + str(rounds) + "\n")
             logger1.info("simplified post k == " + str(i) + "\n"+
                         simplePost.toInfix())
-            
+            logger1.info("pex time: "+str(pexTime)+"\n")
+            logger1.info("learn time: "+str(learnTime)+"\n")
+            logger1.info("Samples: "+str(totalSamples)+"\n")
             
             results.append((post, simplePost, rounds))
             
@@ -132,6 +147,14 @@ def runLearnPost(p, putList, projectName, outputFile, k ):
                 solver.add(Not(implication))
                 check = solver.check()
                 logger1.info("Not(k"+str(i-1)+" -> k" + str(i) +")? " + str(check)+"\n")
+
+                implication = Implies( results[i][0].formulaZ3,results[i-1][0].formulaZ3)
+                solver = Solver()
+                # check (not (postK0 => postK1)) is unsat
+                solver.add(Not(implication))
+                check = solver.check()
+                logger1.info("Not(k"+str(i)+" -> k" + str(i-1) +")? " + str(check)+"\n")
+
             
 def runLearnPostTest(p, putList, projectName, outputFile, k):
     #assert puts in putList in problem
@@ -150,16 +173,15 @@ def runLearnPostTest(p, putList, projectName, outputFile, k):
         results = []
         
         logger1.info("=====\nCase: k == "+str(k)+"\n")
-        (post, simplePost, rounds) = learnPostUpToK(p, PUTName, outputFile,k,locationOfTests)
-        logger1.info("===== Final Result\n")
+        (post, simplePost, rounds, pexTime, learnTime, totalSamples)  = learnPostUpToK(p, PUTName, outputFile,k,locationOfTests)
+        logger1.info("===== Final Result for "+PUTName +"\n")
         logger1.info("postcondition k == "+str(k)+"\n" +
                     post.toInfix()+"\nrounds: " + str(rounds) + "\n")
         logger1.info("simplified post k == " + str(k) + "\n"+
                         simplePost.toInfix())
-    
-
-        
-            
+        logger1.info("pex time: "+str(pexTime)+"\n")
+        logger1.info("learn time: "+str(learnTime)+"\n")
+        logger1.info("Samples: "+str(totalSamples)+"\n")
 
 
 if __name__ == '__main__':
@@ -171,7 +193,7 @@ if __name__ == '__main__':
     outputFileType = os.path.abspath('./typesOM.txt')
     subjects = []
     
-    # Stack
+    #region Stack
     sln = os.path.abspath('../ContractsSubjects/Stack/Stack.sln')
     projectName = 'StackTest'
     testDebugFolder = '../ContractsSubjects/Stack/StackTest/bin/Debug/'
@@ -187,9 +209,9 @@ if __name__ == '__main__':
                 testFileName, testNamepace, testClass,stackPUTs )
     
     subjects.append(p)
-    #End of Stack
+    #endregion of Stack
 
-    # HashSet
+    #region HashSet
     sln = os.path.abspath('../ContractsSubjects/HashSet/HashSet.sln')
     projectName = 'HashSetTest'
     testDebugFolder = '../ContractsSubjects/HashSet/HashSetTest/bin/Debug/'
@@ -206,9 +228,9 @@ if __name__ == '__main__':
                  testFileName, testNamepace, testClass, hashsetPUTs)
     
     subjects.append(p1)
-    # End of HashSet
+    #endregion of HashSet
 
-    # Dictionary
+    #region Dictionary
     sln = os.path.abspath('../ContractsSubjects/Dictionary/Dictionary.sln')
     projectName = 'DictionaryTest'
     testDebugFolder = '../ContractsSubjects/Dictionary/DictionaryTest/bin/Debug/'
@@ -223,9 +245,9 @@ if __name__ == '__main__':
                  testFileName, testNamepace, testClass,dictionaryPUTs)
     
     subjects.append(p2)
-    # End of Dictionary
+    #endregion of Dictionary
 
-    # Queue
+    #region Queue
     sln = os.path.abspath('../ContractsSubjects/Queue/Queue.sln')
     projectName = 'QueueTest'
     testDebugFolder = '../ContractsSubjects/Queue/QueueTest/bin/Debug/'
@@ -241,9 +263,9 @@ if __name__ == '__main__':
     
     subjects.append(p3)
     
-    # End Queue
+    #endregion Queue
 
-    # ArrayList
+    #region ArrayList
     sln = os.path.abspath('../ContractsSubjects/ArrayList/ArrayList.sln')
     projectName = 'ArrayListTest'
     testDebugFolder = '../ContractsSubjects/ArrayList/ArrayListTest/bin/Debug/'
@@ -258,9 +280,46 @@ if __name__ == '__main__':
                  testFileName, testNamepace, testClass,arrayListPUTs)
     
     subjects.append(p4)
-    # End of ArrayList
+    #endregion of ArrayList
 
+    #region UndirectedGraph
+    sln = os.path.abspath('../ContractsSubjects/UndirectedGraph3/UndirectedGraph.sln')
+    projectName = 'UndirectedGraphTest'
+    testDebugFolder = '../ContractsSubjects/UndirectedGraph3/UndirectedGraphTest/bin/Debug/'
+    testDll = testDebugFolder + 'UndirectedGraphTest.dll'
+    testFileName = 'UndirectedGraphContractTest.cs'
+    testNamepace = 'UndirectedGraph.Test'
+    testClass = 'UndirectedGraphContractTest'
+    #ugraphPUTs = ['PUT_AddVertexContract', 'PUT_RemoveVertexContract','PUT_ClearAdjacentEdgesContract','PUT_ContainsEdgeContract'
+                    #'PUT_RemoveVertexContract', 'PUT_ClearAdjacentEdgesContract', 'PUT_ContainsEdgeContract',
+                    #'PUT_ContainsEdgeIntContract', 'PUT_AdjacentEdgeContract', 'PUT_IsVerticesEmptyContract', 'PUT_VertexCountContract', 'PUT_ContainsVertexContract',
+                    #'PUT_AddEdgeContract', 'PUT_RemoveEdgeContract', 'PUT_IsEdgesEmptyContract', 'PUT_EdgeCountContract', 'PUT_AdjacentDegreeContract',
+                    #'PUT_IsAdjacentEdgesEmptyContract']
 
+    ugraphPUTs = ['PUT_ContainsEdgeIntContract', 'PUT_AdjacentEdgeContract', 'PUT_IsVerticesEmptyContract', 'PUT_VertexCountContract', 'PUT_ContainsVertexContract']
+    p5 = Problem(sln, projectName, testDebugFolder, testDll,
+                 testFileName, testNamepace, testClass,ugraphPUTs)
+    
+    
+    
+    subjects.append(p5)
+    #endregion of UndirectedGraph
+
+    #region BinaryHeap
+    sln = os.path.abspath('../ContractsSubjects/BinaryHeap3/BinaryHeap.sln')
+    projectName = 'BinaryHeapTest'
+    testDebugFolder = '../ContractsSubjects/BinaryHeap3/BinaryHeapTest/bin/Debug/'
+    testDll = testDebugFolder + 'BinaryHeapTest.dll'
+    testFileName = 'BinaryHeapContractTest.cs'
+    testNamepace = 'BinaryHeap.Test'
+    testClass = 'BinaryHeapContractTest'
+    ugraphPUTs = ['PUT_AddContract', 'PUT_MinimumContract', 'PUT_RemoveMinimumContract', 'PUT_RemoveAtContract',
+                     'PUT_IndexOfContract', 'PUT_UpdateContract', 'PUT_MinimumUpdateContract']
+    
+    p6 = Problem(sln, projectName, testDebugFolder, testDll,
+                 testFileName, testNamepace, testClass,ugraphPUTs)
+
+    #endregion BinaryHeap
 
     logger1 = logging.getLogger("Results")
     logger1.setLevel(logging.INFO)
@@ -293,7 +352,8 @@ if __name__ == '__main__':
 
     else:
         #unit tests
-        unitTests = [(p,['PUT_PushContract']), (p, ['PUT_ContainsContract']), (p1, ['PUT_AddContract']), (p3,['PUT_DequeueContract']),(p2,['PUT_ContainsValueContract']) ]
+        #(p,['PUT_PopContract']), """ remove before this """,
+        unitTests = [(p5,['PUT_AddVertexContract'] ), """ remove before this """,(p,['PUT_PushContract']), (p, ['PUT_ContainsContract']), (p1, ['PUT_AddContract']), (p3,['PUT_DequeueContract']),(p2,['PUT_ContainsValueContract']) ]
         for t in unitTests:
             resultFileName = "regression_results_2"+str(t[0].projectName)
             fh1 = logging.FileHandler(resultFileName)
@@ -305,6 +365,6 @@ if __name__ == '__main__':
             print(prob.projectName)
             print(prob.puts)
             # run all cases up to k
-            runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 1)
-            #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
+            #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
+            runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
             break
