@@ -47,7 +47,8 @@ class Houdini:
     def learn2(self,features,featureVectors, call):
         #assert(len(featureVectors) > 0)
         if len(featureVectors) == 0:
-            logger1.info("houdini Called with 0 feature vectors")
+            logger1.info(call+ ": houdini Called with 0 feature vectors")
+            print(call +": houdini Called with 0 feature vectors")
             return (PrecisFormula(BoolVal(True)),[])
         #check datapoint are boolean --> currently assention doesnt work
         #assert(len(featureVectors) or all ( all( v == "True" or v == "False" for v in dp) for dp in featureVectors))
@@ -72,6 +73,8 @@ class Houdini:
                 indexes.append(idx)
         # early return if no predicates are always true -> houdini should return true
         if len(conjuncts) == 0:
+            logger1.info(call+ ": not expressive in with conjunctions")
+            print(call +": not expressive in with conjunctions")
             #assert(False) #remove this assertion the first time it is tested
             return (PrecisFormula(BoolVal(True)),[])
         
