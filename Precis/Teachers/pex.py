@@ -68,6 +68,7 @@ class Pex:
                 #singlePoint = singlePoint + ('True',)
                 featureValues = FeatureVector(precisFeatureList, singlePoint, 'True')
             else:
+                #Also for post condition learnig - consider checking that all the failures are of AssertionFailed type. 
                 #singlePoint = singlePoint +('False',)
                 # check for TermFailure exception
                 if test.get('name').find("TermDestruction") != -1:
