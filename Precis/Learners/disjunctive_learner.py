@@ -36,8 +36,9 @@ class DisjunctiveLearner:
         #on the empty set of data points, return true
         if len(baseFeatureValues) == 0:
             print("called learn3 with 0 feature vectors")
+            logger.info("called learn3 with 0 feature vectors")
             return PrecisFormula(BoolVal(True))
-        # rename  splitIntoBoolAndIntFeatureVectors
+        #rename  splitIntoBoolAndIntFeatureVectors
         (intBaseFeatVectors, boolBaseFeatVectors) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeat, boolBaseFeat, baseFeatureValues)
 
         derivFeats = self.synthesizeUniqueFeatures(intBaseFeat, boolBaseFeat, baseFeatureValues, exclude)
@@ -124,7 +125,10 @@ class DisjunctiveLearner:
             if is_int(feature.varZ3):
                 assert(False)
             (fvPos,fvPosDeriv,fvNeg,fvNegDeriv) = self.splitSamplesImplication(feature, idx + lookAhead, baseFv, derivFv)
-            
+            #if it splits lobsided, the it is the same as the allTrueCase, but since those feature have been removed-> houdini will only learn true
+            if len(fvPos) == 0 or len(fvNeg) == 0:
+                irrelevantIndices.append(idx)
+                continue
             (posIntBaseFv, posBoolBaseFv) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeatures, baseBoolFeatures, fvPos)
             (negIntBaseFv, negBoolBaseFv) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeatures, baseBoolFeatures, fvNeg)
 
@@ -132,8 +136,8 @@ class DisjunctiveLearner:
             negFvs = Featurizer.mergeFeatureVectors(negBoolBaseFv, fvNegDeriv)
             
         
-            (posAllTrueFormula, posIndicesAllwaysTrue) = houdini.learn2(boolFeatures , posFvs, call)
-            (negAllTrueFormula, negIndicesAllwaysTrue) = houdini.learn2(boolFeatures , negFvs, call)
+            (posAllTrueFormula, posIndicesAllwaysTrue) = houdini.learn2(boolFeatures , posFvs, call+" from implication check")
+            (negAllTrueFormula, negIndicesAllwaysTrue) = houdini.learn2(boolFeatures , negFvs, call+" from implication check")
             #disjunct z3 type
             disjunct = Or(And(posAllTrueFormula.formulaZ3, feature.varZ3 ) , And(negAllTrueFormula.formulaZ3, Not(feature.varZ3)))
             implication = Implies(alwaysTrueFormula.formulaZ3 , disjunct)
