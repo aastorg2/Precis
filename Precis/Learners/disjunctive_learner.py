@@ -125,10 +125,9 @@ class DisjunctiveLearner:
             if is_int(feature.varZ3):
                 assert(False)
             (fvPos,fvPosDeriv,fvNeg,fvNegDeriv) = self.splitSamplesImplication(feature, idx + lookAhead, baseFv, derivFv)
-            #if it splits lobsided, the it is the same as the allTrueCase, but since those feature have been removed-> houdini will only learn true
-            if len(fvPos) == 0 or len(fvNeg) == 0:
-                irrelevantIndices.append(idx)
-                continue
+            #if len(fvPos) == 0 or len(fvNeg) == 0:
+                #irrelevantIndices.append(idx)
+                #continue
             (posIntBaseFv, posBoolBaseFv) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeatures, baseBoolFeatures, fvPos)
             (negIntBaseFv, negBoolBaseFv) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeatures, baseBoolFeatures, fvNeg)
 
@@ -136,8 +135,8 @@ class DisjunctiveLearner:
             negFvs = Featurizer.mergeFeatureVectors(negBoolBaseFv, fvNegDeriv)
             
         
-            (posAllTrueFormula, posIndicesAllwaysTrue) = houdini.learn2(boolFeatures , posFvs, call+" from implication check")
-            (negAllTrueFormula, negIndicesAllwaysTrue) = houdini.learn2(boolFeatures , negFvs, call+" from implication check")
+            (posAllTrueFormula, posIndicesAllwaysTrue) = houdini.learn2(boolFeatures , posFvs, call+" from implication check-- split from pred "+str(feature))
+            (negAllTrueFormula, negIndicesAllwaysTrue) = houdini.learn2(boolFeatures , negFvs, call+" from implication check-- split from pred "+str(feature))
             #disjunct z3 type
             disjunct = Or(And(posAllTrueFormula.formulaZ3, feature.varZ3 ) , And(negAllTrueFormula.formulaZ3, Not(feature.varZ3)))
             implication = Implies(alwaysTrueFormula.formulaZ3 , disjunct)
