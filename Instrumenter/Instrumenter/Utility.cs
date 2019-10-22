@@ -47,16 +47,18 @@ namespace ObserverTypeExtractor
 
         public void PostConditionInsertion(string PUTName, string postCondition)
         {
+            string AssertionPex = "PexAssert.IsTrue";
+            string AssertionNUnit = "Assert.True";
             int targetMethodIdx = FindMethodSyntaxIdxByName(PUTName);
             MethodDeclarationSyntax targetMethod = this.testClassMethods[targetMethodIdx];
             List<StatementSyntax> expressionNodes = targetMethod.DescendantNodes().OfType<StatementSyntax>().ToList();
             foreach (StatementSyntax expr in expressionNodes)
             {
-                if (expr.ToString().StartsWith("PexAssert.IsTrue"))
+                if (expr.ToString().StartsWith(AssertionNUnit))
                 {
                     SyntaxTriviaList trailing = expr.GetTrailingTrivia();
                     SyntaxTriviaList leading = expr.GetLeadingTrivia();
-                    StatementSyntax newAsssertStatement = SyntaxFactory.ParseStatement("PexAssert.IsTrue(" + postCondition + ");");
+                    StatementSyntax newAsssertStatement = SyntaxFactory.ParseStatement(AssertionNUnit+"(" + postCondition + ");");
                     newAsssertStatement = newAsssertStatement.WithLeadingTrivia(leading).WithTrailingTrivia(trailing);
                     Console.WriteLine(newAsssertStatement.ToString());
                     testClassEditor.ReplaceNode(expr, newAsssertStatement);
