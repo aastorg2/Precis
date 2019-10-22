@@ -49,6 +49,8 @@ class Houdini:
         if len(featureVectors) == 0:
             logger1.info(call+ ": houdini Called with 0 feature vectors")
             print(call +": houdini Called with 0 feature vectors")
+            if "implication check" in call:
+                return (PrecisFormula(BoolVal(False)),[])
             return (PrecisFormula(BoolVal(True)),[])
         #check datapoint are boolean --> currently assention doesnt work
         #assert(len(featureVectors) or all ( all( v == "True" or v == "False" for v in dp) for dp in featureVectors))
