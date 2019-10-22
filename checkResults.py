@@ -26,8 +26,9 @@ class PUT:
     putName = ""
     cases = []
     k1 = False
-    k2 = False
     onlyk2 = False
+    strictk2 = False
+    
 
     def __init__(self, name: str):
         self.putName = name
@@ -43,7 +44,7 @@ class PUT:
     
     def __str__(self):
         return self.putName+"\nk1 disjunctive: "+str(self.k1)+\
-            "\nk2 disjunctive: "+ str(self.k2)+\
+            "\nstrict k2 disjunctive: "+ str(self.strictk2)+\
                 "\nOnlyK2: "+str(self.onlyk2)
 
 def ParseResults(resultsFile):
@@ -67,9 +68,13 @@ def ParseResults(resultsFile):
     puts = []
     cases = []
     k1Disjunctive = False
-    k2Disjunctive = False
+    strictk2 = False
     onlyK2Disjunctive = False
     forRealAddCase = False
+    k1Added = False
+    k2Added = False
+    k2OnlyAdded = False
+    k0Added = False
     for i in range(0, len(lines)):
         line = lines[i]
         
@@ -87,8 +92,11 @@ def ParseResults(resultsFile):
             #reset cases for new PUT
             cases = []
             k1Disjunctive = False
-            k2Disjunctive = False
+            strictk2 = False
             onlyK2Disjunctive = False
+            k1Added = False
+            k2OnlyAdded = False
+            k0Added = False
 
         if 'Case: k ==' in line and newCase:
             newCase = False
@@ -118,9 +126,13 @@ def ParseResults(resultsFile):
         if ('simplified post k ==' in line or 'simple' in line ) and getSimplePost:
             #reset the initial state at 'case k =='
             newCase = True
-            addCase = True
+            
+            getSimplePost = False
             simplePost = lines[i+1]
             simplePost = simplePost.strip()
+            if not k0Added:
+                k0Added = True
+                addCase = True
             #print(line)
             #print(simplePost)
             #case = Case(k,rounds,post,simplePost)
@@ -129,6 +141,7 @@ def ParseResults(resultsFile):
         
         #consider refactoring so that the results of the implication are output at the end
         if 'Not(k0 -> k1)?' in line:
+            addCase = True
             questionIdx = line.find('?')
             res = line[questionIdx+1 : -1]
             res = res.strip()
@@ -136,7 +149,6 @@ def ParseResults(resultsFile):
             
 
         if 'Not(k0 -> k2)?' in line:
-            forRealAddCase = True
             questionIdx = line.find('?')
             res = line[questionIdx+1 : -1]
             res = res.strip()
@@ -144,14 +156,18 @@ def ParseResults(resultsFile):
             
 
         if 'Not(k1 -> k2)?' in line:
+            #forRealAddCase = True
+            #newCase = True
+            #addCase = True
+            addCase = True
             questionIdx = line.find('?')
             res = line[questionIdx+1 : -1]
             res = res.strip()
-            k2Disjunctive = (res == "sat")
+            strictk2 = (res == "sat")
             
         
 
-        if addCase and forRealAddCase:
+        if addCase :
             # safe to assume implication results are ready to store
             addCase = False
             forRealAddCase = False
@@ -160,7 +176,7 @@ def ParseResults(resultsFile):
             #update current PUT
             puts[len(puts)-1].addCases(cases)
             puts[len(puts)-1].k1 = k1Disjunctive
-            puts[len(puts)-1].k2 = k2Disjunctive
+            puts[len(puts)-1].strictk2 = strictk2
             puts[len(puts)-1].onlyk2 = onlyK2Disjunctive 
     return puts
 
@@ -226,17 +242,57 @@ def getPut(name: str, basePut: List[PUT]):
 
 def getNumberOfKDisjunctive(puts):
     k1 = 0
-    k2 = 0
+    strictk2 = 0
     onlyk2 =0
     for p in puts:
         if p.k1:
             k1+=1
-        if p.k2:
-            k2+=1
+        if p.strictk2:
+            strictk2+=1
         if p.onlyk2:
             onlyk2+=1
     
-    return(k1,k2,onlyk2)
+    return(k1,strictk2,onlyk2)
+
+def getPutByDisjunction(puts):
+    k1 = []
+    strictk2 = []
+    onlyk2 = []
+    for p in puts:
+        if p.k1:
+            k1.append(p)
+        if p.strictk2:
+            strictk2.append(p)
+        if p.onlyk2:
+            onlyk2.append(p)
+
+    return (k1,strictk2,onlyk2)
+
+def printDisjuncPuts(puts: List[PUT], k:str ):
+    i = 0
+    i = len(puts)-1
+    if len(puts) == 0:
+        print("None")
+    for p in puts:
+        #if i < len(puts):
+        print(p.putName)
+        #else:
+        #    break
+        #i+=1
+        #j = 0
+        #j = len(p.getCases())-3
+        for c in p.getCases():
+            #if j < len(p.getCases()):
+            #print(len(p.getCases()))
+            #print("HERE "+k+" "+c.k)
+            if c.k == k:
+                print(c)
+                print("\n")
+                break
+    
+            #else:
+            #break
+            #j += 1
 
 if __name__ == '__main__':
 
@@ -266,6 +322,15 @@ if __name__ == '__main__':
         (k1,k2,onlyK2) = getNumberOfKDisjunctive(puts)
         print("k1 disj: "+str(k1),"k2 disj: "+str(k2),"only k2 disj: "+str(onlyK2))
         print("")
+        print("number of PUts: "+str(len(puts)))
+        #these can overlap
+        (k1Puts, k2Puts, onlyk2Puts) = getPutByDisjunction(puts)
+        print("K1 cases:")
+        printDisjuncPuts(k1Puts, "1")
+        print("strict K2 cases:")
+        printDisjuncPuts(k2Puts, "2")
+        print("only K2 cases:")
+        printDisjuncPuts(onlyk2Puts, "2")
     else:
         pass
 
