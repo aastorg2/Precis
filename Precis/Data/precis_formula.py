@@ -30,7 +30,9 @@ class PrecisFormula:
                     .replace("&&       ", "&& ") \
                     .replace("&&     ", "&& ").replace("&&    ", "&& ") \
                     .replace("||                  ", "|| ").replace("||              ", "|| ") \
-                    .replace("||            ", "|| ").replace("||       ", "|| ").replace("||   ", "|| ")
+                    .replace("||            ", "|| ").replace("||       ", "|| ").replace("||   ", "|| ")\
+                        .replace("==                          ","== ")\
+                            .replace("!=                          ","!= ")
 
                 cSharpCompatibleFormula = replacePlacedHolderFormula.replace(
                     "False", "false").replace("True", "true")
@@ -98,9 +100,9 @@ class PrecisFormula:
             OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
             # OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
             # OrElse(Tactic('purify-arith'),Tactic('skip')),
-            OrElse(Tactic('ctx-simplify'),Tactic('skip')),
-            OrElse(Tactic('dom-simplify'),Tactic('skip')),
-            OrElse(Tactic('propagate-values'),Tactic('skip')),
+            #OrElse(Tactic('ctx-simplify'),Tactic('skip')),
+            #OrElse(Tactic('dom-simplify'),Tactic('skip')),
+            #OrElse(Tactic('propagate-values'),Tactic('skip')),
 
             OrElse(Tactic('simplify'), Tactic('skip')),
 
@@ -111,7 +113,7 @@ class PrecisFormula:
             # OrElse(Tactic('recover-01'),Tactic('skip')),
 
             # must to remove ite
-            OrElse(Tactic('elim-term-ite'), Tactic('skip')),
+            #OrElse(Tactic('elim-term-ite'), Tactic('skip')),
             #OrElse(Tactic('smt'), Tactic('skip')),
             # OrElse(Tactic('injectivity'),Tactic('skip')),
             # OrElse(Tactic('snf'),Tactic('skip')),
