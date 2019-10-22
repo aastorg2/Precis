@@ -148,12 +148,12 @@ def runLearnPost(p, putList, projectName, outputFile, k ):
                 check = solver.check()
                 logger1.info("Not(k"+str(i-1)+" -> k" + str(i) +")? " + str(check)+"\n")
 
-                implication = Implies( results[i][0].formulaZ3,results[i-1][0].formulaZ3)
-                solver = Solver()
+                implication4 = Implies( results[i][0].formulaZ3,results[i-1][0].formulaZ3)
+                solver4 = Solver()
                 # check (not (postK0 => postK1)) is unsat
-                solver.add(Not(implication))
-                check = solver.check()
-                logger1.info("Not(k"+str(i)+" -> k" + str(i-1) +")? " + str(check)+"\n")
+                solver4.add(Not(implication4))
+                check4 = solver.check()
+                logger1.info("Not(k"+str(i)+" -> k" + str(i-1) +")? " + str(check4)+"\n")
 
             
 def runLearnPostTest(p, putList, projectName, outputFile, k):
@@ -313,23 +313,23 @@ if __name__ == '__main__':
     testFileName = 'BinaryHeapContractTest.cs'
     testNamepace = 'BinaryHeap.Test'
     testClass = 'BinaryHeapContractTest'
-    ugraphPUTs = ['PUT_AddContract', 'PUT_MinimumContract', 'PUT_RemoveMinimumContract', 'PUT_RemoveAtContract',
+    heapPUTs = ['PUT_AddContract', 'PUT_MinimumContract', 'PUT_RemoveMinimumContract', 'PUT_RemoveAtContract',
                      'PUT_IndexOfContract', 'PUT_UpdateContract', 'PUT_MinimumUpdateContract']
     
     p6 = Problem(sln, projectName, testDebugFolder, testDll,
-                 testFileName, testNamepace, testClass,ugraphPUTs)
+                 testFileName, testNamepace, testClass,heapPUTs)
 
     #endregion BinaryHeap
 
     logger1 = logging.getLogger("Results")
     logger1.setLevel(logging.INFO)
     
-    evalutating = False 
+    evalutating = True 
     if evalutating:
         #stackPUTs = ['PUT_PushContract']
         #for prob in subjects:
-        for idx in range(0, (len(subjects))):
-            prob = subjects[idx]
+        for idx in range(0, (len(subjects)-5 )):
+            prob = subjects[idx+5]
             
             #resultFileName = "results"
             #resultFileName = "results_"+str(prob.projectName)
@@ -343,6 +343,7 @@ if __name__ == '__main__':
             print(prob.puts)
             # run all cases up to k
             runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
+            break
             #Run one test and one case
             #break
             #learnPostUpToK(prob,prob.puts[0],outputFileType,1)
