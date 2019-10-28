@@ -37,7 +37,7 @@ class DisjunctiveLearner:
         if len(baseFeatureValues) == 0:
             print("called learn3 with 0 feature vectors")
             logger.info("called learn3 with 0 feature vectors")
-            return PrecisFormula(BoolVal(True))
+            return PrecisFormula(BoolVal(False))
         #rename  splitIntoBoolAndIntFeatureVectors
         (intBaseFeatVectors, boolBaseFeatVectors) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeat, boolBaseFeat, baseFeatureValues)
 
