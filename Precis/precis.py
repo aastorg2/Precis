@@ -204,7 +204,7 @@ if __name__ == '__main__':
     stackPUTs = ['PUT_PushContract', 'PUT_PopContract',
                  'PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract']
     
-
+    stackPUTs = ['PUT_ContainsContract']
     p = Problem(sln, projectName, testDebugFolder, testDll,
                 testFileName, testNamepace, testClass,stackPUTs )
     
@@ -290,13 +290,12 @@ if __name__ == '__main__':
     testFileName = 'UndirectedGraphContractTest.cs'
     testNamepace = 'UndirectedGraph.Test'
     testClass = 'UndirectedGraphContractTest'
-    #ugraphPUTs = ['PUT_AddVertexContract', 'PUT_RemoveVertexContract','PUT_ClearAdjacentEdgesContract','PUT_ContainsEdgeContract'
-                    #'PUT_RemoveVertexContract', 'PUT_ClearAdjacentEdgesContract', 'PUT_ContainsEdgeContract',
+    #ugraphPUTs = ['PUT_AddVertexContract', 'PUT_RemoveVertexContract','PUT_ClearAdjacentEdgesContract','PUT_ContainsEdgeContract', 'PUT_RemoveVertexContract',
                     #'PUT_ContainsEdgeIntContract', 'PUT_AdjacentEdgeContract', 'PUT_IsVerticesEmptyContract', 'PUT_VertexCountContract', 'PUT_ContainsVertexContract',
                     #'PUT_AddEdgeContract', 'PUT_RemoveEdgeContract', 'PUT_IsEdgesEmptyContract', 'PUT_EdgeCountContract', 'PUT_AdjacentDegreeContract',
                     #'PUT_IsAdjacentEdgesEmptyContract']
 
-    ugraphPUTs = ['PUT_ContainsEdgeIntContract', 'PUT_AdjacentEdgeContract', 'PUT_IsVerticesEmptyContract', 'PUT_VertexCountContract', 'PUT_ContainsVertexContract']
+    ugraphPUTs = ['PUT_AddEdgeContract', 'PUT_RemoveEdgeContract', 'PUT_IsEdgesEmptyContract', 'PUT_EdgeCountContract', 'PUT_AdjacentDegreeContract']
     p5 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,ugraphPUTs)
     
@@ -328,8 +327,8 @@ if __name__ == '__main__':
     if evalutating:
         #stackPUTs = ['PUT_PushContract']
         #for prob in subjects:
-        for idx in range(0, (len(subjects)-5 )):
-            prob = subjects[idx+5]
+        for idx in range(0, (len(subjects) )):
+            prob = subjects[idx]
             
             #resultFileName = "results"
             #resultFileName = "results_"+str(prob.projectName)
@@ -342,7 +341,9 @@ if __name__ == '__main__':
             print(prob.projectName)
             print(prob.puts)
             # run all cases up to k
-            runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
+            runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 1)
+            #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
+            
             break
             #Run one test and one case
             #break
