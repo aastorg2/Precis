@@ -128,6 +128,7 @@ class DisjunctiveLearner:
             #if len(fvPos) == 0 or len(fvNeg) == 0:
                 #irrelevantIndices.append(idx)
                 #continue
+            
             (posIntBaseFv, posBoolBaseFv) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeatures, baseBoolFeatures, fvPos)
             (negIntBaseFv, negBoolBaseFv) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeatures, baseBoolFeatures, fvNeg)
 
@@ -137,6 +138,11 @@ class DisjunctiveLearner:
         
             (posAllTrueFormula, posIndicesAllwaysTrue) = houdini.learn2(boolFeatures , posFvs, call+" from implication check-- split from pred "+str(feature))
             (negAllTrueFormula, negIndicesAllwaysTrue) = houdini.learn2(boolFeatures , negFvs, call+" from implication check-- split from pred "+str(feature))
+            if len(fvPos) != 0 and len(fvNeg) != 0:
+                logger.info(call+ " implication check-- split pred: "+ str(feature))
+                logger.info(call+ " implication check-- featurePos: "+ str(posAllTrueFormula.toInfix()))
+                logger.info(call+ " implication check-- featureNeg: "+ str(negAllTrueFormula.toInfix())+"\n")
+
             #disjunct z3 type
             disjunct = Or(And(posAllTrueFormula.formulaZ3, feature.varZ3 ) , And(negAllTrueFormula.formulaZ3, Not(feature.varZ3)))
             implication = Implies(alwaysTrueFormula.formulaZ3 , disjunct)
