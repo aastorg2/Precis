@@ -145,9 +145,10 @@ class DisjunctiveLearner:
 
             #disjunct z3 type
             disjunct = Or(And(posAllTrueFormula.formulaZ3, feature.varZ3 ) , And(negAllTrueFormula.formulaZ3, Not(feature.varZ3)))
+           
             implication = Implies(alwaysTrueFormula.formulaZ3 , disjunct)
             solver = Solver()
-            # check (not (postK0 => postK1)) is unsat
+            # check (not (postK0 => postK1)) is unsat -- validity check
             solver.add(Not(implication))
             check = solver.check()
             #splitting on `feature does not` add new information: alwaysTrueFormula -> (OR(f and posSplit, ~f and negSplit)) is valid
