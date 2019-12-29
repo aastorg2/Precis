@@ -61,7 +61,7 @@ namespace ObserverTypeExtractor
 
                 varTypePairs.Add(new Tuple<string, string>(p.Identifier.ToString(), p.Type.ToString()));
             }
-            Debug.Assert(pexVarName != "");
+            //Debug.Assert(pexVarName != "");
 
             BlockSyntax body = targetMethod.Body;
             List<VariableDeclarationSyntax> varNodes = body.DescendantNodes().OfType<VariableDeclarationSyntax>().ToList();
