@@ -94,7 +94,6 @@ class PrecisFormula:
         g.add(postcondition)
 
         works = Repeat(Then(
-
             OrElse(Tactic('ctx-solver-simplify'), Tactic('skip')),
 
             OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
@@ -122,8 +121,9 @@ class PrecisFormula:
             # OrElse(Tactic('symmetry-reduce'),Tactic('skip')),
             # OrElse(Tactic('macro-finder'),Tactic('skip')),
             # OrElse(Tactic('quasi-macros'),Tactic('skip')),
-
+            Repeat(OrElse(Tactic('cofactor-term-ite'), Tactic('skip'))),
             Repeat(OrElse(Tactic('split-clause'), Tactic('skip'))),
+            
         ))
         #works1 = Tactic('simplify')
 
@@ -139,20 +139,39 @@ class PrecisFormula:
         result = filter(None, result)
         if not result:
             return "true"
+        
         # return result
-
+        result = list(result)
         completeConjunct = []
-        for conjunct in result:
+        for i in range(0,len(result)):
+            conjunction = result[i]
             completeDisjunct = []
-            for disjunct in conjunct:
-                completeDisjunct.append(disjunct)
+            for literal in conjunction:
+                #if i >= 1 and  literal in result[i-1]:
+                #    continue
+                completeDisjunct.append(literal)
 
             completeConjunct.append(And(completeDisjunct))
 
         simplifiedPrecondition = Or(completeConjunct)
+        return simplifiedPrecondition
 
+        # g1 = Goal()
+        # tac = Repeat(Then(
+        # OrElse(Tactic('tseitin-cnf'),Tactic('skip')),
+        # OrElse(Tactic('cofactor-term-ite'), Tactic('skip')),
+        # OrElse(Tactic('ctx-simplify'),Tactic('skip')),
+        # OrElse(Tactic('dom-simplify'),Tactic('skip')),
+        # OrElse(Tactic('factor'),Tactic('skip')),
+        # OrElse(Tactic('elim-term-ite'), Tactic('skip')),
+        # ))
+        # g1.add(simplifiedPrecondition)
+        # post = tac(g1)
+        # newConju = And(list(post[0]))
+        # print(PrecisFormula(simplify(newConju)).toInfix())
+        # print(list(post))
+        #print(PrecisFormula(post).toInfix())
         #simplifiedPrecondition = simplifiedPrecondition.replace("Not", " ! ")
         #simplifiedPrecondition = simplifiedPrecondition.replace("False", " false ")
         #simplifiedPrecondition = simplifiedPrecondition.replace("True", " true ")
         #simplifiedPrecondition = simplifiedPrecondition.replace("\n", "  ")
-        return simplifiedPrecondition

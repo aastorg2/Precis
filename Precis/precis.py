@@ -204,7 +204,7 @@ if __name__ == '__main__':
     stackPUTs = ['PUT_PushContract', 'PUT_PopContract',
                  'PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract']
     
-
+    #stackPUTs = ['PUT_ContainsContract']
     p = Problem(sln, projectName, testDebugFolder, testDll,
                 testFileName, testNamepace, testClass,stackPUTs )
     
@@ -290,13 +290,14 @@ if __name__ == '__main__':
     testFileName = 'UndirectedGraphContractTest.cs'
     testNamepace = 'UndirectedGraph.Test'
     testClass = 'UndirectedGraphContractTest'
-    #ugraphPUTs = ['PUT_AddVertexContract', 'PUT_RemoveVertexContract','PUT_ClearAdjacentEdgesContract','PUT_ContainsEdgeContract'
-                    #'PUT_RemoveVertexContract', 'PUT_ClearAdjacentEdgesContract', 'PUT_ContainsEdgeContract',
+    #ugraphPUTs = ['PUT_AddVertexContract', 'PUT_RemoveVertexContract','PUT_ClearAdjacentEdgesContract','PUT_ContainsEdgeContract', 'PUT_RemoveVertexContract',
                     #'PUT_ContainsEdgeIntContract', 'PUT_AdjacentEdgeContract', 'PUT_IsVerticesEmptyContract', 'PUT_VertexCountContract', 'PUT_ContainsVertexContract',
                     #'PUT_AddEdgeContract', 'PUT_RemoveEdgeContract', 'PUT_IsEdgesEmptyContract', 'PUT_EdgeCountContract', 'PUT_AdjacentDegreeContract',
                     #'PUT_IsAdjacentEdgesEmptyContract']
 
-    ugraphPUTs = ['PUT_ContainsEdgeIntContract', 'PUT_AdjacentEdgeContract', 'PUT_IsVerticesEmptyContract', 'PUT_VertexCountContract', 'PUT_ContainsVertexContract']
+    #ugraphPUTs = ['PUT_AddEdgeContract', 'PUT_RemoveEdgeContract', 'PUT_IsEdgesEmptyContract', 'PUT_EdgeCountContract', 'PUT_AdjacentDegreeContract']
+    ugraphPUTs = ['PUT_IsAdjacentEdgesEmptyContract']
+
     p5 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,ugraphPUTs)
     
@@ -324,7 +325,7 @@ if __name__ == '__main__':
     logger1 = logging.getLogger("Results")
     logger1.setLevel(logging.INFO)
     
-    evalutating = True 
+    evalutating = False 
     if evalutating:
         #stackPUTs = ['PUT_PushContract']
         #for prob in subjects:
@@ -343,6 +344,8 @@ if __name__ == '__main__':
             print(prob.puts)
             # run all cases up to k
             runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
+            #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
+            
             break
             #Run one test and one case
             #break
@@ -354,7 +357,8 @@ if __name__ == '__main__':
     else:
         #unit tests
         #(p,['PUT_PopContract']), """ remove before this """,
-        unitTests = [(p5,['PUT_AddVertexContract'] ), """ remove before this """,(p,['PUT_PushContract']), (p, ['PUT_ContainsContract']), (p1, ['PUT_AddContract']), (p3,['PUT_DequeueContract']),(p2,['PUT_ContainsValueContract']) ]
+        #unitTests = [(p5,['PUT_AddVertexContract'] ), """ remove before this """,(p,['PUT_PushContract']), (p, ['PUT_ContainsContract']), (p1, ['PUT_AddContract']), (p3,['PUT_DequeueContract']),(p2,['PUT_ContainsValueContract']) ]
+        unitTests = [(p,['PUT_PushContract'])]
         for t in unitTests:
             resultFileName = "regression_results_2"+str(t[0].projectName)
             fh1 = logging.FileHandler(resultFileName)
@@ -367,5 +371,5 @@ if __name__ == '__main__':
             print(prob.puts)
             # run all cases up to k
             #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
-            runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
+            runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 1)
             break
