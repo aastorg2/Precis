@@ -322,6 +322,24 @@ if __name__ == '__main__':
 
     #endregion BinaryHeap
 
+    #region NetBigInteger
+    sln = os.path.abspath('../ContractsSubjects/NetBigInteger/NetBigInteger.sln')
+    projectName = 'NetBigIntegerTest'
+    testDebugFolder = '../ContractsSubjects/NetBigInteger/NetBigIntegerTest/bin/Debug/'
+    testDll = testDebugFolder + 'NetBigIntegerTest.dll'
+    testFileName = 'NetBigIntegerContractTest.cs'
+    testNamepace = 'NetBigInteger.Test'
+    testClass = 'NetBigIntegerContractTest'
+    heapPUTs = ['PUT_AbsContract', 'PUT_AddContract', 'PUT_AndContract', 'PUT_BitLengthGetContract', 'PUT_CompareToContract', 'PUT_CompareTo01Contract', 'PUT_ConstructorContract', 'PUT_Constructor01Contract', 'PUT_Constructor02Contract', 'PUT_Constructor03Contract', 'PUT_Constructor04Contract', 'PUT_Constructor05Contract', 'PUT_DivideContract', 'PUT_DivideAndRemainderContract', 'PUT_Equals01Contract', 'PUT_GcdContract', 'PUT_GetHashCode01Contract', 'PUT_GetLowestSetBitContract', 'PUT_IntValueGetContract', 'PUT_MaxContract', 'PUT_MinContract', 'PUT_ModContract', 'PUT_ModInverseContract', 'PUT_ModPowContract', 'PUT_ModulusContract', 'PUT_MultiplyContract', 'PUT_NegateContract', 'PUT_RemainderContract', 'PUT_ShiftLeftContract', 'PUT_ShiftRightContract', 'PUT_SignValueGetContract', 'PUT_SubtractContract', 'PUT_TestBitContract', 'PUT_ToByteArrayContract', 'PUT_ToByteArrayUnsignedContract', 'PUT_ToString01Contract', 'PUT_ToString02Contract', 'PUT_ValueOfContract'
+    ]
+    
+    p7 = Problem(sln, projectName, testDebugFolder, testDll,
+                 testFileName, testNamepace, testClass,heapPUTs)
+
+    subjects.append(p7)
+    #endregion NetBigInteger
+
+
     logger1 = logging.getLogger("Results")
     logger1.setLevel(logging.INFO)
     
