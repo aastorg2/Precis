@@ -384,3 +384,5 @@ z3/
 *.txt
 information
 example.yaml
+tempLocation/
+regression_results*
