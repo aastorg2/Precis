@@ -71,8 +71,7 @@ class PrecisFormula:
     def precisSimplify(self):
         postcondition = self.formulaZ3
         
-        set_option(max_args=10000000, max_lines=1000000,
-                   max_depth=10000000, max_visited=1000000)
+        set_option(max_args = 10000000, max_lines = 1000000, max_depth = 10000000, max_visited = 1000000)
         set_option(html_mode=False)
         set_fpa_pretty(flag=False)
 
@@ -92,16 +91,17 @@ class PrecisFormula:
 
         g = Goal()
         g.add(postcondition)
-
+        
         works = Repeat(Then(
             OrElse(Tactic('ctx-solver-simplify'), Tactic('skip')),
 
             OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
+            
             # OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
             # OrElse(Tactic('purify-arith'),Tactic('skip')),
-            #OrElse(Tactic('ctx-simplify'),Tactic('skip')),
-            #OrElse(Tactic('dom-simplify'),Tactic('skip')),
-            #OrElse(Tactic('propagate-values'),Tactic('skip')),
+            # OrElse(Tactic('ctx-simplify'),Tactic('skip')),
+            # OrElse(Tactic('dom-simplify'),Tactic('skip')),
+            # OrElse(Tactic('propagate-values'),Tactic('skip')),
 
             OrElse(Tactic('simplify'), Tactic('skip')),
 
@@ -111,9 +111,9 @@ class PrecisFormula:
             # OrElse(Tactic('lia2pb'),Tactic('skip')),
             # OrElse(Tactic('recover-01'),Tactic('skip')),
 
-            # must to remove ite
-            #OrElse(Tactic('elim-term-ite'), Tactic('skip')),
-            #OrElse(Tactic('smt'), Tactic('skip')),
+            #must to remove ite
+            # OrElse(Tactic('elim-term-ite'), Tactic('skip')),
+            # OrElse(Tactic('smt'), Tactic('skip')),
             # OrElse(Tactic('injectivity'),Tactic('skip')),
             # OrElse(Tactic('snf'),Tactic('skip')),
             # OrElse(Tactic('reduce-args'),Tactic('skip')),
@@ -122,11 +122,11 @@ class PrecisFormula:
             # OrElse(Tactic('macro-finder'),Tactic('skip')),
             # OrElse(Tactic('quasi-macros'),Tactic('skip')),
             Repeat(OrElse(Tactic('cofactor-term-ite'), Tactic('skip'))),
-            Repeat(OrElse(Tactic('split-clause'), Tactic('skip'))),
-            
+            Repeat(OrElse(Tactic('split-clause'), Tactic('skip'))),   
         ))
-        #works1 = Tactic('simplify')
-
+        
+        
+        
         result = works(g)
         #result = works1(g)
         # split_all =
@@ -138,7 +138,8 @@ class PrecisFormula:
         # remove empty subgoals and check if resultant list is empty.
         result = filter(None, result)
         if not result:
-            return "true"
+            print("there is an error in the custom simplify Z3")
+            sys.exit(-9)
         
         # return result
         result = list(result)

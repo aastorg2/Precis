@@ -58,7 +58,7 @@ def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
             simplifiedPost = PrecisFormula(currentPostcondition.precisSimplify())
             return currentPostcondition, simplifiedPost, rounds, totalPexTime, totalLearningTime, len(allBaseFeatureVectors)
 
-        if rounds == 16:
+        if rounds == 20:
             print("BAD!")
             simplifiedPost = PrecisFormula(currentPostcondition.precisSimplify())
             return currentPostcondition, simplifiedPost, rounds, totalPexTime, totalLearningTime, len(allBaseFeatureVectors)
@@ -73,7 +73,8 @@ def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
         logger1.info("#############\nRound: "+str(rounds)+"\n")
         # Learning function
         startLearningTime = time.time()
-        postcondition = disLearner.learn3( k, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), "root")
+        s = Solver()
+        postcondition = disLearner.learn3( k, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), s,"root")
         learningTime = time.time() - startLearningTime
         totalLearningTime += learningTime
 
@@ -301,11 +302,10 @@ if __name__ == '__main__':
     p5 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,ugraphPUTs)
     
-    
-    
     subjects.append(p5)
     #endregion of UndirectedGraph
 
+    #C:\Users\astor\Research\LearningContracts\ContractsSubjects\BinaryHeap3\BinaryHeapTest\BinaryHeapContractTest.cs
     #region BinaryHeap
     sln = os.path.abspath('../ContractsSubjects/BinaryHeap3/BinaryHeap.sln')
     projectName = 'BinaryHeapTest'
@@ -321,6 +321,7 @@ if __name__ == '__main__':
                  testFileName, testNamepace, testClass,heapPUTs)
 
     #endregion BinaryHeap
+    subjects.append(p6)
 
     logger1 = logging.getLogger("Results")
     logger1.setLevel(logging.INFO)
@@ -358,18 +359,22 @@ if __name__ == '__main__':
         #unit tests
         #(p,['PUT_PopContract']), """ remove before this """,
         #unitTests = [(p5,['PUT_AddVertexContract'] ), """ remove before this """,(p,['PUT_PushContract']), (p, ['PUT_ContainsContract']), (p1, ['PUT_AddContract']), (p3,['PUT_DequeueContract']),(p2,['PUT_ContainsValueContract']) ]
-        unitTests = [(p,['PUT_PushContract'])]
+        #unitTests = [(p2,['PUT_AddContract'])]
+        #unitTests = [(p,['PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract'])]
+        #unitTests = [(p1,['PUT_ContainsContract'])]
+        unitTests = [(p3,['PUT_DequeueContract'])]
+
         for t in unitTests:
             resultFileName = "regression_results_2"+str(t[0].projectName)
             fh1 = logging.FileHandler(resultFileName)
             formatter1 = logging.Formatter('%(message)s')
             fh1.setFormatter(formatter1)
             logger1.addHandler(fh1)
-            prob = t[0]
-            prob.puts = t[1]
+            prob = t[0] # t[0] -> problem
+            prob.puts = t[1] # t[1] -> list of PUTs
             print(prob.projectName)
             print(prob.puts)
             # run all cases up to k
             #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
-            runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 1)
+            runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
             break

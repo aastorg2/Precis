@@ -32,7 +32,7 @@ class DisjunctiveLearner:
         uniqueDerivFeats = tuple([f for f in derivFeats if f not in exclude])
         return uniqueDerivFeats
     #baseFeartureVectors : List of lists but the inner list are FeatureVector datatype
-    def learn3(self, k, intBaseFeat, boolBaseFeat, baseFeatureValues, exclude, call):
+    def learn3(self, k, intBaseFeat, boolBaseFeat, baseFeatureValues, exclude, solver, call):
         #on the empty set of data points, return true
         if len(baseFeatureValues) == 0:
             print("called learn3 with 0 feature vectors")
@@ -66,9 +66,12 @@ class DisjunctiveLearner:
             
             ######################################
             #bug: chooseFeatureImplication does not update reamining bool features or feature vectors. Idx is with respect to updates
+            #solver = Solver()
+            solver.add(allTrueFormula.formulaZ3 == BoolVal(True))
+            solver.push()
             (f,idx, posBaseFv, negBaseFv, remainingBaseBoolFeat, remainingDerivBoolFeat ) = \
                 self.chooseFeatureImplication(allTrueFormula,intBaseFeat,remainingBaseBoolFeat , remainingDerivBoolFeat, \
-                    Featurizer.mergeFeatureVectors(intBaseFeatVectors,reaminingEntriesBaseBoolFv) , reaminingEntriesDerivBoolFv, lookAhead, call )
+                    Featurizer.mergeFeatureVectors(intBaseFeatVectors,reaminingEntriesBaseBoolFv) , reaminingEntriesDerivBoolFv, lookAhead, solver, call )
             ######################################
             if idx < 0:
                 print("Predicate: "+ call + " for k = "+ str(k)+" : None")
@@ -91,15 +94,17 @@ class DisjunctiveLearner:
                 # if predicate to split is in baseFeatures, the update posBaseFv and negBaseFv feature vectors
                 posBaseFv = self.removeFeatureEntryInBaseFv(posBaseFv,[idx+lookAhead])
                 negBaseFv = self.removeFeatureEntryInBaseFv(negBaseFv,[idx+lookAhead])
-
+            #push(allTrue)
             posPost = self.learn3( k-1,\
-                intBaseFeat, newBoolBaseFeat, posBaseFv, exclude, call + " Left")  #recursive call
+                intBaseFeat, newBoolBaseFeat, posBaseFv, exclude, solver, call + " Left")  #recursive call
             
             logger.info(call +" Left: " + " for k = "+ str(k)+" : "+ posPost.toInfix())
             print(call +" Left: " + " for k = "+ str(k)+" : "+ posPost.toInfix())
 
             negPost = self.learn3( k-1,\
-                intBaseFeat, newBoolBaseFeat, negBaseFv, exclude, call +" Right") #recursive call
+                intBaseFeat, newBoolBaseFeat, negBaseFv, exclude, solver, call +" Right") #recursive call
+            
+            solver.pop()
 
             logger.info(call +" Right: " + " for k = "+ str(k)+" : "+ negPost.toInfix())
             print(call +" Right: " + " for k = "+ str(k)+" : "+ negPost.toInfix())
@@ -110,7 +115,7 @@ class DisjunctiveLearner:
 
     #Features only contains bool features
     def chooseFeatureImplication(self, alwaysTrueFormula, intBaseFeatures, baseBoolFeatures, \
-         derivBoolFeatures, baseFv, derivFv, lookAhead, call ):
+         derivBoolFeatures, baseFv, derivFv, lookAhead, solver, call ):
         houdini = Houdini()
         fvPos = list()
         fvPosDeriv = list()
@@ -147,9 +152,10 @@ class DisjunctiveLearner:
             disjunct = Or(And(posAllTrueFormula.formulaZ3, feature.varZ3 ) , And(negAllTrueFormula.formulaZ3, Not(feature.varZ3)))
            
             implication = Implies(alwaysTrueFormula.formulaZ3 , disjunct)
-            solver = Solver()
+            #solver = Solver()
             # check (not (postK0 => postK1)) is unsat -- validity check
             solver.add(Not(implication))
+            #logger.info("smt format:\n"+ solver.to_smt2())
             check = solver.check()
             #splitting on `feature does not` add new information: alwaysTrueFormula -> (OR(f and posSplit, ~f and negSplit)) is valid
             if str(check) == 'unsat':
