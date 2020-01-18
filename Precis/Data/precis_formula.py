@@ -99,8 +99,8 @@ class PrecisFormula:
             
             # OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
             # OrElse(Tactic('purify-arith'),Tactic('skip')),
-            # OrElse(Tactic('ctx-simplify'),Tactic('skip')),
-            # OrElse(Tactic('dom-simplify'),Tactic('skip')),
+              OrElse(Tactic('ctx-simplify'),Tactic('skip')),
+              OrElse(Tactic('dom-simplify'),Tactic('skip')),
             # OrElse(Tactic('propagate-values'),Tactic('skip')),
 
             OrElse(Tactic('simplify'), Tactic('skip')),
@@ -121,7 +121,7 @@ class PrecisFormula:
             # OrElse(Tactic('symmetry-reduce'),Tactic('skip')),
             # OrElse(Tactic('macro-finder'),Tactic('skip')),
             # OrElse(Tactic('quasi-macros'),Tactic('skip')),
-            Repeat(OrElse(Tactic('cofactor-term-ite'), Tactic('skip'))),
+            #Repeat(OrElse(Tactic('cofactor-term-ite'), Tactic('skip'))),
             Repeat(OrElse(Tactic('split-clause'), Tactic('skip'))),   
         ))
         
