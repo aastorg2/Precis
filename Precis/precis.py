@@ -78,11 +78,11 @@ def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
         learningTime = time.time() - startLearningTime
         totalLearningTime += learningTime
 
-        logger1.info("unsimplified post:\n"+ postcondition.toInfix()+"\n")
+        logger1.info("Unsimplified post:\n\n"+ postcondition.toInfix()+"\n")
         
         print("unsimplified post "+ postcondition.toInfix())
         print("")
-        print("simplified post "+ PrecisFormula(postcondition.precisSimplify()).toInfix() )
+        print("Simplified post:\n\n"+ PrecisFormula(postcondition.precisSimplify()).toInfix() )
         # assumes ms build in path
         inst = Instrumenter(
             "MSBuild.exe", "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
@@ -362,7 +362,7 @@ if __name__ == '__main__':
         #unitTests = [(p2,['PUT_AddContract'])]
         #unitTests = [(p,['PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract'])]
         #unitTests = [(p1,['PUT_ContainsContract'])]
-        unitTests = [(p3,['PUT_DequeueContract'])]
+        unitTests = [(p3,['PUT_EnqueueContract'])]
 
         for t in unitTests:
             resultFileName = "regression_results_2"+str(t[0].projectName)
@@ -376,5 +376,5 @@ if __name__ == '__main__':
             print(prob.puts)
             # run all cases up to k
             #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
-            runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
+            runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 1)
             break
