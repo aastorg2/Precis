@@ -84,8 +84,8 @@ def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
         print("")
         print("Simplified post:\n\n"+ PrecisFormula(postcondition.precisSimplify()).toInfix() )
         # assumes ms build in path
-        inst = Instrumenter(
-            "MSBuild.exe", "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
+        #inst = Instrumenter(
+        #    "MSBuild.exe", "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
         inst.instrumentPost(p, postcondition, PUTName)
         
         currentPostcondition = PrecisFormula(postcondition.formulaZ3)
