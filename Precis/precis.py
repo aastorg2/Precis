@@ -20,11 +20,11 @@ import evaluation
 
 
 def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
-    sygusExecutable = "Precis/Learners/EnumerativeSolver/bin/starexec_run_Default"
-    tempLocation = "tempLocation"
+    sygusExecutable = "./Learners/EnumerativeSolver/bin/starexec_run_Default"
+    tempLocation = "../tempLocation"
     sygusFileName = "postcondition.sl"
     #assumes MSBuils.exe in path
-    inst = Instrumenter("MSBuild.exe", "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
+    inst = Instrumenter("MSBuild.exe", "../Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
     p.ExtractObservers(PUTName, outputFile)
     
     # returns list of base features
@@ -107,7 +107,7 @@ def runLearnPost(p, putList, projectName, outputFile, k ):
         results = []
         for i in range(0, k+1):
             
-            locationOfTests = evaluation.createDirectoryForTests("../evaluation", p.projectName, PUTName,"Case"+str(i))
+            locationOfTests = evaluation.createDirectoryForTests("../../evaluation", p.projectName, PUTName,"Case"+str(i))
             assert(locationOfTests != None)
             
             print(locationOfTests)
@@ -191,13 +191,13 @@ if __name__ == '__main__':
 
     
     # endregion
-    outputFileType = os.path.abspath('./typesOM.txt')
+    outputFileType = os.path.abspath('../typesOM.txt')
     subjects = []
     
     #region Stack
-    sln = os.path.abspath('../ContractsSubjects/Stack/Stack.sln')
+    sln = os.path.abspath('../../ContractsSubjects/Stack/Stack.sln')
     projectName = 'StackTest'
-    testDebugFolder = '../ContractsSubjects/Stack/StackTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/Stack/StackTest/bin/Debug/'
     testDll = testDebugFolder + 'StackTest.dll'
     testFileName = 'StackContractTest.cs'
     testNamepace = 'Stack.Test'
@@ -362,7 +362,7 @@ if __name__ == '__main__':
         #unitTests = [(p2,['PUT_AddContract'])]
         #unitTests = [(p,['PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract'])]
         #unitTests = [(p1,['PUT_ContainsContract'])]
-        unitTests = [(p3,['PUT_EnqueueContract'])]
+        unitTests = [(p,['PUT_PushContract'])]
 
         for t in unitTests:
             resultFileName = "regression_results_2"+str(t[0].projectName)
@@ -375,6 +375,6 @@ if __name__ == '__main__':
             print(prob.projectName)
             print(prob.puts)
             # run all cases up to k
-            #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
-            runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 1)
+            runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
+            #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
             break
