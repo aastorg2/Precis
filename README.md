@@ -10,7 +10,8 @@
 
 
 ## Development notes
-1. When executing this program in VSCode, relative paths used in our code depends on where you open VSCode.
+1. When executing this program in VSCode, relative paths used in our code depends on where you open VSCode(Working Directory).
+2. Working directory is Precis/
 
 ## Instrumenter
 1. Usage: Instrumenter.exe --solution=<> --test-project-name=<> --test-file-name=<> --PUT-name=<> --post-condition=<>
