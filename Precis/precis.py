@@ -213,9 +213,9 @@ if __name__ == '__main__':
     #endregion of Stack
 
     #region HashSet
-    sln = os.path.abspath('../ContractsSubjects/HashSet/HashSet.sln')
+    sln = os.path.abspath('../../ContractsSubjects/HashSet/HashSet.sln')
     projectName = 'HashSetTest'
-    testDebugFolder = '../ContractsSubjects/HashSet/HashSetTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/HashSet/HashSetTest/bin/Debug/'
     testDll = testDebugFolder + 'HashSetTest.dll'
     testFileName = 'HashSetContractTest.cs'
     testNamepace = 'HashSet.Test'
@@ -232,9 +232,9 @@ if __name__ == '__main__':
     #endregion of HashSet
 
     #region Dictionary
-    sln = os.path.abspath('../ContractsSubjects/Dictionary/Dictionary.sln')
+    sln = os.path.abspath('../../ContractsSubjects/Dictionary/Dictionary.sln')
     projectName = 'DictionaryTest'
-    testDebugFolder = '../ContractsSubjects/Dictionary/DictionaryTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/Dictionary/DictionaryTest/bin/Debug/'
     testDll = testDebugFolder + 'DictionaryTest.dll'
     testFileName = 'DictionaryContractTest.cs'
     testNamepace = 'Dictionary.Test'
@@ -249,9 +249,9 @@ if __name__ == '__main__':
     #endregion of Dictionary
 
     #region Queue
-    sln = os.path.abspath('../ContractsSubjects/Queue/Queue.sln')
+    sln = os.path.abspath('../../ContractsSubjects/Queue/Queue.sln')
     projectName = 'QueueTest'
-    testDebugFolder = '../ContractsSubjects/Queue/QueueTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/Queue/QueueTest/bin/Debug/'
     testDll = testDebugFolder + 'QueueTest.dll'
     testFileName = 'QueueContractTest.cs'
     testNamepace = 'Queue.Test'
@@ -267,9 +267,9 @@ if __name__ == '__main__':
     #endregion Queue
 
     #region ArrayList
-    sln = os.path.abspath('../ContractsSubjects/ArrayList/ArrayList.sln')
+    sln = os.path.abspath('../../ContractsSubjects/ArrayList/ArrayList.sln')
     projectName = 'ArrayListTest'
-    testDebugFolder = '../ContractsSubjects/ArrayList/ArrayListTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/ArrayList/ArrayListTest/bin/Debug/'
     testDll = testDebugFolder + 'ArrayListTest.dll'
     testFileName = 'ArrayListContractTest.cs'
     testNamepace = 'ArrayList.Test'
@@ -284,9 +284,9 @@ if __name__ == '__main__':
     #endregion of ArrayList
 
     #region UndirectedGraph
-    sln = os.path.abspath('../ContractsSubjects/UndirectedGraph3/UndirectedGraph.sln')
+    sln = os.path.abspath('../../ContractsSubjects/UndirectedGraph3/UndirectedGraph.sln')
     projectName = 'UndirectedGraphTest'
-    testDebugFolder = '../ContractsSubjects/UndirectedGraph3/UndirectedGraphTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/UndirectedGraph3/UndirectedGraphTest/bin/Debug/'
     testDll = testDebugFolder + 'UndirectedGraphTest.dll'
     testFileName = 'UndirectedGraphContractTest.cs'
     testNamepace = 'UndirectedGraph.Test'
@@ -307,9 +307,9 @@ if __name__ == '__main__':
 
     #C:\Users\astor\Research\LearningContracts\ContractsSubjects\BinaryHeap3\BinaryHeapTest\BinaryHeapContractTest.cs
     #region BinaryHeap
-    sln = os.path.abspath('../ContractsSubjects/BinaryHeap3/BinaryHeap.sln')
+    sln = os.path.abspath('../../ContractsSubjects/BinaryHeap3/BinaryHeap.sln')
     projectName = 'BinaryHeapTest'
-    testDebugFolder = '../ContractsSubjects/BinaryHeap3/BinaryHeapTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/BinaryHeap3/BinaryHeapTest/bin/Debug/'
     testDll = testDebugFolder + 'BinaryHeapTest.dll'
     testFileName = 'BinaryHeapContractTest.cs'
     testNamepace = 'BinaryHeap.Test'
