@@ -63,7 +63,10 @@ class Pex:
                     val = self.ReplaceIntMinAndMax(val)
                     val = self.ReplaceTrueAndFalse(val)
                     singlePoint = singlePoint + (val,)
-
+            
+            if len(singlePoint) < len(precisFeatureList):
+                continue
+            
             if test.get('status') == 'normaltermination':
                 #singlePoint = singlePoint + ('True',)
                 featureValues = FeatureVector(precisFeatureList, singlePoint, 'True')
@@ -74,9 +77,6 @@ class Pex:
                 if test.get('name').find("TermDestruction") != -1:
                     continue
                 featureValues = FeatureVector(precisFeatureList, singlePoint, 'False')
-
-            if len(singlePoint) < len(precisFeatureList):
-                continue
             
             assert(featureValues != None)
             dataPoints.append(featureValues)
