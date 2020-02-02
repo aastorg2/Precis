@@ -20,11 +20,11 @@ import evaluation
 
 
 def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
-    sygusExecutable = "Precis/Learners/EnumerativeSolver/bin/starexec_run_Default"
-    tempLocation = "tempLocation"
+    sygusExecutable = "./Learners/EnumerativeSolver/bin/starexec_run_Default"
+    tempLocation = "../tempLocation"
     sygusFileName = "postcondition.sl"
     #assumes MSBuils.exe in path
-    inst = Instrumenter("MSBuild.exe", "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
+    inst = Instrumenter("MSBuild.exe", "../Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
     p.ExtractObservers(PUTName, outputFile)
     
     # returns list of base features
@@ -58,7 +58,7 @@ def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
             simplifiedPost = PrecisFormula(currentPostcondition.precisSimplify())
             return currentPostcondition, simplifiedPost, rounds, totalPexTime, totalLearningTime, len(allBaseFeatureVectors)
 
-        if rounds == 16:
+        if rounds == 20:
             print("BAD!")
             simplifiedPost = PrecisFormula(currentPostcondition.precisSimplify())
             return currentPostcondition, simplifiedPost, rounds, totalPexTime, totalLearningTime, len(allBaseFeatureVectors)
@@ -73,18 +73,19 @@ def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
         logger1.info("#############\nRound: "+str(rounds)+"\n")
         # Learning function
         startLearningTime = time.time()
-        postcondition = disLearner.learn3( k, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), "root")
+        s = Solver()
+        postcondition = disLearner.learn3( k, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), s,"root")
         learningTime = time.time() - startLearningTime
         totalLearningTime += learningTime
 
-        logger1.info("unsimplified post:\n"+ postcondition.toInfix()+"\n")
+        logger1.info("Unsimplified post:\n\n"+ postcondition.toInfix()+"\n")
         
         print("unsimplified post "+ postcondition.toInfix())
         print("")
-        print("simplified post "+ PrecisFormula(postcondition.precisSimplify()).toInfix() )
+        print("Simplified post:\n\n"+ PrecisFormula(postcondition.precisSimplify()).toInfix() )
         # assumes ms build in path
-        inst = Instrumenter(
-            "MSBuild.exe", "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
+        #inst = Instrumenter(
+        #    "MSBuild.exe", "./Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
         inst.instrumentPost(p, postcondition, PUTName)
         
         currentPostcondition = PrecisFormula(postcondition.formulaZ3)
@@ -106,7 +107,7 @@ def runLearnPost(p, putList, projectName, outputFile, k ):
         results = []
         for i in range(0, k+1):
             
-            locationOfTests = evaluation.createDirectoryForTests("../evaluation", p.projectName, PUTName,"Case"+str(i))
+            locationOfTests = evaluation.createDirectoryForTests("../../evaluation", p.projectName, PUTName,"Case"+str(i))
             assert(locationOfTests != None)
             
             print(locationOfTests)
@@ -190,13 +191,13 @@ if __name__ == '__main__':
 
     
     # endregion
-    outputFileType = os.path.abspath('./typesOM.txt')
+    outputFileType = os.path.abspath('../typesOM.txt')
     subjects = []
     
     #region Stack
-    sln = os.path.abspath('../ContractsSubjects/Stack/Stack.sln')
+    sln = os.path.abspath('../../ContractsSubjects/Stack/Stack.sln')
     projectName = 'StackTest'
-    testDebugFolder = '../ContractsSubjects/Stack/StackTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/Stack/StackTest/bin/Debug/'
     testDll = testDebugFolder + 'StackTest.dll'
     testFileName = 'StackContractTest.cs'
     testNamepace = 'Stack.Test'
@@ -212,9 +213,9 @@ if __name__ == '__main__':
     #endregion of Stack
 
     #region HashSet
-    sln = os.path.abspath('../ContractsSubjects/HashSet/HashSet.sln')
+    sln = os.path.abspath('../../ContractsSubjects/HashSet/HashSet.sln')
     projectName = 'HashSetTest'
-    testDebugFolder = '../ContractsSubjects/HashSet/HashSetTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/HashSet/HashSetTest/bin/Debug/'
     testDll = testDebugFolder + 'HashSetTest.dll'
     testFileName = 'HashSetContractTest.cs'
     testNamepace = 'HashSet.Test'
@@ -231,9 +232,9 @@ if __name__ == '__main__':
     #endregion of HashSet
 
     #region Dictionary
-    sln = os.path.abspath('../ContractsSubjects/Dictionary/Dictionary.sln')
+    sln = os.path.abspath('../../ContractsSubjects/Dictionary/Dictionary.sln')
     projectName = 'DictionaryTest'
-    testDebugFolder = '../ContractsSubjects/Dictionary/DictionaryTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/Dictionary/DictionaryTest/bin/Debug/'
     testDll = testDebugFolder + 'DictionaryTest.dll'
     testFileName = 'DictionaryContractTest.cs'
     testNamepace = 'Dictionary.Test'
@@ -248,9 +249,9 @@ if __name__ == '__main__':
     #endregion of Dictionary
 
     #region Queue
-    sln = os.path.abspath('../ContractsSubjects/Queue/Queue.sln')
+    sln = os.path.abspath('../../ContractsSubjects/Queue/Queue.sln')
     projectName = 'QueueTest'
-    testDebugFolder = '../ContractsSubjects/Queue/QueueTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/Queue/QueueTest/bin/Debug/'
     testDll = testDebugFolder + 'QueueTest.dll'
     testFileName = 'QueueContractTest.cs'
     testNamepace = 'Queue.Test'
@@ -266,9 +267,9 @@ if __name__ == '__main__':
     #endregion Queue
 
     #region ArrayList
-    sln = os.path.abspath('../ContractsSubjects/ArrayList/ArrayList.sln')
+    sln = os.path.abspath('../../ContractsSubjects/ArrayList/ArrayList.sln')
     projectName = 'ArrayListTest'
-    testDebugFolder = '../ContractsSubjects/ArrayList/ArrayListTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/ArrayList/ArrayListTest/bin/Debug/'
     testDll = testDebugFolder + 'ArrayListTest.dll'
     testFileName = 'ArrayListContractTest.cs'
     testNamepace = 'ArrayList.Test'
@@ -283,9 +284,9 @@ if __name__ == '__main__':
     #endregion of ArrayList
 
     #region UndirectedGraph
-    sln = os.path.abspath('../ContractsSubjects/UndirectedGraph3/UndirectedGraph.sln')
+    sln = os.path.abspath('../../ContractsSubjects/UndirectedGraph3/UndirectedGraph.sln')
     projectName = 'UndirectedGraphTest'
-    testDebugFolder = '../ContractsSubjects/UndirectedGraph3/UndirectedGraphTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/UndirectedGraph3/UndirectedGraphTest/bin/Debug/'
     testDll = testDebugFolder + 'UndirectedGraphTest.dll'
     testFileName = 'UndirectedGraphContractTest.cs'
     testNamepace = 'UndirectedGraph.Test'
@@ -301,15 +302,14 @@ if __name__ == '__main__':
     p5 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,ugraphPUTs)
     
-    
-    
     subjects.append(p5)
     #endregion of UndirectedGraph
 
+    #C:\Users\astor\Research\LearningContracts\ContractsSubjects\BinaryHeap3\BinaryHeapTest\BinaryHeapContractTest.cs
     #region BinaryHeap
-    sln = os.path.abspath('../ContractsSubjects/BinaryHeap3/BinaryHeap.sln')
+    sln = os.path.abspath('../../ContractsSubjects/BinaryHeap3/BinaryHeap.sln')
     projectName = 'BinaryHeapTest'
-    testDebugFolder = '../ContractsSubjects/BinaryHeap3/BinaryHeapTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/BinaryHeap3/BinaryHeapTest/bin/Debug/'
     testDll = testDebugFolder + 'BinaryHeapTest.dll'
     testFileName = 'BinaryHeapContractTest.cs'
     testNamepace = 'BinaryHeap.Test'
@@ -321,6 +321,7 @@ if __name__ == '__main__':
                  testFileName, testNamepace, testClass,heapPUTs)
 
     #endregion BinaryHeap
+    subjects.append(p6)
 
     #region NetBigInteger
     sln = os.path.abspath('../ContractsSubjects/NetBigInteger/NetBigInteger.sln')
@@ -376,18 +377,22 @@ if __name__ == '__main__':
         #unit tests
         #(p,['PUT_PopContract']), """ remove before this """,
         #unitTests = [(p5,['PUT_AddVertexContract'] ), """ remove before this """,(p,['PUT_PushContract']), (p, ['PUT_ContainsContract']), (p1, ['PUT_AddContract']), (p3,['PUT_DequeueContract']),(p2,['PUT_ContainsValueContract']) ]
+        #unitTests = [(p2,['PUT_AddContract'])]
+        #unitTests = [(p,['PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract'])]
+        #unitTests = [(p1,['PUT_ContainsContract'])]
         unitTests = [(p,['PUT_PushContract'])]
+
         for t in unitTests:
             resultFileName = "regression_results_2"+str(t[0].projectName)
             fh1 = logging.FileHandler(resultFileName)
             formatter1 = logging.Formatter('%(message)s')
             fh1.setFormatter(formatter1)
             logger1.addHandler(fh1)
-            prob = t[0]
-            prob.puts = t[1]
+            prob = t[0] # t[0] -> problem
+            prob.puts = t[1] # t[1] -> list of PUTs
             print(prob.projectName)
             print(prob.puts)
             # run all cases up to k
-            #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
-            runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 1)
+            runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
+            #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
             break

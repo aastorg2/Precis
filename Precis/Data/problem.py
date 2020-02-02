@@ -22,7 +22,7 @@ class Problem:
     # Use C# code to extract the observer methods and corresponding types to an output file
     def ExtractObservers(self, PUTName, outputFile):
         # assert PUTName in self.PUTs, 'PUTName not found or does not match PUTs given in constructor!!!'
-        observerExtractor = os.path.abspath('./ObserverExtractor/ObserverExtractor/bin/Debug/ObserverExtractor.exe')
+        observerExtractor = os.path.abspath('../ObserverExtractor/ObserverExtractor/bin/Debug/ObserverExtractor.exe')
         cmd = observerExtractor + ' ' + self.sln + ' ' + self.projectName + ' ' + self.testFileName + ' ' + PUTName + ' ' + outputFile
         os.system(cmd)
 

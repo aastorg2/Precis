@@ -319,10 +319,7 @@ if __name__ == '__main__':
             print("--runMode disjunc command must be used with --base")
             sys.exit(-1)
         puts = ParseResults(baseResults)
-        (k1,k2,onlyK2) = getNumberOfKDisjunctive(puts)
-        print("k1 disj: "+str(k1),"k2 disj: "+str(k2),"only k2 disj: "+str(onlyK2))
-        print("")
-        print("number of PUts: "+str(len(puts)))
+        
         #these can overlap
         (k1Puts, k2Puts, onlyk2Puts) = getPutByDisjunction(puts)
         print("K1 cases:")
@@ -331,6 +328,11 @@ if __name__ == '__main__':
         printDisjuncPuts(k2Puts, "2")
         print("only K2 cases:")
         printDisjuncPuts(onlyk2Puts, "2")
+
+        (k1,k2,onlyK2) = getNumberOfKDisjunctive(puts)
+        print("k1 disj: "+str(k1),"k2 disj: "+str(k2),"only k2 disj: "+str(onlyK2))
+        print("")
+        print("number of PUts: "+str(len(puts)))
     else:
         pass
 
