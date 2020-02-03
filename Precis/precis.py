@@ -324,9 +324,9 @@ if __name__ == '__main__':
     subjects.append(p6)
 
     #region NetBigInteger
-    sln = os.path.abspath('../ContractsSubjects/NetBigInteger/NetBigInteger.sln')
+    sln = os.path.abspath('../../ContractsSubjects/NetBigInteger/NetBigInteger.sln')
     projectName = 'NetBigIntegerTest'
-    testDebugFolder = '../ContractsSubjects/NetBigInteger/NetBigIntegerTest/bin/Debug/'
+    testDebugFolder = '../../ContractsSubjects/NetBigInteger/NetBigIntegerTest/bin/Debug/'
     testDll = testDebugFolder + 'NetBigIntegerTest.dll'
     testFileName = 'NetBigIntegerContractTest.cs'
     testNamepace = 'NetBigInteger.Test'
@@ -380,8 +380,8 @@ if __name__ == '__main__':
         #unitTests = [(p2,['PUT_AddContract'])]
         #unitTests = [(p,['PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract'])]
         #unitTests = [(p1,['PUT_ContainsContract'])]
-        unitTests = [(p,['PUT_PushContract'])]
-
+        #unitTests = [(p,['PUT_PushContract'])]
+        unitTests = [(p7, ['PUT_AbsContract'])]
         for t in unitTests:
             resultFileName = "regression_results_2"+str(t[0].projectName)
             fh1 = logging.FileHandler(resultFileName)
@@ -393,6 +393,6 @@ if __name__ == '__main__':
             print(prob.projectName)
             print(prob.puts)
             # run all cases up to k
-            runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
-            #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
+            #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 1)
+            runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
             break
