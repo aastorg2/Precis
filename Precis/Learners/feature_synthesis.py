@@ -37,10 +37,6 @@ class FeatureSynthesis:
         boolFeatures = boolFeat
         negationBaseBoolFeatures =()
         equalityFeatures = ()
-        #sygusLearner = SygusLIA("esolver", "learner/EnumerativeSolver/bin/starexec_run_Default", "grammar=True", "tempLocation")
-        #minus = precisFeature.oldcount - IntVal(1)
-        #equal = precisFeature.New  
-        #sygusPrecisFeature = PrecisFeature(sygusResult, )
         assert(len(intFeatures) > 0)
         #assert(len(boolFeatures) > 0)
         equalityFeatures: Tuple[PrecisFeature] = self.CreateEqualities(intFeatures)
