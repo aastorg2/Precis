@@ -44,7 +44,7 @@ class FeatureSynthesis:
         assert(len(intFeatures) > 0)
         #assert(len(boolFeatures) > 0)
         equalityFeatures: Tuple[PrecisFeature] = self.CreateEqualities(intFeatures)
-        
+        equalityFeatures: Tuple[PrecisFeature] = equalityFeatures + self.CreateInequalities(intFeatures)
         if len(boolFeatures) > 0: # there exist any base bool observer methods
             negationBaseBoolFeatures: Tuple[PrecisFeature] = self.createNegationBool(boolFeatures)
         
@@ -106,12 +106,33 @@ class FeatureSynthesis:
             negBoolFeatures += (negBoolDerive,)
         return negBoolFeatures
 
+
+    def CreateInequalities(self, intFeatures):
+        inequalitiesFeatures = ()
+
+        if len(intFeatures) <= 1:
+            return ()
+        
+        allCombinations = itertools.combinations(intFeatures,2)
+        for (feat1,feat2) in allCombinations:
+            if feat1.isNew == False and feat2.isNew == False:# skip comparison among variables of the pre state only
+                continue
+            lessThanExpr = feat2.varZ3 < feat1.varZ3
+            lessThanEqualExpr = feat2.varZ3 <= feat1.varZ3
+            
+            lessThanDerived = PrecisFeature(True, str(lessThanExpr), str(lessThanExpr.sort()), None, lessThanExpr)
+            lessThanEqualDerived = PrecisFeature(True, str(lessThanEqualExpr), str(lessThanEqualExpr.sort()), None, lessThanEqualExpr)
+            inequalitiesFeatures += (lessThanDerived,)
+            inequalitiesFeatures += (lessThanEqualDerived,)
+        return inequalitiesFeatures
+
     # this method assumes it called with integer features
     def CreateEqualities(self, intFeatures):
         equalitiesFeatures = ()        
         
         if len(intFeatures) <= 1:
-            return intFeatures # throw new error
+            return ()
+            #return intFeatures # throw new error
         
         allCombinations = itertools.combinations(intFeatures,2)
         

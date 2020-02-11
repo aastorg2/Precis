@@ -381,7 +381,8 @@ if __name__ == '__main__':
         #unitTests = [(p,['PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract'])]
         #unitTests = [(p1,['PUT_ContainsContract'])]
         #unitTests = [(p,['PUT_PushContract'])]
-        unitTests = [(p7, ['PUT_AbsContract'])]
+        #unitTests = [(p7, ['PUT_AbsContract'])]
+        unitTests = [(p4, ['PUT_ContainsContract'])] 
         for t in unitTests:
             resultFileName = "regression_results_2"+str(t[0].projectName)
             fh1 = logging.FileHandler(resultFileName)
