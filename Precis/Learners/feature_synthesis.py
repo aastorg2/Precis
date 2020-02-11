@@ -106,7 +106,7 @@ class FeatureSynthesis:
             negBoolFeatures += (negBoolDerive,)
         return negBoolFeatures
 
-
+    # CreateInequalities and Equalities are code clones.
     def CreateInequalities(self, intFeatures):
         inequalitiesFeatures = ()
 
