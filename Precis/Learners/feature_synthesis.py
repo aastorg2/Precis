@@ -135,6 +135,8 @@ class FeatureSynthesis:
         allCombinations = itertools.combinations(intFeatures,2)
         
         for (feat1,feat2) in allCombinations:
+            if feat1.isNew == False and feat2.isNew == False: # skip comparison among variables of the pre state only
+                continue
             #print (feat1, feat2)
             notEqualExpr = feat2.varZ3 != feat1.varZ3 
             equalExpr = feat2.varZ3  == feat1.varZ3 
