@@ -36,16 +36,18 @@ class FeatureSynthesis:
         intFeatures = intFeat
         boolFeatures = boolFeat
         negationBaseBoolFeatures =()
-        equalityFeatures = ()
+        derivedFeatures = ()
         assert(len(intFeatures) > 0)
         #assert(len(boolFeatures) > 0)
-        equalityFeatures: Tuple[PrecisFeature] = self.CreateEqualities(intFeatures)
-        equalityFeatures: Tuple[PrecisFeature] = equalityFeatures + self.CreateInequalities(intFeatures)
+        derivedFeatures: Tuple[PrecisFeature] = self.CreateEqualities(intFeatures)
+        derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateInequalities(intFeatures)
+        derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateEqualitiesWithConstants(intFeatures)
+        derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateInequalitiesWithConstants(intFeatures)
         if len(boolFeatures) > 0: # there exist any base bool observer methods
             negationBaseBoolFeatures: Tuple[PrecisFeature] = self.createNegationBool(boolFeatures)
         
-        return negationBaseBoolFeatures + equalityFeatures
-        #return equalityFeatures
+        return negationBaseBoolFeatures + derivedFeatures
+        #return derivedFeatures
         #Todo: call to sygus solvers can be placed here.
     def synthesizeFeatures(self,intFeat, boolFeat, baseFeatureVectors):
         #assert( baseFeatureVectors != None)
@@ -144,4 +146,59 @@ class FeatureSynthesis:
             equalitiesFeatures += (notEqualDerived,)
             equalitiesFeatures += (equalDerived,)
         return equalitiesFeatures
+
+    def CreateEqualitiesWithConstants(self, intFeatures):
+        equalitiesWithConstantsFeatures = ()        
+        
+        if len(intFeatures) <= 1:
+            return ()
+            #return intFeatures # throw new error
+        
+        for feat1 in intFeatures:
+            #print (feat1, feat2)
+            equalOneExpr = feat1.varZ3 == IntVal(1)
+            equalZeroExpr = feat1.varZ3 == IntVal(0)
+            equalNegOneExpr = feat1.varZ3 == IntVal(-1)
+            #print(notEqualExpr)
+            #print(notEqualExpr.sort())
+            #print(type(notEqualExpr))
+            equalOneExpr = PrecisFeature(True, str(equalOneExpr), str(equalOneExpr.sort()), None, equalOneExpr)
+            equalZeroExpr = PrecisFeature(True, str(equalZeroExpr), str(equalZeroExpr.sort()), None, equalZeroExpr)
+            equalNegOneExpr = PrecisFeature(True, str(equalNegOneExpr), str(equalNegOneExpr.sort()), None, equalNegOneExpr)
+            equalitiesWithConstantsFeatures += (equalNegOneExpr,)
+            equalitiesWithConstantsFeatures += (equalOneExpr,)
+            equalitiesWithConstantsFeatures += (equalZeroExpr,)
+        return equalitiesWithConstantsFeatures
+
+    def CreateInequalitiesWithConstants(self, intFeatures):
+        inequalitiesWithConstantsFeatures = ()        
+        
+        if len(intFeatures) <= 1:
+            return ()
+            #return intFeatures # throw new error
+        
+        for feat1 in intFeatures:
+            #print (feat1, feat2)
+            greaterThanOneExpr = feat1.varZ3 > IntVal(1)
+            greaterThanEqualOneExpr = feat1.varZ3 >= IntVal(1)
+            greaterThanZeroExpr = feat1.varZ3 > IntVal(0)
+            greaterThanEqualZeroExpr = feat1.varZ3 >= IntVal(0)
+            greaterThanNegOneExpr = feat1.varZ3 > IntVal(-1)
+            greaterThanEqualNegOneExpr = feat1.varZ3 >= IntVal(-1)
+            #print(notEqualExpr)
+            #print(notEqualExpr.sort())
+            #print(type(notEqualExpr))
+            greaterThanOneExpr = PrecisFeature(True, str(greaterThanOneExpr), str(greaterThanOneExpr.sort()), None, greaterThanOneExpr)
+            greaterThanEqualOneExpr = PrecisFeature(True, str(greaterThanEqualOneExpr), str(greaterThanEqualOneExpr.sort()), None, greaterThanEqualOneExpr)
+            greaterThanZeroExpr = PrecisFeature(True, str(greaterThanZeroExpr), str(greaterThanZeroExpr.sort()), None, greaterThanZeroExpr)
+            greaterThanEqualZeroExpr = PrecisFeature(True, str(greaterThanEqualZeroExpr), str(greaterThanEqualZeroExpr.sort()), None, greaterThanEqualZeroExpr)
+            greaterThanNegOneExpr = PrecisFeature(True, str(greaterThanNegOneExpr), str(greaterThanNegOneExpr.sort()), None, greaterThanNegOneExpr)
+            greaterThanEqualNegOneExpr = PrecisFeature(True, str(greaterThanEqualNegOneExpr), str(greaterThanEqualNegOneExpr.sort()), None, greaterThanEqualNegOneExpr)
+            inequalitiesWithConstantsFeatures += (greaterThanOneExpr,)
+            inequalitiesWithConstantsFeatures += (greaterThanEqualOneExpr,)
+            inequalitiesWithConstantsFeatures += (greaterThanZeroExpr,)
+            inequalitiesWithConstantsFeatures += (greaterThanEqualZeroExpr,)
+            inequalitiesWithConstantsFeatures += (greaterThanNegOneExpr,)
+            inequalitiesWithConstantsFeatures += (greaterThanEqualNegOneExpr,)
+        return inequalitiesWithConstantsFeatures
     
