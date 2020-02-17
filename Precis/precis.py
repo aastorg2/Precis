@@ -38,6 +38,7 @@ def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
     rounds = 1
     totalPexTime = 0.0
     totalLearningTime = 0.0
+    totalDepthUsed = 0
     while True:
         print("starting round: " + str(rounds))
         pex = Pex()
@@ -56,17 +57,17 @@ def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
         if all(baseFeatureVectors[i].testLabel for i in range(0, len(baseFeatureVectors))):
             print("found it")
             simplifiedPost = PrecisFormula(currentPostcondition.precisSimplify())
-            return currentPostcondition, simplifiedPost, rounds, totalPexTime, totalLearningTime, len(allBaseFeatureVectors)
+            return currentPostcondition, simplifiedPost, rounds, totalPexTime, totalLearningTime, len(allBaseFeatureVectors), totalDepthUsed
 
         if rounds == 20:
             print("BAD!")
             simplifiedPost = PrecisFormula(currentPostcondition.precisSimplify())
-            return currentPostcondition, simplifiedPost, rounds, totalPexTime, totalLearningTime, len(allBaseFeatureVectors)
+            return currentPostcondition, simplifiedPost, rounds, totalPexTime, totalLearningTime, len(allBaseFeatureVectors), totalDepthUsed
 
         if len(baseFeatureVectors) == 0:
             logger1.info("process TERMINATED with TG not generating any test! DEBUG ME!\n")
             simplifiedPost = PrecisFormula(currentPostcondition.precisSimplify())
-            return currentPostcondition, simplifiedPost, rounds , totalPexTime, totalLearningTime, len(allBaseFeatureVectors)
+            return currentPostcondition, simplifiedPost, rounds , totalPexTime, totalLearningTime, len(allBaseFeatureVectors), totalDepthUsed
 
         intBaseFeatures, boolBaseFeatures = Featurizer.getIntAndBoolFeatures(baseFeatures)
         disLearner = DisjunctiveLearner(synthesizer)
@@ -74,7 +75,12 @@ def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
         # Learning function
         startLearningTime = time.time()
         s = Solver()
-        postcondition = disLearner.learn3( k, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), s,"root")
+        result = disLearner.learn3( k, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), s,"root")
+        postcondition = result[0]
+        totalDepthUsed = k - result[1]
+        logger1.info(f"Total Depth Used: {totalDepthUsed}")
+        print(f"Total Depth Used: {totalDepthUsed}")
+
         learningTime = time.time() - startLearningTime
         totalLearningTime += learningTime
 
@@ -114,8 +120,9 @@ def runLearnPost(p, putList, projectName, outputFile, k ):
             #sys.exit(0)
 
             logger1.info("=====\nCase: k == "+str(i)+"\n")
-            (post, simplePost, rounds, pexTime, learnTime, totalSamples) = learnPostUpToK(p, PUTName, outputFile, i, locationOfTests)
+            (post, simplePost, rounds, pexTime, learnTime, totalSamples, depthUsed) = learnPostUpToK(p, PUTName, outputFile, i, locationOfTests)
             logger1.info("===== Final Result for "+PUTName +"\n")
+            logger1.info(f"total depth used: {depthUsed}\n")
             logger1.info("postcondition k == "+str(i)+"\n" +
                         post.toInfix()+"\nrounds: " + str(rounds) + "\n")
             logger1.info("simplified post k == " + str(i) + "\n"+
@@ -165,8 +172,7 @@ def runLearnPostTest(p, putList, projectName, outputFile, k):
     if os.path.exists(p.testDebugFolder):
         shutil.rmtree(p.testDebugFolder)
 
-    for PUTName in putList:
-        
+    for PUTName in putList: 
         locationOfTests = evaluation.createDirectoryForTests("../evaluation", p.projectName, PUTName,"Case"+str(k))
         assert(locationOfTests != None)
         
@@ -174,8 +180,9 @@ def runLearnPostTest(p, putList, projectName, outputFile, k):
         results = []
         
         logger1.info("=====\nCase: k == "+str(k)+"\n")
-        (post, simplePost, rounds, pexTime, learnTime, totalSamples)  = learnPostUpToK(p, PUTName, outputFile,k,locationOfTests)
+        (post, simplePost, rounds, pexTime, learnTime, totalSamples, depthUsed)  = learnPostUpToK(p, PUTName, outputFile,k,locationOfTests)
         logger1.info("===== Final Result for "+PUTName +"\n")
+        logger1.info(f"total depth used: {depthUsed}\n")
         logger1.info("postcondition k == "+str(k)+"\n" +
                     post.toInfix()+"\nrounds: " + str(rounds) + "\n")
         logger1.info("simplified post k == " + str(k) + "\n"+
@@ -382,7 +389,7 @@ if __name__ == '__main__':
         #unitTests = [(p1,['PUT_ContainsContract'])]
         #unitTests = [(p,['PUT_PushContract'])]
         #unitTests = [(p7, ['PUT_AbsContract'])]
-        unitTests = [(p4, ['PUT_ContainsContract'])] 
+        unitTests = [(p, ['PUT_PeekContract'])] 
         for t in unitTests:
             resultFileName = "regression_results_2"+str(t[0].projectName)
             fh1 = logging.FileHandler(resultFileName)

@@ -32,7 +32,7 @@ class DisjunctiveLearner:
         uniqueDerivFeats = tuple([f for f in derivFeats if f not in exclude])
         return uniqueDerivFeats
     #baseFeartureVectors : List of lists but the inner list are FeatureVector datatype
-    def learn3(self, k, intBaseFeat, boolBaseFeat, baseFeatureValues, exclude, solver, call):
+    def learn3(self, depth, intBaseFeat, boolBaseFeat, baseFeatureValues, exclude, solver, call):
         #on the empty set of data points, return true
         if len(baseFeatureValues) == 0:
             print("called learn3 with 0 feature vectors")
@@ -48,10 +48,10 @@ class DisjunctiveLearner:
         
         houdini = Houdini()
         (allTrueFormula, indicesAllwaysTrue) = houdini.learn2(boolBaseFeat + derivFeats , boolFvs, call)
-        logger.info("Houdini AlwaysTrue for k="+str(k)+" : "+ allTrueFormula.toInfix()+"\n")
+        logger.info("Houdini AlwaysTrue for k="+str(depth)+" : "+ allTrueFormula.toInfix()+"\n")
         
-        if k == 0:
-            return allTrueFormula
+        if depth == 0:
+            return (allTrueFormula, depth)
         else:
             #removing features returned by houdini and their corresponding feature vector entries. 
             (remainingBaseBoolFeat, remainingDerivBoolFeat, featuresRemoved)  = \
@@ -74,14 +74,14 @@ class DisjunctiveLearner:
                     Featurizer.mergeFeatureVectors(intBaseFeatVectors,reaminingEntriesBaseBoolFv) , reaminingEntriesDerivBoolFv, lookAhead, solver, call )
             ######################################
             if idx < 0:
-                print("Predicate: "+ call + " for k = "+ str(k)+" : None")
-                logger.info("Predicate: "+ call + " for k = "+ str(k)+" : None"+"\n")
-                return allTrueFormula
+                print("Predicate: "+ call + " for k = "+ str(depth)+" : None")
+                logger.info("Predicate: "+ call + " for k = "+ str(depth)+" : None"+"\n")
+                return (allTrueFormula, depth)
             #TODO: choose should return boolBasePosFv and intBasePosFv ...
             #(f,idx, posBaseFv, negBaseFv) = \
             #    self.chooseFeature2(remainingBaseBoolFeat + remainingDerivBoolFeat, \
             #        Featurizer.mergeFeatureVectors(intBaseFeatVectors,reaminingEntriesBaseBoolFv), reaminingEntriesDerivBoolFv, call, lookAhead)
-            logger.info("Predicate: "+ call + " for k = "+ str(k)+" : "+ str(f)+"\n")
+            logger.info("Predicate: "+ call + " for k = "+ str(depth)+" : "+ str(f)+"\n")
             print("Predicate chosen at "+ call+" : "+str(f))
             
             #featureSplitRemoved == f 
@@ -95,23 +95,29 @@ class DisjunctiveLearner:
                 posBaseFv = self.removeFeatureEntryInBaseFv(posBaseFv,[idx+lookAhead])
                 negBaseFv = self.removeFeatureEntryInBaseFv(negBaseFv,[idx+lookAhead])
             #push(allTrue)
-            posPost = self.learn3( k-1,\
+            posCall = self.learn3( depth-1,\
                 intBaseFeat, newBoolBaseFeat, posBaseFv, exclude, solver, call + " Left")  #recursive call
-            
-            logger.info(call +" Left: " + " for k = "+ str(k)+" : "+ posPost.toInfix())
-            print(call +" Left: " + " for k = "+ str(k)+" : "+ posPost.toInfix())
+            posPost = posCall[0] #alltrue from recursive call
+            depth1 = posCall[1]
 
-            negPost = self.learn3( k-1,\
+            
+            logger.info(call +" Left: " + " for k = "+ str(depth)+" : "+ posPost.toInfix())
+            print(call +" Left: " + " for k = "+ str(depth)+" : "+ posPost.toInfix())
+
+            negCall = self.learn3( depth-1,\
                 intBaseFeat, newBoolBaseFeat, negBaseFv, exclude, solver, call +" Right") #recursive call
+            negPost = negCall[0] #alltrue from recursive call
+            depth2 = negCall[1]
             
             solver.pop()
 
-            logger.info(call +" Right: " + " for k = "+ str(k)+" : "+ negPost.toInfix())
-            print(call +" Right: " + " for k = "+ str(k)+" : "+ negPost.toInfix())
+            logger.info(call +" Right: " + " for k = "+ str(depth)+" : "+ negPost.toInfix())
+            print(call +" Right: " + " for k = "+ str(depth)+" : "+ negPost.toInfix())
 
             disjunctivePost  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3, Not(f.varZ3) )))
             precisPost = PrecisFormula(disjunctivePost)
-            return precisPost
+            depthUsed = depth1 if depth1 <= depth2 else depth2
+            return (precisPost, depthUsed)
 
     #Features only contains bool features
     def chooseFeatureImplication(self, alwaysTrueFormula, intBaseFeatures, baseBoolFeatures, \
