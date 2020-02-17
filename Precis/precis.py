@@ -220,8 +220,7 @@ if __name__ == '__main__':
     testFileName = 'HashSetContractTest.cs'
     testNamepace = 'HashSet.Test'
     testClass = 'HashSetContractTest'
-    hashsetPUTs = ['PUT_AddContract', 'PUT_RemoveContract',
-                   'PUT_CountContract', 'PUT_ContainsContract']
+    hashsetPUTs = ['PUT_AddContract', 'PUT_RemoveContract','PUT_ContainsContract','PUT_CountContract']
 
     
 
@@ -257,7 +256,7 @@ if __name__ == '__main__':
     testNamepace = 'Queue.Test'
     testClass = 'QueueContractTest'
     queuePUTs = ['PUT_EnqueueContract', 'PUT_DequeueContract',
-                 'PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract']
+                 'PUT_PeekContract', 'PUT_ContainsContract','PUT_CountContract']
     
     p3 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,queuePUTs )
@@ -348,8 +347,8 @@ if __name__ == '__main__':
     if evalutating:
         #stackPUTs = ['PUT_PushContract']
         #for prob in subjects:
-        for idx in range(0, (len(subjects)-5 )):
-            prob = subjects[idx+5]
+        for idx in range(0, (len(subjects)) ):
+            prob = subjects[idx+2]
             
             #resultFileName = "results"
             #resultFileName = "results_"+str(prob.projectName)
@@ -362,12 +361,11 @@ if __name__ == '__main__':
             print(prob.projectName)
             print(prob.puts)
             # run all cases up to k
-            runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
-            #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
+            #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
+            runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
             
-            break
             #Run one test and one case
-            #break
+            break
             #learnPostUpToK(prob,prob.puts[0],outputFileType,1)
             #Testing: just call learnUpToK
             #sys.exit(0)
@@ -378,11 +376,11 @@ if __name__ == '__main__':
         #(p,['PUT_PopContract']), """ remove before this """,
         #unitTests = [(p5,['PUT_AddVertexContract'] ), """ remove before this """,(p,['PUT_PushContract']), (p, ['PUT_ContainsContract']), (p1, ['PUT_AddContract']), (p3,['PUT_DequeueContract']),(p2,['PUT_ContainsValueContract']) ]
         #unitTests = [(p2,['PUT_AddContract'])]
-        #unitTests = [(p,['PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract'])]
+        unitTests = [(p,['PUT_PushContract'])]
         #unitTests = [(p1,['PUT_ContainsContract'])]
         #unitTests = [(p,['PUT_PushContract'])]
         #unitTests = [(p7, ['PUT_AbsContract'])]
-        unitTests = [(p4, ['PUT_ContainsContract'])] 
+        #unitTests = [(p4, ['PUT_IndexOfContract'])] 
         for t in unitTests:
             resultFileName = "regression_results_2"+str(t[0].projectName)
             fh1 = logging.FileHandler(resultFileName)
