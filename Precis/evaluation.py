@@ -5,9 +5,19 @@ import logging
 
 logger = logging.getLogger("Results.evaluation")
 
+#refactor so that there is only one createDirectory function
+
 def createDirectoryForTests(mainDir, projectName, putName, case):
     rootDirForTests = os.path.abspath(mainDir)
     locationOfTests = os.path.join(rootDirForTests, projectName,putName,case)
+    if path.exists(locationOfTests):
+        shutil.rmtree(locationOfTests)
+    os.makedirs(locationOfTests)
+    return locationOfTests
+
+def createDirectoryForTestsWithoutCase(mainDir, projectName, putName):
+    rootDirForTests = os.path.abspath(mainDir)
+    locationOfTests = os.path.join(rootDirForTests, projectName,putName)
     if path.exists(locationOfTests):
         shutil.rmtree(locationOfTests)
     os.makedirs(locationOfTests)

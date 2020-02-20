@@ -107,21 +107,26 @@ class FeatureSynthesis:
     # CreateInequalities and Equalities are code clones.
     def CreateInequalities(self, intFeatures):
         inequalitiesFeatures = ()
-
         if len(intFeatures) <= 1:
             return ()
-        
         allCombinations = itertools.combinations(intFeatures,2)
         for (feat1,feat2) in allCombinations:
             #if feat1.isNew == False and feat2.isNew == False:# skip comparison among variables of the pre state only
             #    continue
             lessThanExpr = feat2.varZ3 < feat1.varZ3
+            lessThanExprReversed = feat1.varZ3 < feat2.varZ3
             lessThanEqualExpr = feat2.varZ3 <= feat1.varZ3
+            lessThanEqualExprReversed = feat1.varZ3 <= feat2.varZ3
             
             lessThanDerived = PrecisFeature(True, str(lessThanExpr), str(lessThanExpr.sort()), None, lessThanExpr)
             lessThanEqualDerived = PrecisFeature(True, str(lessThanEqualExpr), str(lessThanEqualExpr.sort()), None, lessThanEqualExpr)
+            lessThanDerivedRev = PrecisFeature(True, str(lessThanExprReversed), str(lessThanExprReversed.sort()), None, lessThanExprReversed)
+            lessThanEqualDerivedRev = PrecisFeature(True, str(lessThanEqualExprReversed), str(lessThanEqualExprReversed.sort()), None, lessThanEqualExprReversed)
             inequalitiesFeatures += (lessThanDerived,)
             inequalitiesFeatures += (lessThanEqualDerived,)
+            inequalitiesFeatures += (lessThanDerivedRev,)
+            inequalitiesFeatures += (lessThanEqualDerivedRev,)
+            
         return inequalitiesFeatures
 
     # this method assumes it called with integer features

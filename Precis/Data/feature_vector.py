@@ -66,6 +66,9 @@ class FeatureVector:
         output += "L="+str(self.counterexampleLabel) + ')'
         return output
     
+    #def toString(self):
+    #    output = '('
+
     # for printing FeatureVector in Lists
     def __repr__(self):
         return self.__str__()

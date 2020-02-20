@@ -12,13 +12,15 @@ from Learners.houdini import Houdini
 from Learners.disjunctive_learner import DisjunctiveLearner
 from Teachers.instrumenter import Instrumenter
 from featurizer import Featurizer
-import command_runner
 import shutil
 from typing import List, Tuple, Type
 import logging
 import evaluation
+from Learners.sygus2 import SygusDisjunctive
+from Learners.houdini import Houdini
+import command_runner
 
-
+#learning function 1 --- based decision tree
 def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
     sygusExecutable = "./Learners/EnumerativeSolver/bin/starexec_run_Default"
     tempLocation = "../tempLocation"
@@ -184,11 +186,138 @@ def runLearnPostTest(p, putList, projectName, outputFile, k):
         logger1.info("learn time: "+str(learnTime)+"\n")
         logger1.info("Samples: "+str(totalSamples)+"\n")
 
+#learning function 2 --- based on synthesis and  decision tree
+def SynthTightDT(p, PUTName, outputFile, destinationOfTests):
+    sygusExecutable = "./Learners/EnumerativeSolver/bin/starexec_run_Default"
+    tempLocation = "../tempLocation"
+    sygusFileName = "postcondition.sl"
+    #assumes MSBuils.exe in path
+    inst = Instrumenter("MSBuild.exe", "../Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
+    p.ExtractObservers(PUTName, outputFile)
+    
+    # returns list of base features
+    baseFeatures: Tuple[PrecisFeature] = p.ReadObserversFromFile(outputFile)
+    allPostconditions = []
+    allBaseFeatureVectors = []
+
+    synthesizer = FeatureSynthesis(sygusExecutable, tempLocation, sygusFileName)
+    currentStringTree = "false"
+    inst.instrumentPostString(p, currentStringTree, PUTName)
+    
+    rounds = 1
+    totalPexTime = 0.0
+    totalLearningTime = 0.0
+
+    k = 1
+    print("Here")
+    print(p, PUTName, outputFile, destinationOfTests)
+    while True:
+        print("starting round: " + str(rounds))
+        #For this kind of learner, consider optimizing by generating fixed templates once. Only call sygus per round.
+        pex = Pex()
+            
+        startTimePex = time.time()
+        baseFeatureVectors: List[FeatureVector] = pex.RunTeacher(p, PUTName, baseFeatures)
+        pexTime = time.time() - startTimePex
+
+
+        if all(baseFeatureVectors[i].testLabel for i in range(0, len(baseFeatureVectors))):
+            print("found it")
+            break
+        allBaseFeatureVectors.extend(baseFeatureVectors)
+        
+        intBaseFeatures, boolBaseFeatures = Featurizer.getIntAndBoolFeatures(baseFeatures)
+        
+        (intBaseFeatVectors, boolBaseFeatVectors) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors)
+        
+        print(intBaseFeatVectors, boolBaseFeatVectors)
+        print(intBaseFeatures, boolBaseFeatures)
+
+        derivFeats = synthesizeUniqueFeatures(intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, [],synthesizer)
+        derivFeatVectors: List[FeatureVector] = Featurizer.generateDerivedFeatureVectors(derivFeats, intBaseFeatures+boolBaseFeatures,allBaseFeatureVectors)
+
+        boolFvs = Featurizer.mergeFeatureVectors(boolBaseFeatVectors,derivFeatVectors)
+        boolFeatures = boolBaseFeatures + derivFeats
+        atoms = generateAtomPredicates(len(boolFeatures))
+        strBoolFvs = [ str(fv).lower().replace("(","").replace(")","").split(", ") for fv in boolFvs ]
+
+        
+        houdini = Houdini()
+        conjunct = houdini.learnHoudiniString(atoms, strBoolFvs)
+        (conjunctZ3, idxs) = houdini.learn2(boolFeatures, boolFvs, "root")
+
+        sygusConjunct = '(and ' + ' '.join(conjunct) + ')'
+        regularConjunct = replace(sygusConjunct, atoms, boolFeatures)
+
+        
+        solver1 = SygusDisjunctive(
+                        atoms,
+                        strBoolFvs,
+                        k=1,
+                        cdt=sygusConjunct
+                    )
+        output_tree = solver1.run_sygus()
+        if output_tree == None:
+            continue
+        stringTree = output_tree.parse(atoms, strBoolFvs)
+        stringTreeReplaced = replace(stringTree, atoms, boolFeatures)
+
+    #derivFeatVectors: List[FeatureVector] = Featurizer.generateDerivedFeatureVectors(derivFeats, intBaseFeatures+boolBaseFeat,baseFeatureValues )
+    #assert(len(baseFeatureValues) == len(derivFeatVectors))
+    #boolFvs = Featurizer.mergeFeatureVectors(boolBaseFeatVectors,derivFeatVectors)
+        simplePost = PrecisFormula(PrecisFormula(conjunctZ3.precisSimplify()).toInfix())
+        #inst.instrumentPost(p, simplePost , PUTName)
+        inst.instrumentPostString(p, stringTreeReplaced, PUTName)
+        rounds = rounds + 1 
+    sys.exit(0)
+
+
+def runSynthTightDT(p, putList, projectName, outputFile):
+
+    for putName in putList:
+        ## location to store tests
+        locationOfTests = evaluation.createDirectoryForTestsWithoutCase("../evaluation2", projectName, putName)
+        assert(locationOfTests != None)
+
+        SynthTightDT(p, putName, outputFile, locationOfTests)
+
+def replace(postcondtion, atoms, boolFeatures):
+    import re
+    toMatch = "cond\d+"
+    matches = list(set(re.findall(toMatch, postcondtion)))
+    matches = sorted(matches)
+    output = postcondtion
+    for idx in range (len(matches) - 1, -1, -1):
+        index = getIndex(matches[idx])
+        output = output.replace(matches[idx], boolFeatures[index].varName)
+    # This code may not generalize if applied to exression of comparisons applied to integer boolean features to integer boolean features
+    output = output.replace("Not", "!")
+    return output
+    
+
+def getIndex(string):
+    ret = ''.join([i for i in string if i.isdigit()])
+    return int(ret)
+        
+
+
+
+def generateAtomPredicates(num):
+    atoms=[]
+    for i in range(0,num):
+        atoms.append( "cond"+str(i) )
+    return atoms
+
+def synthesizeUniqueFeatures(intBaseFeat, boolBaseFeat, baseFeatureValues, exclude, synthesizer):
+        syntFeats : Tuple[PrecisFeature] = synthesizer.synthesizeFeatures(intBaseFeat, boolBaseFeat, baseFeatureValues)  
+        # if boolBaseFeat empty, no derived bool features will be generated -> consider refactor
+        genFeats : Tuple[PrecisFeature] = synthesizer.GenerateDerivedFeatures(intBaseFeat, boolBaseFeat) 
+        derivFeats : Tuple[PrecisFeature] = Featurizer.mergeSynthesizedAndGeneratedFeatures(syntFeats, genFeats)
+        uniqueDerivFeats = tuple([f for f in derivFeats if f not in exclude])
+        return uniqueDerivFeats
 
 if __name__ == '__main__':
     # region logger
-    
-
     
     # endregion
     outputFileType = os.path.abspath('../typesOM.txt')
@@ -205,10 +334,17 @@ if __name__ == '__main__':
     stackPUTs = ['PUT_PushContract', 'PUT_PopContract',
                  'PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract']
     
+
     #stackPUTs = ['PUT_ContainsContract']
     p = Problem(sln, projectName, testDebugFolder, testDll,
-                testFileName, testNamepace, testClass,stackPUTs )
+                testFileName, testNamepace, testClass,stackPUTs)
     
+    p.puts = ['PUT_PushContract']
+    
+    runSynthTightDT(p, p.puts, p.projectName , outputFileType)
+    sys.exit(0)
+
+#######################################################################################################################
     subjects.append(p)
     #endregion of Stack
 

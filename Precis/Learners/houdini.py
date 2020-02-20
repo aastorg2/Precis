@@ -85,3 +85,17 @@ class Houdini:
         phi = And(conjuncts)
         houdini = PrecisFormula(phi)
         return (houdini,indexes)
+    
+    def learnHoudiniString(self, strFeatures, strFeatureVectors):
+        workList = {key: True for key in range(0, len(strFeatures))}
+
+        for idx in range(0, len(strFeatures)):
+            for vector in strFeatureVectors:
+                if vector[idx] == "false":
+                    workList[idx] = False
+        
+        terms = []
+        for idx in range(0, len(strFeatures)):
+            if workList[idx]:
+                terms.append(strFeatures[idx])
+        return terms

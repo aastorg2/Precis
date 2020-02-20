@@ -1,0 +1,291 @@
+(set-logic LIA) ; bv here
+
+; hard code values 
+; TTT
+(define-fun s1_0 () Bool true)
+(define-fun s1_1 () Bool true)
+(define-fun s1_2 () Bool true)
+
+;;TFT
+(define-fun s2_0 () Bool true)
+(define-fun s2_1 () Bool false)
+(define-fun s2_2 () Bool true)
+
+;;TFF
+(define-fun s3_0 () Bool true)
+(define-fun s3_1 () Bool false)
+(define-fun s3_2 () Bool false)
+
+
+;;FTT
+(define-fun s4_0 () Bool false)
+(define-fun s4_1 () Bool true)
+(define-fun s4_2 () Bool true)
+
+
+;;FTF
+(define-fun s5_0 () Bool false)
+(define-fun s5_1 () Bool true)
+(define-fun s5_2 () Bool false)
+
+
+;;FFT
+(define-fun s6_0 () Bool false)
+(define-fun s6_1 () Bool false)
+(define-fun s6_2 () Bool true)
+
+;;FFF
+(define-fun s7_0 () Bool false)
+(define-fun s7_1 () Bool false)
+(define-fun s7_2 () Bool false)
+
+
+
+;; truly universally quantified variables u0, u1, u2
+(declare-const u0 Bool)
+(declare-const u1 Bool)
+(declare-const u2 Bool)
+
+
+;; Current decision tree
+;; (in this example, the purely conjunctive one, which happens to be true, as (FFF) is a sample
+;; we can also try the second version with cdt being (v0 AND v1)=> v2. In this case, synthesis
+;; will fail as there is no tighter concept
+(define-fun cdt ((v0 Bool) (v1 Bool) (v2 Bool)) Bool
+true
+;  (=> (and v0 v1) v2)
+)
+   
+;; synthesize decition tree of form
+;; (ite r[p1] 
+;;       (ite r[p2] * *)
+;;       *)
+;; we just ask p1, p2 to be synthesized, as integers
+;; let's model the integers using bits pi_j, j=0,1,2 in unary
+
+(synth-fun p1_0 () Bool)
+;           ((Start Bool))
+;           ( (Start Bool (true false ))))
+
+(synth-fun p1_1 () Bool)
+;           ((Start Bool))
+;           ( (Start Bool (true false ))))
+
+(synth-fun p1_2 () Bool)
+;           ((Start Bool))
+;           ( (Start Bool (true false ))))
+
+(synth-fun p2_0 () Bool)
+;           ((Start Bool))
+;           ( (Start Bool (true false ))))
+
+(synth-fun p2_1 () Bool)
+;           ((Start Bool))
+;           ( (Start Bool (true false ))))
+
+(synth-fun p2_2 () Bool)
+;           ((Start Bool))
+;           ( (Start Bool (true false ))))
+
+
+;; we also ask for a valuation \vec{w} to be synthesized that shows synthesized decision tree
+;; is strictly stronger than current decision tree
+
+(synth-fun w0 () Bool)
+;           ((Start Bool))
+;           ( (Start Bool ( true false )) ))
+
+(synth-fun w1 () Bool)
+;           ((Start Bool))
+;           ( (Start Bool ( true false )) ))
+
+(synth-fun w2 () Bool)
+;           ((Start Bool))
+;           ( (Start Bool ( true false )) ))
+
+
+;; a basic macro for selection
+(define-fun selectme (
+	(v0 Bool) (v1 Bool) (v2 Bool) ;leaves
+	(q0 Bool) (q1 Bool) ;pred
+	) Bool
+ (ite q0 v0
+ (ite q1 v1
+ v2)))
+
+  
+
+;; evalv evaluates the synthesized decision tree on a particular valuation
+;; of \vec{v}, where the decision tree is implicitly given  \vec{q} or p_k_pred
+
+(define-fun evalv (
+; datapoint universal pred+ universal leaves + 
+(v0 Bool) (v1 Bool) (v2 Bool)  ; univerasal variable
+; for a fixed tree
+(q1_0 Bool) (q1_1 Bool) (q1_2 Bool) ;p0
+(q2_0 Bool) (q2_1 Bool) (q2_2 Bool) ;p1
+) Bool
+	(ite
+		(selectme v0 v1 v2 q1_0 q1_1 q1_2)   ;; v[q1]
+		(ite
+			(selectme v0 v1 v2 q2_0 q2_1 q2_2) ;;  v[q2]
+			;; conjunctive leaf for LL branch
+			;; for each i in 0..n-1
+			;; if v[i] is false, then there is some s such that
+			;;       s[q1] is true and s[q2] is true (s flows to this branch)
+			;;	 and s[i] is false
+
+			(and
+			
+				; 
+			
+				(=> (not v0)
+					(or
+						(and (selectme s1_0 s1_1 s1_2 q1_0 q1_1 q1_2) (selectme s1_0 s1_1 s1_2 q2_0 q2_1 q2_2) (not s1_0))
+						(and (selectme s2_0 s2_1 s2_2 q1_0 q1_1 q1_2) (selectme s2_0 s2_1 s2_2 q2_0 q2_1 q2_2) (not s2_0))
+						(and (selectme s3_0 s3_1 s3_2 q1_0 q1_1 q1_2) (selectme s3_0 s3_1 s3_2 q2_0 q2_1 q2_2) (not s3_0))
+						(and (selectme s4_0 s4_1 s4_2 q1_0 q1_1 q1_2) (selectme s4_0 s4_1 s4_2 q2_0 q2_1 q2_2) (not s4_0))
+						(and (selectme s5_0 s5_1 s5_2 q1_0 q1_1 q1_2) (selectme s5_0 s5_1 s5_2 q2_0 q2_1 q2_2) (not s5_0))
+						(and (selectme s6_0 s6_1 s6_2 q1_0 q1_1 q1_2) (selectme s6_0 s6_1 s6_2 q2_0 q2_1 q2_2) (not s6_0))
+						(and (selectme s7_0 s7_1 s7_2 q1_0 q1_1 q1_2) (selectme s7_0 s7_1 s7_2 q2_0 q2_1 q2_2) (not s7_0))
+					)
+				)
+				(=> (not v1)
+					(or
+						(and (selectme s1_0 s1_1 s1_2 q1_0 q1_1 q1_2) (selectme s1_0 s1_1 s1_2 q2_0 q2_1 q2_2) (not s1_1))
+						(and (selectme s2_0 s2_1 s2_2 q1_0 q1_1 q1_2) (selectme s2_0 s2_1 s2_2 q2_0 q2_1 q2_2) (not s2_1))
+						(and (selectme s3_0 s3_1 s3_2 q1_0 q1_1 q1_2) (selectme s3_0 s3_1 s3_2 q2_0 q2_1 q2_2) (not s3_1))
+						(and (selectme s4_0 s4_1 s4_2 q1_0 q1_1 q1_2) (selectme s4_0 s4_1 s4_2 q2_0 q2_1 q2_2) (not s4_1))
+						(and (selectme s5_0 s5_1 s5_2 q1_0 q1_1 q1_2) (selectme s5_0 s5_1 s5_2 q2_0 q2_1 q2_2) (not s5_1))
+						(and (selectme s6_0 s6_1 s6_2 q1_0 q1_1 q1_2) (selectme s6_0 s6_1 s6_2 q2_0 q2_1 q2_2) (not s6_1))
+						(and (selectme s7_0 s7_1 s7_2 q1_0 q1_1 q1_2) (selectme s7_0 s7_1 s7_2 q2_0 q2_1 q2_2) (not s7_1))
+					)
+				)
+				(=> (not v2)
+					(or
+						(and (selectme s1_0 s1_1 s1_2 q1_0 q1_1 q1_2) (selectme s1_0 s1_1 s1_2 q2_0 q2_1 q2_2) (not s1_2))
+						(and (selectme s2_0 s2_1 s2_2 q1_0 q1_1 q1_2) (selectme s2_0 s2_1 s2_2 q2_0 q2_1 q2_2) (not s2_2))
+						(and (selectme s3_0 s3_1 s3_2 q1_0 q1_1 q1_2) (selectme s3_0 s3_1 s3_2 q2_0 q2_1 q2_2) (not s3_2))
+						(and (selectme s4_0 s4_1 s4_2 q1_0 q1_1 q1_2) (selectme s4_0 s4_1 s4_2 q2_0 q2_1 q2_2) (not s4_2))
+						(and (selectme s5_0 s5_1 s5_2 q1_0 q1_1 q1_2) (selectme s5_0 s5_1 s5_2 q2_0 q2_1 q2_2) (not s5_2))
+						(and (selectme s6_0 s6_1 s6_2 q1_0 q1_1 q1_2) (selectme s6_0 s6_1 s6_2 q2_0 q2_1 q2_2) (not s6_2))
+						(and (selectme s7_0 s7_1 s7_2 q1_0 q1_1 q1_2) (selectme s7_0 s7_1 s7_2 q2_0 q2_1 q2_2) (not s7_2))
+					)
+				)
+			)
+
+
+			;; conjunctive leaf for LR branch
+			;; for each i in 0..n-1
+			;; if v[i] is false, then there is some s such that
+			;;        s[q1] is true and s[q2] is false (s flows to this branch)
+			;;	 and s[i] is false
+
+			(and
+				(=> (not v0)
+					(or
+						(and (selectme s1_0 s1_1 s1_2 q1_0 q1_1 q1_2) (not (selectme s1_0 s1_1 s1_2 q2_0 q2_1 q2_2)) (not s1_0))
+						(and (selectme s2_0 s2_1 s2_2 q1_0 q1_1 q1_2) (not (selectme s2_0 s2_1 s2_2 q2_0 q2_1 q2_2)) (not s2_0))
+						(and (selectme s3_0 s3_1 s3_2 q1_0 q1_1 q1_2) (not (selectme s3_0 s3_1 s3_2 q2_0 q2_1 q2_2)) (not s3_0))
+						(and (selectme s4_0 s4_1 s4_2 q1_0 q1_1 q1_2) (not (selectme s4_0 s4_1 s4_2 q2_0 q2_1 q2_2)) (not s4_0))
+						(and (selectme s5_0 s5_1 s5_2 q1_0 q1_1 q1_2) (not (selectme s5_0 s5_1 s5_2 q2_0 q2_1 q2_2)) (not s5_0))
+						(and (selectme s6_0 s6_1 s6_2 q1_0 q1_1 q1_2) (not (selectme s6_0 s6_1 s6_2 q2_0 q2_1 q2_2)) (not s6_0))
+						(and (selectme s7_0 s7_1 s7_2 q1_0 q1_1 q1_2) (not (selectme s7_0 s7_1 s7_2 q2_0 q2_1 q2_2)) (not s7_0))
+					)
+				)
+				(=> (not v1)
+					(or
+						(and (selectme s1_0 s1_1 s1_2 q1_0 q1_1 q1_2) (not (selectme s1_0 s1_1 s1_2 q2_0 q2_1 q2_2)) (not s1_1))
+						(and (selectme s2_0 s2_1 s2_2 q1_0 q1_1 q1_2) (not (selectme s2_0 s2_1 s2_2 q2_0 q2_1 q2_2)) (not s2_1))
+						(and (selectme s3_0 s3_1 s3_2 q1_0 q1_1 q1_2) (not (selectme s3_0 s3_1 s3_2 q2_0 q2_1 q2_2)) (not s3_1))
+						(and (selectme s4_0 s4_1 s4_2 q1_0 q1_1 q1_2) (not (selectme s4_0 s4_1 s4_2 q2_0 q2_1 q2_2)) (not s4_1))
+						(and (selectme s5_0 s5_1 s5_2 q1_0 q1_1 q1_2) (not (selectme s5_0 s5_1 s5_2 q2_0 q2_1 q2_2)) (not s5_1))
+						(and (selectme s6_0 s6_1 s6_2 q1_0 q1_1 q1_2) (not (selectme s6_0 s6_1 s6_2 q2_0 q2_1 q2_2)) (not s6_1))
+						(and (selectme s7_0 s7_1 s7_2 q1_0 q1_1 q1_2) (not (selectme s7_0 s7_1 s7_2 q2_0 q2_1 q2_2)) (not s7_1))
+					)
+				)
+				(=> (not v2)
+					(or
+						(and (selectme s1_0 s1_1 s1_2 q1_0 q1_1 q1_2) (not (selectme s1_0 s1_1 s1_2 q2_0 q2_1 q2_2)) (not s1_2))
+						(and (selectme s2_0 s2_1 s2_2 q1_0 q1_1 q1_2) (not (selectme s2_0 s2_1 s2_2 q2_0 q2_1 q2_2)) (not s2_2))
+						(and (selectme s3_0 s3_1 s3_2 q1_0 q1_1 q1_2) (not (selectme s3_0 s3_1 s3_2 q2_0 q2_1 q2_2)) (not s3_2))
+						(and (selectme s4_0 s4_1 s4_2 q1_0 q1_1 q1_2) (not (selectme s4_0 s4_1 s4_2 q2_0 q2_1 q2_2)) (not s4_2))
+						(and (selectme s5_0 s5_1 s5_2 q1_0 q1_1 q1_2) (not (selectme s5_0 s5_1 s5_2 q2_0 q2_1 q2_2)) (not s5_2))
+						(and (selectme s6_0 s6_1 s6_2 q1_0 q1_1 q1_2) (not (selectme s6_0 s6_1 s6_2 q2_0 q2_1 q2_2)) (not s6_2))
+						(and (selectme s7_0 s7_1 s7_2 q1_0 q1_1 q1_2) (not (selectme s7_0 s7_1 s7_2 q2_0 q2_1 q2_2)) (not s7_2))
+					)
+				)
+			)
+
+		)
+
+		;; conjunctive leaf for R branch
+		;; for each i in 0..n-1
+		;; if v[i] is false, then there is some s such that
+		;;        s[q1] is false (s flows to this branch)
+		;;	 and s[i] is false
+
+		(and
+			(=> (not v0)
+				(or
+					(and (not (selectme s1_0 s1_1 s1_2  q1_0 q1_1 q1_2)) (not s1_0))
+					(and (not (selectme s2_0 s2_1 s2_2  q1_0 q1_1 q1_2)) (not s2_0))
+					(and (not (selectme s3_0 s3_1 s3_2  q1_0 q1_1 q1_2)) (not s3_0))
+					(and (not (selectme s4_0 s4_1 s4_2  q1_0 q1_1 q1_2)) (not s4_0))
+					(and (not (selectme s5_0 s5_1 s5_2  q1_0 q1_1 q1_2)) (not s5_0))
+					(and (not (selectme s6_0 s6_1 s6_2  q1_0 q1_1 q1_2)) (not s6_0))
+					(and (not (selectme s7_0 s7_1 s7_2  q1_0 q1_1 q1_2)) (not s7_0))
+				)
+			)
+			(=> (not v1)
+				(or
+					(and (not (selectme s1_0 s1_1 s1_2  q1_0 q1_1 q1_2)) (not s1_1))
+					(and (not (selectme s2_0 s2_1 s2_2  q1_0 q1_1 q1_2)) (not s2_1))
+					(and (not (selectme s3_0 s3_1 s3_2  q1_0 q1_1 q1_2)) (not s3_1))
+					(and (not (selectme s4_0 s4_1 s4_2  q1_0 q1_1 q1_2)) (not s4_1))
+					(and (not (selectme s5_0 s5_1 s5_2  q1_0 q1_1 q1_2)) (not s5_1))
+					(and (not (selectme s6_0 s6_1 s6_2  q1_0 q1_1 q1_2)) (not s6_1))
+					(and (not (selectme s7_0 s7_1 s7_2  q1_0 q1_1 q1_2)) (not s7_1))
+				)
+			)
+			(=> (not v2)
+				(or
+					(and (not (selectme s1_0 s1_1 s1_2  q1_0 q1_1 q1_2)) (not s1_2))
+					(and (not (selectme s2_0 s2_1 s2_2  q1_0 q1_1 q1_2)) (not s2_2))
+					(and (not (selectme s3_0 s3_1 s3_2  q1_0 q1_1 q1_2)) (not s3_2))
+					(and (not (selectme s4_0 s4_1 s4_2  q1_0 q1_1 q1_2)) (not s4_2))
+					(and (not (selectme s5_0 s5_1 s5_2  q1_0 q1_1 q1_2)) (not s5_2))
+					(and (not (selectme s6_0 s6_1 s6_2  q1_0 q1_1 q1_2)) (not s6_2))
+					(and (not (selectme s7_0 s7_1 s7_2  q1_0 q1_1 q1_2)) (not s7_2))
+				)
+			)
+		)
+	)
+)
+
+
+(constraint
+(and
+;; make at least only one bit is chosen
+(or p1_0 p1_1 p1_2)
+(=> p1_0 (and (not p1_1) (not p1_2)))
+(=> p1_1 (and (not p1_0) (not p1_2)))
+(=> p1_2 (and (not p1_0) (not p1_1)))
+
+
+
+(or p2_0 p2_1 p2_2)
+(=> p2_0 (and (not p2_1) (not p2_2)))
+(=> p2_1 (and (not p2_0) (not p2_2)))
+(=> p2_2 (and (not p2_0) (not p2_1)))
+
+;; inclusion check-- check if new decision tree defines a smaller space than the old one
+(=> (evalv u0 u1 u2 p1_0 p1_1 p1_2 p2_0 p2_1 p2_2) (cdt u0 u1 u2))
+;; strictness check; check if there is at least one valuation that is rejected by new tree but accepted by old tree
+(and (cdt w0 w1 w2) 
+(not (evalv w0 w1 w2 p1_0 p1_1 p1_2 p2_0 p2_1 p2_2)))
+)
+)
+
+
+(check-synth)
