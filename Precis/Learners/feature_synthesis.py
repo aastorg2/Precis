@@ -63,9 +63,10 @@ class FeatureSynthesis:
         
         #getting old vars
         intOldVarAndIdxs = [(intFeatures[idx],idx) for idx in range(len(intFeatures)) if intFeatures[idx].isNew != None and not(intFeatures[idx].isNew)]
-        intOldVarFeatures = list((map(lambda x:  x[0] , intOldVarAndIdxs)))
+        intOldVarFeatures = list((map(lambda x:  x[0] , intOldVarAndIdxs))) # map applies function(x[0], accessor) to iterable(list, tuple,etc) inputs(intOldVarAndIdxs). 
         #print(sygusSynthesizer.formatGrammar(grammar))
-        
+        if len(intOldVarFeatures) == 0:
+            return ()
         shell = Shell(True)
 
         ## wrap this code with a synthesize function
@@ -157,7 +158,7 @@ class FeatureSynthesis:
     def CreateEqualitiesWithConstants(self, intFeatures):
         equalitiesWithConstantsFeatures = ()        
         
-        if len(intFeatures) <= 1:
+        if len(intFeatures) == 0:
             return ()
             #return intFeatures # throw new error
         
@@ -180,7 +181,7 @@ class FeatureSynthesis:
     def CreateInequalitiesWithConstants(self, intFeatures):
         inequalitiesWithConstantsFeatures = ()        
         
-        if len(intFeatures) <= 1:
+        if len(intFeatures) == 0:
             return ()
             #return intFeatures # throw new error
         
