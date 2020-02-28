@@ -20,6 +20,8 @@
 
 ## TODO:
 
+# Everything we pull, git changes linux line endings to windows; figure out configuration to no do that
+
 ## Design Decisions To Be Made:
 1. ***Learners/feature_synthesis.py***: ```GenerateDerivedFeatures``` generates a list of tuples of Z3 values now, need to make it return a list of feature vectors.
 
