@@ -95,7 +95,9 @@ class Houdini:
                     workList[idx] = False
         
         terms = []
+        indexes = []
         for idx in range(0, len(strFeatures)):
             if workList[idx]:
                 terms.append(strFeatures[idx])
-        return terms
+                indexes.append(idx)
+        return (terms, indexes)

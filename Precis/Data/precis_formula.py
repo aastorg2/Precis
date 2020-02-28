@@ -122,7 +122,7 @@ class PrecisFormula:
         # ))
         
         works = Repeat(Then( 
-        Repeat(OrElse(Tactic('split-clause'),Tactic('skip'))),
+        #Repeat(OrElse(Tactic('split-clause'),Tactic('skip'))),
                 OrElse(Tactic('ctx-solver-simplify'),Tactic('skip')),
                 OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
                 OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
@@ -144,7 +144,7 @@ class PrecisFormula:
                 OrElse(Tactic('symmetry-reduce'),Tactic('skip')),
                 OrElse(Tactic('macro-finder'),Tactic('skip')),
                 OrElse(Tactic('quasi-macros'),Tactic('skip')),
-                ))
+                Repeat(OrElse(Tactic('split-clause'),Tactic('skip')))))
         
         result = works(g)
         #result = works1(g)
