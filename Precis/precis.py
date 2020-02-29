@@ -265,6 +265,8 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
         stringTree = ""
         stringTreeReplaced = ""
         timePerK = []
+        if rounds == 2:
+            print("debugger check point")
         while True and k <= maxK:
             print("solving for k="+str(k))
 
@@ -286,37 +288,34 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
                 # at this point, currentBestTreeAtK has the best tree of depth k. So now, we check if there exist a better tree of depth k+1
                 copy2StrBoolFvs = list(strBoolFvs)
                 s1 = Solver()
-                print("best tree at k")
-                print(PrecisFormula(currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy2StrBoolFvs, s1).precisSimplify()).toInfix()+"\n") # destroys copy2StrBoolFvs
+                print("best tree at depth k")
+                print("disjunctive sygus format:\n"+currentBestTreeAtK)
+                print("z3 simplified:\n"+PrecisFormula(currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy2StrBoolFvs, s1).precisSimplify()).toInfix()+"\n") # destroys copy2StrBoolFvs
                 
-                print("checking if there exist a tree at k+1 depth that is better")
+                print("checking if there exist a tree at k+1 depth that is tigher?")
                 solver2 = SygusDisjunctive(
                             atoms if config else condAtoms,
                             strBoolFvs if config else strCondBoolFvs,
                             k=(k+1),
                             cdt=currentBestTreeAtK)
+                startKExecTime = time.time()
                 output_tree = solver2.run_sygus()
+                kExecTime = time.time() - startKExecTime
+                timePerK.append( (k, kExecTime) )
+                totalLearningTime = totalLearningTime + kExecTime
                 if output_tree != None:
                     copy3StrBoolFvs = list(strBoolFvs)
-                    print("best tree at k+1")
-                    print(PrecisFormula(output_tree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy3StrBoolFvs, s1).precisSimplify()).toInfix()+"\n")# destroys copy3StrBoolFvs
+                    print("Yes, best tree at k+1")
                     currentBestTreeAtK = output_tree.parseWithHoudiniWithPruning(condAtoms,strCondBoolFvs)
+                    print("disjunctive sygus format:\n"+currentBestTreeAtK)
+                    print("z3 simplified:\n"+PrecisFormula(output_tree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy3StrBoolFvs, s1).precisSimplify()).toInfix()+"\n")# destroys copy3StrBoolFvs
                     currentBestTree = output_tree
                     k = k + 1
                 else:
                     break
             else:# this is hit when we have a conjunctive case
                 break
-            #if output_tree == None:
-                #break # exception code
-            #if output_tree.data == "true": 
-            #    break
-            #currentBestTreeAtK = str(output_tree)
-            #currentBestTreeAtK = output_tree.parseWithHoudiniWithPruning(condAtoms,strCondBoolFvs)
-            #currentBestTree = output_tree
-            #k = k + 1
-            #if k > maxK:
-            #   k = maxK
+
         
         print("round: "+str(rounds))
         for idx in range(0, len(timePerK)):
@@ -469,7 +468,7 @@ if __name__ == '__main__':
                 testFileName, testNamepace, testClass,stackPUTs)
     
     #p.puts = ['PUT_PushContract']
-    p.puts = ['PUT_PopContract']
+    p.puts = ['PUT_PeekContract']
     runSynthTightDT(p, p.puts, p.projectName , outputFileType)
     sys.exit(0)
     
