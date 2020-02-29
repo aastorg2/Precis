@@ -4,7 +4,11 @@ from Learners.houdini import Houdini
 from Data.precis_formula import PrecisFormula
 from Data.precis_feature import PrecisFeature
 from z3 import *
+import logging
 distcintConditionals = True
+
+
+logger = logging.getLogger("Results.Sygus2")
 
 class Nd:
     def __init__(self):
@@ -125,7 +129,7 @@ class Nd:
             
             return ret
     
-    def parseWithHoudiniWithZ3Expr(self, atoms, boolFeatures, boolFvs,s):
+    def parseWithHoudiniWithZ3Expr(self, atoms, boolFeatures, boolFvs, s, call):
         if len(boolFvs) == 0:
             return  PrecisFormula(BoolVal(False))
         if not self.left and not self.right:
@@ -164,13 +168,21 @@ class Nd:
                     earlyRet =  PrecisFormula(And([f.varZ3 for f in commonConjuctPrecisFeat]))
                 else:
                     earlyRet = PrecisFormula(BoolVal(True))
-
+                print("Predicate: "+ call + " : None")
+                logger.info("Predicate "+ call + " : None"+"\n")
                 return earlyRet
             
+
             (pPos, pNeg) = Nd.split(idx, remainingBoolFvs)
-            splitPred = remainingAtomsPrecisFeat[idx]
-            right = self.right.parseWithHoudiniWithZ3Expr(remainingAtoms,remainingAtomsPrecisFeat, pPos,s).formulaZ3
-            left = self.left.parseWithHoudiniWithZ3Expr(remainingAtoms,remainingAtomsPrecisFeat , pNeg,s).formulaZ3
+            splitPred = remainingAtomsPrecisFeat[idx] # chosen predicate to split on LOG THIS
+
+            logger.info("Predicate "+ call + " : "+ str(splitPred)+"\n")
+            print("Predicate chosen at " + call +" : "+str(splitPred))
+
+            right = self.right.parseWithHoudiniWithZ3Expr(remainingAtoms,remainingAtomsPrecisFeat, pPos, s, call + " Right").formulaZ3
+
+
+            left = self.left.parseWithHoudiniWithZ3Expr(remainingAtoms,remainingAtomsPrecisFeat , pNeg, s, call + " Left").formulaZ3
             #s.pop() 
             if len(commonConjuct) != 0:
                 

@@ -224,6 +224,7 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
         print("Total pex time: "+str(totalPexTime))
 
         if all(baseFeatureVectors[i].testLabel for i in range(0, len(baseFeatureVectors))):
+            #In the first round, 
             print("found it")
             simplifiedPost = PrecisFormula(candidatePostcondition.precisSimplify()).toInfix()
             return candidatePostcondition, candidatePostcondition.toInfix(), simplifiedPost, rounds, totalPexTime, totalLearningTime, len(allBaseFeatureVectors)
@@ -290,7 +291,7 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
                 s1 = Solver()
                 print("best tree at depth k")
                 print("disjunctive sygus format:\n"+currentBestTreeAtK)
-                print("z3 simplified:\n"+PrecisFormula(currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy2StrBoolFvs, s1).precisSimplify()).toInfix()+"\n") # destroys copy2StrBoolFvs
+                print("z3 simplified:\n"+PrecisFormula(currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy2StrBoolFvs, s1, "root").precisSimplify()).toInfix()+"\n") # destroys copy2StrBoolFvs
                 
                 print("checking if there exist a tree at k+1 depth that is tigher?")
                 solver2 = SygusDisjunctive(
@@ -308,7 +309,7 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
                     print("Yes, best tree at k+1")
                     currentBestTreeAtK = output_tree.parseWithHoudiniWithPruning(condAtoms,strCondBoolFvs)
                     print("disjunctive sygus format:\n"+currentBestTreeAtK)
-                    print("z3 simplified:\n"+PrecisFormula(output_tree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy3StrBoolFvs, s1).precisSimplify()).toInfix()+"\n")# destroys copy3StrBoolFvs
+                    print("z3 simplified:\n"+PrecisFormula(output_tree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy3StrBoolFvs, s1, "root").precisSimplify()).toInfix()+"\n")# destroys copy3StrBoolFvs
                     currentBestTree = output_tree
                     k = k + 1
                 else:
@@ -330,7 +331,9 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
             stringTree = currentBestTree.parseWithHoudini(atoms, strBoolFvs) #this call detroys strBoolFvs
             stringTreeReplaced = replace(stringTree, atoms, boolFeatures)
             s = Solver()
-            candidatePostcondition = currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copyStrBoolFvs, s)
+            logger1.info("Final Tree ====")
+            logger1.info(f"Round: {rounds}")
+            candidatePostcondition = currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copyStrBoolFvs, s, "root")
         else:
             stringTreeReplaced = PrecisFormula(conjunctZ3.precisSimplify()).toInfix() #Debugging
             candidatePostcondition = conjunctZ3
@@ -469,12 +472,12 @@ if __name__ == '__main__':
     
     #p.puts = ['PUT_PushContract']
     p.puts = ['PUT_PeekContract']
-    runSynthTightDT(p, p.puts, p.projectName , outputFileType)
-    sys.exit(0)
+   # runSynthTightDT(p, p.puts, p.projectName , outputFileType)
+   # sys.exit(0)
     
 
 #######################################################################################################################
-    subjects.append(p)
+    #subjects.append(p)
     #endregion of Stack
 
     #region HashSet
@@ -509,7 +512,7 @@ if __name__ == '__main__':
     p2 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,dictionaryPUTs)
     
-    #subjects.append(p2)
+    subjects.append(p2)
     #endregion of Dictionary
 
     #region Queue
@@ -544,11 +547,11 @@ if __name__ == '__main__':
     p4 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,arrayListPUTs)
     
-    #subjects.append(p4)
+    subjects.append(p4)
     p4.puts = ['PUT_CountContract']
     ##### Developing HERE
-    runSynthTightDT(p4, p4.puts, p4.projectName , outputFileType)
-    sys.exit(0)
+    #runSynthTightDT(p4, p4.puts, p4.projectName , outputFileType)
+    #sys.exit(0)
 
     #endregion of ArrayList
 
@@ -613,12 +616,12 @@ if __name__ == '__main__':
     logger1 = logging.getLogger("Results")
     logger1.setLevel(logging.INFO)
     
-    evalutating = False 
+    evalutating = True 
     if evalutating:
         #stackPUTs = ['PUT_PushContract']
         #for prob in subjects:
         for idx in range(0, (len(subjects)) ):
-            prob = subjects[idx+2]
+            prob = subjects[idx]
             
             #resultFileName = "results"
             #resultFileName = "results_"+str(prob.projectName)
@@ -636,7 +639,7 @@ if __name__ == '__main__':
             #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
             
             #Run one test and one case
-            break
+            #break
             #learnPostUpToK(prob,prob.puts[0],outputFileType,1)
             #Testing: just call learnUpToK
             #sys.exit(0)
