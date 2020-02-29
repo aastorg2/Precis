@@ -226,7 +226,7 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
         if all(baseFeatureVectors[i].testLabel for i in range(0, len(baseFeatureVectors))):
             print("found it")
             simplifiedPost = PrecisFormula(candidatePostcondition.precisSimplify()).toInfix()
-            return candidatePostcondition, candidatePostcondition.toInfix(), simplifiedPost  
+            return candidatePostcondition, candidatePostcondition.toInfix(), simplifiedPost, rounds, totalPexTime, totalLearningTime, len(allBaseFeatureVectors)
             #break
         if rounds == 16:
             print("did not find it - Max Rounds")
@@ -344,17 +344,28 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
 
 
 def runSynthTightDT(p, putList, projectName, outputFile):
+    logger1.info("Problem: "+projectName+"\n")
 
     for putName in putList:
         ## location to store tests
         locationOfTests = evaluation.createDirectoryForTestsWithoutCase("../evaluation2", projectName, putName)
         assert(locationOfTests != None)
 
-        currentPost, learnedPostStr, simplifiedPostStr = SynthTightDT(p, putName, outputFile, locationOfTests ,5)
+        logger1.info("PUT: "+putName+"\n")
+        (currentPost, learnedPostStr, simplifiedPostStr, rounds, pexTime, learnTime, totalSamples) = SynthTightDT(p, putName, outputFile, locationOfTests , 5)
         print("learnerd post:")
         print(learnedPostStr +"\n")
         print("simplified post:")
         print(simplifiedPostStr+"\n")
+
+        logger1.info("===== Final Result for "+putName +"\n")
+        logger1.info("postcondition: \n" +
+                    learnedPostStr+"\nrounds: " + str(rounds) + "\n")
+        logger1.info("simplified post: " + "\n"+
+                        simplifiedPostStr)
+        logger1.info("pex time: "+str(pexTime)+"\n")
+        logger1.info("learn time: "+str(learnTime)+"\n")
+        logger1.info("Samples: "+str(totalSamples)+"\n")
 
         f = open("testingData.txt", "a")
         f.write("PUT: "+putName)
@@ -482,7 +493,7 @@ if __name__ == '__main__':
     p1 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass, hashsetPUTs)
     
-    subjects.append(p1)
+    #subjects.append(p1)
     #endregion of HashSet
 
     #region Dictionary
@@ -499,7 +510,7 @@ if __name__ == '__main__':
     p2 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,dictionaryPUTs)
     
-    subjects.append(p2)
+    #subjects.append(p2)
     #endregion of Dictionary
 
     #region Queue
@@ -516,7 +527,7 @@ if __name__ == '__main__':
     p3 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,queuePUTs )
     
-    subjects.append(p3)
+    #subjects.append(p3)
     
     #endregion Queue
 
@@ -534,7 +545,7 @@ if __name__ == '__main__':
     p4 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,arrayListPUTs)
     
-    subjects.append(p4)
+    #subjects.append(p4)
     p4.puts = ['PUT_CountContract']
     ##### Developing HERE
     runSynthTightDT(p4, p4.puts, p4.projectName , outputFileType)
@@ -561,7 +572,7 @@ if __name__ == '__main__':
     p5 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,ugraphPUTs)
     
-    subjects.append(p5)
+    #subjects.append(p5)
     #endregion of UndirectedGraph
 
     #C:\Users\astor\Research\LearningContracts\ContractsSubjects\BinaryHeap3\BinaryHeapTest\BinaryHeapContractTest.cs
@@ -580,7 +591,7 @@ if __name__ == '__main__':
                  testFileName, testNamepace, testClass,heapPUTs)
 
     #endregion BinaryHeap
-    subjects.append(p6)
+    #subjects.append(p6)
 
     #region NetBigInteger
     sln = os.path.abspath('../../ContractsSubjects/NetBigInteger/NetBigInteger.sln')
@@ -596,7 +607,7 @@ if __name__ == '__main__':
     p7 = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,heapPUTs)
 
-    subjects.append(p7)
+    #subjects.append(p7)
     #endregion NetBigInteger
 
 
@@ -622,7 +633,8 @@ if __name__ == '__main__':
             print(prob.puts)
             # run all cases up to k
             #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
-            runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
+            runSynthTightDT(prob, prob.puts, prob.projectName , outputFileType)
+            #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
             
             #Run one test and one case
             break
