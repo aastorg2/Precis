@@ -467,13 +467,13 @@ if __name__ == '__main__':
     
 
     #stackPUTs = ['PUT_ContainsContract']
-    p = Problem(sln, projectName, testDebugFolder, testDll,
+    pStack = Problem(sln, projectName, testDebugFolder, testDll,
                 testFileName, testNamepace, testClass,stackPUTs)
     
     #p.puts = ['PUT_PushContract']
-    p.puts = ['PUT_PeekContract']
-   # runSynthTightDT(p, p.puts, p.projectName , outputFileType)
-   # sys.exit(0)
+    #p.puts = ['PUT_PeekContract']
+    #runSynthTightDT(p, p.puts, p.projectName , outputFileType)
+    #sys.exit(0)
     
 
 #######################################################################################################################
@@ -492,7 +492,7 @@ if __name__ == '__main__':
 
     
 
-    p1 = Problem(sln, projectName, testDebugFolder, testDll,
+    pHashSet = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass, hashsetPUTs)
     
     #subjects.append(p1)
@@ -509,10 +509,10 @@ if __name__ == '__main__':
     dictionaryPUTs = ['PUT_AddContract', 'PUT_RemoveContract', 'PUT_GetContract', 'PUT_SetContract',
                       'PUT_ContainsKeyContract', 'PUT_ContainsValueContract', 'PUT_CountContract']
     
-    p2 = Problem(sln, projectName, testDebugFolder, testDll,
+    pDictionary = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,dictionaryPUTs)
     
-    subjects.append(p2)
+    #subjects.append(p2)
     #endregion of Dictionary
 
     #region Queue
@@ -526,7 +526,7 @@ if __name__ == '__main__':
     queuePUTs = ['PUT_EnqueueContract', 'PUT_DequeueContract',
                  'PUT_PeekContract', 'PUT_ContainsContract','PUT_CountContract']
     
-    p3 = Problem(sln, projectName, testDebugFolder, testDll,
+    pQueue = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,queuePUTs )
     
     #subjects.append(p3)
@@ -544,11 +544,11 @@ if __name__ == '__main__':
     arrayListPUTs = ['PUT_AddContract', 'PUT_RemoveContract', 'PUT_InsertContract', 'PUT_SetContract',
                      'PUT_GetContract', 'PUT_ContainsContract', 'PUT_IndexOfContract', 'PUT_LastIndexOfContract', 'PUT_CountContract']
     
-    p4 = Problem(sln, projectName, testDebugFolder, testDll,
+    pArrayList = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,arrayListPUTs)
     
-    subjects.append(p4)
-    p4.puts = ['PUT_CountContract']
+    #subjects.append(p4)
+    #p4.puts = ['PUT_CountContract']
     ##### Developing HERE
     #runSynthTightDT(p4, p4.puts, p4.projectName , outputFileType)
     #sys.exit(0)
@@ -563,15 +563,15 @@ if __name__ == '__main__':
     testFileName = 'UndirectedGraphContractTest.cs'
     testNamepace = 'UndirectedGraph.Test'
     testClass = 'UndirectedGraphContractTest'
-    #ugraphPUTs = ['PUT_AddVertexContract', 'PUT_RemoveVertexContract','PUT_ClearAdjacentEdgesContract','PUT_ContainsEdgeContract', 'PUT_RemoveVertexContract',
-                    #'PUT_ContainsEdgeIntContract', 'PUT_AdjacentEdgeContract', 'PUT_IsVerticesEmptyContract', 'PUT_VertexCountContract', 'PUT_ContainsVertexContract',
-                    #'PUT_AddEdgeContract', 'PUT_RemoveEdgeContract', 'PUT_IsEdgesEmptyContract', 'PUT_EdgeCountContract', 'PUT_AdjacentDegreeContract',
-                    #'PUT_IsAdjacentEdgesEmptyContract']
+    ugraphPUTs = ['PUT_AddVertexContract', 'PUT_RemoveVertexContract','PUT_ClearAdjacentEdgesContract','PUT_ContainsEdgeContract', 'PUT_RemoveVertexContract',
+                    'PUT_ContainsEdgeIntContract', 'PUT_AdjacentEdgeContract', 'PUT_IsVerticesEmptyContract', 'PUT_VertexCountContract', 'PUT_ContainsVertexContract',
+                    'PUT_AddEdgeContract', 'PUT_RemoveEdgeContract', 'PUT_IsEdgesEmptyContract', 'PUT_EdgeCountContract', 'PUT_AdjacentDegreeContract',
+                    'PUT_IsAdjacentEdgesEmptyContract']
 
     #ugraphPUTs = ['PUT_AddEdgeContract', 'PUT_RemoveEdgeContract', 'PUT_IsEdgesEmptyContract', 'PUT_EdgeCountContract', 'PUT_AdjacentDegreeContract']
-    ugraphPUTs = ['PUT_IsAdjacentEdgesEmptyContract']
+    #ugraphPUTs = ['PUT_IsAdjacentEdgesEmptyContract']
 
-    p5 = Problem(sln, projectName, testDebugFolder, testDll,
+    pUndirectedGraph = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,ugraphPUTs)
     
     #subjects.append(p5)
@@ -589,7 +589,7 @@ if __name__ == '__main__':
     heapPUTs = ['PUT_AddContract', 'PUT_MinimumContract', 'PUT_RemoveMinimumContract', 'PUT_RemoveAtContract',
                      'PUT_IndexOfContract', 'PUT_UpdateContract', 'PUT_MinimumUpdateContract']
     
-    p6 = Problem(sln, projectName, testDebugFolder, testDll,
+    pBinaryHeap = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,heapPUTs)
 
     #endregion BinaryHeap
@@ -606,12 +606,18 @@ if __name__ == '__main__':
     heapPUTs = ['PUT_AbsContract', 'PUT_AddContract', 'PUT_AndContract', 'PUT_BitLengthGetContract', 'PUT_CompareToContract', 'PUT_CompareTo01Contract', 'PUT_ConstructorContract', 'PUT_Constructor01Contract', 'PUT_Constructor02Contract', 'PUT_Constructor03Contract', 'PUT_Constructor04Contract', 'PUT_Constructor05Contract', 'PUT_DivideContract', 'PUT_DivideAndRemainderContract', 'PUT_Equals01Contract', 'PUT_GcdContract', 'PUT_GetHashCode01Contract', 'PUT_GetLowestSetBitContract', 'PUT_IntValueGetContract', 'PUT_MaxContract', 'PUT_MinContract', 'PUT_ModContract', 'PUT_ModInverseContract', 'PUT_ModPowContract', 'PUT_ModulusContract', 'PUT_MultiplyContract', 'PUT_NegateContract', 'PUT_RemainderContract', 'PUT_ShiftLeftContract', 'PUT_ShiftRightContract', 'PUT_SignValueGetContract', 'PUT_SubtractContract', 'PUT_TestBitContract', 'PUT_ToByteArrayContract', 'PUT_ToByteArrayUnsignedContract', 'PUT_ToString01Contract', 'PUT_ToString02Contract', 'PUT_ValueOfContract'
     ]
     
-    p7 = Problem(sln, projectName, testDebugFolder, testDll,
+    pNetBigInteger = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,heapPUTs)
 
     #subjects.append(p7)
     #endregion NetBigInteger
 
+    angello = True
+    if angello:
+        subjects.append(pStack)
+        subjects.append(pQueue)
+    else:
+        pass
 
     logger1 = logging.getLogger("Results")
     logger1.setLevel(logging.INFO)
@@ -635,6 +641,7 @@ if __name__ == '__main__':
             print(prob.puts)
             # run all cases up to k
             #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
+            
             runSynthTightDT(prob, prob.puts, prob.projectName , outputFileType)
             #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
             
