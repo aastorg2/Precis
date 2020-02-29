@@ -657,11 +657,11 @@ if __name__ == '__main__':
         #(p,['PUT_PopContract']), """ remove before this """,
         #unitTests = [(p5,['PUT_AddVertexContract'] ), """ remove before this """,(p,['PUT_PushContract']), (p, ['PUT_ContainsContract']), (p1, ['PUT_AddContract']), (p3,['PUT_DequeueContract']),(p2,['PUT_ContainsValueContract']) ]
         #unitTests = [(p2,['PUT_AddContract'])]
-        unitTests = [(p,['PUT_PushContract'])]
+        #unitTests = [(p,['PUT_PushContract'])]
         #unitTests = [(p1,['PUT_ContainsContract'])]
         #unitTests = [(p,['PUT_PushContract'])]
         #unitTests = [(p7, ['PUT_AbsContract'])]
-        unitTests = [(p4, ['PUT_CountContract'])] 
+        #unitTests = [(p4, ['PUT_CountContract'])] 
         for t in unitTests:
             resultFileName = "regression_results_2"+str(t[0].projectName)
             fh1 = logging.FileHandler(resultFileName)
