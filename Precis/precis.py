@@ -266,9 +266,10 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
         stringTree = ""
         stringTreeReplaced = ""
         timePerK = []
-        if rounds == 2:
-            print("debugger check point")
         while True and k <= maxK:
+            if k == maxK:
+                logger1.info("Reached max k: "+ str(maxK)+ " for round: "+ str(rounds)+ " in problem: "+ PUTName)
+
             print("solving for k="+str(k))
 
             solver1 = SygusDisjunctive(
@@ -354,7 +355,7 @@ def runSynthTightDT(p, putList, projectName, outputFile):
         assert(locationOfTests != None)
 
         logger1.info("PUT: "+putName+"\n")
-        (currentPost, learnedPostStr, simplifiedPostStr, rounds, pexTime, learnTime, totalSamples) = SynthTightDT(p, putName, outputFile, locationOfTests , 5)
+        (currentPost, learnedPostStr, simplifiedPostStr, rounds, pexTime, learnTime, totalSamples) = SynthTightDT(p, putName, outputFile, locationOfTests , 20)
         print("learnerd post:")
         print(learnedPostStr +"\n")
         print("simplified post:")
@@ -591,7 +592,7 @@ if __name__ == '__main__':
     
     pBinaryHeap = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,heapPUTs)
-
+    
     #endregion BinaryHeap
     #subjects.append(p6)
 
@@ -614,8 +615,8 @@ if __name__ == '__main__':
 
     angello = True
     if angello:
-        subjects.append(pStack)
-        subjects.append(pQueue)
+        pBinaryHeap.puts = ['PUT_RemoveAtContract']
+        subjects.append(pBinaryHeap)
     else:
         pass
 
@@ -661,7 +662,7 @@ if __name__ == '__main__':
         #unitTests = [(p1,['PUT_ContainsContract'])]
         #unitTests = [(p,['PUT_PushContract'])]
         #unitTests = [(p7, ['PUT_AbsContract'])]
-        #unitTests = [(p4, ['PUT_CountContract'])] 
+        unitTests = [(pStack, ['PUT_CountContract'])] 
         for t in unitTests:
             resultFileName = "regression_results_2"+str(t[0].projectName)
             fh1 = logging.FileHandler(resultFileName)
