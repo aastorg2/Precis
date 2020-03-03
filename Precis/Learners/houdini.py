@@ -86,6 +86,49 @@ class Houdini:
         houdini = PrecisFormula(phi)
         return (houdini,indexes)
     
+    #return z3 expr types -> refactor: it should return precis
+    def learn4(self,features,featureVectors, call):
+        #assert(len(featureVectors) > 0)
+        if len(featureVectors) == 0:
+            logger1.info(call+ ": houdini Called with 0 feature vectors")
+            print(call +": houdini Called with 0 feature vectors")
+            if "implication check" in call:
+                return (PrecisFormula(BoolVal(False)),[])
+            return (PrecisFormula(BoolVal(True)),[],[] )
+        #check datapoint are boolean --> currently assention doesnt work
+        #assert(len(featureVectors) or all ( all( v == "True" or v == "False" for v in dp) for dp in featureVectors))
+    
+        # dict from  index of features to
+        workList = {idx: True for idx in range(0, len(features))}
+        #workList = list(features)
+        #oldCount = len(workList)
+        for idx in range(0, len(features)):
+            
+            #fv is of type feature vector
+            for fv in featureVectors:
+                assert(len(fv) == len(features) )
+                if str(fv[idx]) == "False":
+                   workList[idx]  = False
+                   break 
+        conjuncts = []
+        indexes = []
+        for idx in range(0, len(features)):
+            if workList[idx]:
+                conjuncts.append(features[idx])
+                indexes.append(idx)
+        # early return if no predicates are always true -> houdini should return true
+        if len(conjuncts) == 0:
+            logger1.info(call+ ": not expressive in with conjunctions")
+            print(call +": not expressive in with conjunctions")
+            #assert(False) #remove this assertion the first time it is tested
+            return (PrecisFormula(BoolVal(True)),[],[])
+        
+        phi = ""
+        houdini = None
+        phi = And([c.varZ3 for c in conjuncts])
+        houdini = PrecisFormula(phi)
+        return (houdini,indexes,conjuncts)
+    
     def learnHoudiniString(self, strFeatures, strFeatureVectors):
         workList = {key: True for key in range(0, len(strFeatures))}
 

@@ -32,7 +32,7 @@ class DisjunctiveLearner:
         uniqueDerivFeats = tuple([f for f in derivFeats if f not in exclude])
         return uniqueDerivFeats
 
-    def learn4(self, k, intBaseFeat, boolBaseFeat, baseFeatureValues, exclude, solver, call, allBoolFeatures):
+    def learn4(self, k, intBaseFeat, boolBaseFeat, baseFeatureValues, exclude, solver, call):
         #on the empty set of data points, return true
         if len(baseFeatureValues) == 0:
             print("called learn3 with 0 feature vectors")
@@ -46,14 +46,17 @@ class DisjunctiveLearner:
         #assert(len(baseFeatureValues) == len(derivFeatVectors))
         boolFvs = Featurizer.mergeFeatureVectors(boolBaseFeatVectors,derivFeatVectors)
         boolFeatures = boolBaseFeat + derivFeats
-        boolFeatToReturn = set()
-        boolFeatToReturn = boolFeatToReturn.union(allBoolFeatures)
+        boolFeatToReturn = set(boolFeatures)
+        #boolFeatToReturn = boolFeatToReturn.union(allBoolFeatures)
         houdini = Houdini()
-        (allTrueFormula, indicesAllwaysTrue) = houdini.learn2(boolFeatures , boolFvs, call)
+        (allTrueFormula, indicesAllwaysTrue, conjuncts) = houdini.learn4(boolFeatures , boolFvs, call)
         logger.info("Houdini AlwaysTrue for k="+str(k)+" : "+ allTrueFormula.toInfix()+"\n")
-        
+        smtConjunct = "true"
+        if len(conjuncts) != 0:
+            smtConjunct = "(and "+ ' '.join([ pFeat.varName for pFeat in  conjuncts]) + ")"
+
         if k == 0:
-            return allTrueFormula, boolFeatToReturn
+            return allTrueFormula, boolFeatToReturn, smtConjunct
         else:
             #removing features returned by houdini and their corresponding feature vector entries. 
             (remainingBaseBoolFeat, remainingDerivBoolFeat, featuresRemoved)  = \
@@ -78,7 +81,7 @@ class DisjunctiveLearner:
             if idx < 0:
                 print("Predicate: "+ call + " for k = "+ str(k)+" : None")
                 logger.info("Predicate: "+ call + " for k = "+ str(k)+" : None"+"\n")
-                return allTrueFormula, boolFeatToReturn
+                return allTrueFormula, boolFeatToReturn, smtConjunct
             #TODO: choose should return boolBasePosFv and intBasePosFv ...
             #(f,idx, posBaseFv, negBaseFv) = \
             #    self.chooseFeature2(remainingBaseBoolFeat + remainingDerivBoolFeat, \
@@ -97,24 +100,24 @@ class DisjunctiveLearner:
                 posBaseFv = self.removeFeatureEntryInBaseFv(posBaseFv,[idx+lookAhead])
                 negBaseFv = self.removeFeatureEntryInBaseFv(negBaseFv,[idx+lookAhead])
             #push(allTrue)
-            posPost boolFeatToReturnPos = self.learn3( k-1,\
-                intBaseFeat, newBoolBaseFeat, posBaseFv, exclude, solver, call + " Left", newBoolBaseFeat)  #recursive call
+            posPost, boolFeatToReturnPos, smtPos = self.learn4( k-1,\
+                intBaseFeat, newBoolBaseFeat, posBaseFv, exclude, solver, call + " Left")  #recursive call
             
             logger.info(call +" Left: " + " for k = "+ str(k)+" : "+ posPost.toInfix())
             print(call +" Left: " + " for k = "+ str(k)+" : "+ posPost.toInfix())
 
-            negPost, boolFeatToReturnNeg = self.learn3( k-1,\
-                intBaseFeat, newBoolBaseFeat, negBaseFv, exclude, solver, call +" Right",  newBoolBaseFeat) #recursive call
+            negPost, boolFeatToReturnNeg, smtNeg = self.learn4( k-1,\
+                intBaseFeat, newBoolBaseFeat, negBaseFv, exclude, solver, call +" Right") #recursive call
             
             solver.pop()
             unionOfSubTrees = boolFeatToReturnPos.union(boolFeatToReturnNeg)
             allUniqueBoolFeat = boolFeatToReturn.union(unionOfSubTrees) 
             logger.info(call +" Right: " + " for k = "+ str(k)+" : "+ negPost.toInfix())
             print(call +" Right: " + " for k = "+ str(k)+" : "+ negPost.toInfix())
-
+            postSmt = "(and "+ smtConjunct +" "+ "(ite "+f.varName +" "+ smtPos+" "+smtNeg +"))"
             disjunctivePost  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3, Not(f.varZ3) )))
             precisPost = PrecisFormula(disjunctivePost)
-            return precisPost, allUniqueBoolFeat
+            return precisPost, allUniqueBoolFeat,postSmt
 
     #baseFeartureVectors : List of lists but the inner list are FeatureVector datatype
     def learn3(self, k, intBaseFeat, boolBaseFeat, baseFeatureValues, exclude, solver, call):
@@ -224,15 +227,20 @@ class DisjunctiveLearner:
 
             posFvs = Featurizer.mergeFeatureVectors(posBoolBaseFv, fvPosDeriv)
             negFvs = Featurizer.mergeFeatureVectors(negBoolBaseFv, fvNegDeriv)
-            
+            if len(fvPos) == 0 or len(fvNeg) == 0:
+                irrelevantFeatures = irrelevantFeatures + (feature,)
+                irrelevantIndices.append(idx)
+                continue
         
-            (posAllTrueFormula, posIndicesAllwaysTrue) = houdini.learn2(boolFeatures , posFvs, call+" from implication check-- split from pred "+str(feature))
-            (negAllTrueFormula, negIndicesAllwaysTrue) = houdini.learn2(boolFeatures , negFvs, call+" from implication check-- split from pred "+str(feature))
-            if len(fvPos) != 0 and len(fvNeg) != 0:
-                logger.info(call+ " implication check-- split pred: "+ str(feature))
-                logger.info(call+ " implication check-- featurePos: "+ str(posAllTrueFormula.toInfix()))
-                logger.info(call+ " implication check-- featureNeg: "+ str(negAllTrueFormula.toInfix())+"\n")
-
+            (posAllTrueFormula, posIndicesAllwaysTrue) = houdini.learn2(boolFeatures , posFvs, call+" from implication check-- positive split of pred "+str(feature))
+            (negAllTrueFormula, negIndicesAllwaysTrue) = houdini.learn2(boolFeatures , negFvs, call+" from implication check-- negative split of pred "+str(feature))
+            print((call+ " Good Split pred: "+ str(feature)+"\n"))
+            #logger.info(call+ " Good Split pred: "+ str(feature)+"\n")
+            #logger.info(call+ " featurePos conjunct: "+ str(posAllTrueFormula.toInfix())+"\n")
+            #logger.info(call+ " featureNeg conjunct: "+ str(negAllTrueFormula.toInfix())+"\n")
+            
+                
+                
             #disjunct z3 type
             disjunct = Or(And(posAllTrueFormula.formulaZ3, feature.varZ3 ) , And(negAllTrueFormula.formulaZ3, Not(feature.varZ3)))
            

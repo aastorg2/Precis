@@ -19,6 +19,7 @@ import evaluation
 from Learners.sygus2 import SygusDisjunctive
 from Learners.houdini import Houdini
 import command_runner
+import operator
 
 #learning function 1 --- based decision tree
 def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
@@ -211,6 +212,7 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
     candidatePostcondition = None
     simplifiedPost =""
     print(p, PUTName, outputFile, destinationOfTests)
+    dtWithSynthesisLearningTime = 0.0
     while True:
         print("starting round: " + str(rounds))
         #For this kind of learner, consider optimizing by generating fixed templates once. Only call sygus per round.
@@ -221,7 +223,7 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
         baseFeatureVectors: List[FeatureVector] = pex.RunTeacher(p, PUTName, baseFeatures)
         pexTime = time.time() - startTimePex
         totalPexTime = totalPexTime + pexTime
-        print("Total pex time: "+str(totalPexTime))
+        
 
         if all(baseFeatureVectors[i].testLabel for i in range(0, len(baseFeatureVectors))):
             #In the first round, 
@@ -232,24 +234,38 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
         if rounds == 16:
             print("did not find it - Max Rounds")
             break
-
+        
+        print("Pex Finished")
         allBaseFeatureVectors.extend(baseFeatureVectors)
         
         intBaseFeatures, boolBaseFeatures = Featurizer.getIntAndBoolFeatures(baseFeatures)
         
         (intBaseFeatVectors, boolBaseFeatVectors) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors)
         
+        disLearner = DisjunctiveLearner(synthesizer)
+        ss = Solver()
+        allBoolFeats=set()
+        postSmt = "true"
+        startDtLearningTime = time.time()
+        postcondition, allBoolFeats, postSmt = disLearner.learn4( 2, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), ss,"root")
+        endDtTime = time.time() - startDtLearningTime 
+        dtWithSynthesisLearningTime = dtWithSynthesisLearningTime + endDtTime
+        
+        allBoolFeatsList = list(allBoolFeats)
         #print(intBaseFeatVectors, boolBaseFeatVectors)
         #print(intBaseFeatures, boolBaseFeatures)
-
-        derivFeats = synthesizeUniqueFeatures(intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, [],synthesizer)
+        allBoolFeatsDerivList = [f for f in allBoolFeatsList if f not in boolBaseFeatures ]
+        #derivFeats = synthesizeUniqueFeatures(intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, [],synthesizer)
+        allBoolFeatsDerivList = sorted( allBoolFeatsDerivList, key=lambda pf: len(pf.varName))
+        derivFeats = tuple(allBoolFeatsDerivList)
+        
         derivFeatVectors: List[FeatureVector] = Featurizer.generateDerivedFeatureVectors(derivFeats, intBaseFeatures+boolBaseFeatures,allBaseFeatureVectors)
 
         boolFvs = Featurizer.mergeFeatureVectors(boolBaseFeatVectors,derivFeatVectors)
         boolFeatures = boolBaseFeatures + derivFeats
         atoms = generateAtomPredicates(len(boolFeatures))
         strBoolFvs = [ str(fv).lower().replace("(","").replace(")","").split(", ") for fv in boolFvs ]
-
+        postSmtAtom  = replaceInfixToAtoms(postSmt,atoms,boolFeatures)
         
         houdini = Houdini()
         (conjunct, indexes) = houdini.learnHoudiniString(atoms, strBoolFvs)
@@ -257,11 +273,14 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
 
         sygusConjunct = '(and ' + ' '.join(conjunct) + ')'
         regularConjunct = replace(sygusConjunct, atoms, boolFeatures)
-        (condAtoms,strCondBoolFvs) = removeUniversallyTrueFalse(atoms, strBoolFvs)
+        (condAtoms,strCondBoolFvs, universallyTrue) = removeUniversallyTrueFalse(atoms, strBoolFvs)
         
+        condPostSmtAtom = removeTopMostCommonConjunct(universallyTrue,postSmtAtom)
+        print("tree from dt w/ synthesis:\n "+ condPostSmtAtom)
         k = 1
         config = False
-        currentBestTreeAtK = 'true'
+        currentBestTreeAtK = condPostSmtAtom
+        #currentBestTreeAtK = 'true'
         currentBestTree = None
         stringTree = ""
         stringTreeReplaced = ""
@@ -324,8 +343,13 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
             print("k= "+str(timePerK[idx][0]) +" " +str(timePerK[idx][1]))
         
         listOfTimesPerK = [entry[1] for entry in timePerK]
-        print("learning time in this round: "+ str(sum(map(float, listOfTimesPerK))) )
+        print("sygu disjunc. learning time in this round: "+ str(sum(map(float, listOfTimesPerK))) )
+        print("sygu disjunc. learning time across all rounds: "+ str( totalLearningTime))
+        print("dt w/ synthesis time in this round: "+str(endDtTime))
+        print("dt w/ synthesis across all rounds "+ str(dtWithSynthesisLearningTime))
+        totalLearningTime = totalLearningTime + dtWithSynthesisLearningTime
         print("total learning time (all rounds): "+ str(totalLearningTime))
+        print("Total pex time: "+str(totalPexTime))
 
         if currentBestTree != None: # this is only true when there are no disjunctive concept and the tighest post is conjunctive
             copyStrBoolFvs = list(strBoolFvs)
@@ -370,11 +394,11 @@ def runSynthTightDT(p, putList, projectName, outputFile):
         logger1.info("learn time: "+str(learnTime)+"\n")
         logger1.info("Samples: "+str(totalSamples)+"\n")
 
-        f = open("testingData.txt", "a")
-        f.write("PUT: "+putName)
-        f.write("simplified Post")
-        f.write(simplifiedPostStr)
-        f.close()
+        #f = open("testingData.txt", "a")
+        #f.write("PUT: "+putName)
+        #f.write("simplified Post")
+        #f.write(simplifiedPostStr)
+        #f.close()
         """
         currentPost2, learnedPostStr2, simplifiedPostStr2 = SynthTightDT(p, putName, outputFile, locationOfTests ,2)
         print("learnerd post:")
@@ -388,6 +412,19 @@ def runSynthTightDT(p, putList, projectName, outputFile):
         print("results: " +solver.check())
         """
 
+def removeTopMostCommonConjunct(universallyTrue, postcondition):
+    import re
+
+    if not "ite" in postcondition:
+        return "true"
+    condPost = ""
+    regPattern = '\(and \(and (?:(?:cond[0-9]+\s*)*|true)\)'
+    matches = re.findall(regPattern, postcondition)
+    if len(matches) > 0:
+        condPost = postcondition.replace(matches[0],"(and " )
+
+    return condPost
+
 #refactor such you always overwrite a list of list of feature vectors.
 def removeUniversallyTrueFalse(atoms, strBoolFvs ):
     workList = {key: True for key in range(0, len(atoms))}
@@ -395,6 +432,7 @@ def removeUniversallyTrueFalse(atoms, strBoolFvs ):
     idxsValuesToKeep = []
     init = ""
     strCondTrueFvs=[]
+    universallyTrue=[]
     for idx in range(len(atoms) -1 ,-1,-1): # no need to start from the end :Refactor
         # we just want to keep those predicate whole values change from initial value
         # predicates whole value never change from the initial are always true or always false
@@ -406,6 +444,8 @@ def removeUniversallyTrueFalse(atoms, strBoolFvs ):
         if keep:
             remainingCondTruePredicates.append(atoms[idx])
             idxsValuesToKeep.append(idx)
+        elif init == 'true':
+            universallyTrue.append(atoms[idx])
     #remove values from feature vectors
     for fv in strBoolFvs:
         updatedFv= []
@@ -413,9 +453,15 @@ def removeUniversallyTrueFalse(atoms, strBoolFvs ):
             updatedFv.append(fv[idx])
         strCondTrueFvs.append(updatedFv)
 
-    return (remainingCondTruePredicates,strCondTrueFvs)
+    return (remainingCondTruePredicates,strCondTrueFvs,universallyTrue)
             
-
+def replaceInfixToAtoms(postcondtion, atoms, boolFeatures):
+    
+    
+    for idx in range(len(boolFeatures) - 1 , -1,-1): # this code relies on the fact that Not(boolExpr) occurs later in list than boolExpr
+        postcondtion = postcondtion.replace(boolFeatures[idx].varName, atoms[idx])
+    return postcondtion
+    
 def replace(postcondtion, atoms, boolFeatures):
     import re
     toMatch = "cond\d+"
@@ -615,8 +661,8 @@ if __name__ == '__main__':
 
     angello = True
     if angello:
-        pBinaryHeap.puts = ['PUT_RemoveAtContract']
-        subjects.append(pBinaryHeap)
+        #pHashSet.puts=['PUT_RemoveContract']
+        subjects.append(pStack)
     else:
         pass
 
