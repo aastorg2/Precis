@@ -31,6 +31,91 @@ class DisjunctiveLearner:
         derivFeats : Tuple[PrecisFeature] = Featurizer.mergeSynthesizedAndGeneratedFeatures(syntFeats, genFeats)
         uniqueDerivFeats = tuple([f for f in derivFeats if f not in exclude])
         return uniqueDerivFeats
+
+    def learn4(self, k, intBaseFeat, boolBaseFeat, baseFeatureValues, exclude, solver, call, allBoolFeatures):
+        #on the empty set of data points, return true
+        if len(baseFeatureValues) == 0:
+            print("called learn3 with 0 feature vectors")
+            logger.info("called learn3 with 0 feature vectors")
+            return PrecisFormula(BoolVal(False))
+        #rename  splitIntoBoolAndIntFeatureVectors
+        (intBaseFeatVectors, boolBaseFeatVectors) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeat, boolBaseFeat, baseFeatureValues)
+
+        derivFeats = self.synthesizeUniqueFeatures(intBaseFeat, boolBaseFeat, baseFeatureValues, exclude)
+        derivFeatVectors: List[FeatureVector] = Featurizer.generateDerivedFeatureVectors(derivFeats, intBaseFeat+boolBaseFeat,baseFeatureValues )
+        #assert(len(baseFeatureValues) == len(derivFeatVectors))
+        boolFvs = Featurizer.mergeFeatureVectors(boolBaseFeatVectors,derivFeatVectors)
+        boolFeatures = boolBaseFeat + derivFeats
+        boolFeatToReturn = set()
+        boolFeatToReturn = boolFeatToReturn.union(allBoolFeatures)
+        houdini = Houdini()
+        (allTrueFormula, indicesAllwaysTrue) = houdini.learn2(boolFeatures , boolFvs, call)
+        logger.info("Houdini AlwaysTrue for k="+str(k)+" : "+ allTrueFormula.toInfix()+"\n")
+        
+        if k == 0:
+            return allTrueFormula, boolFeatToReturn
+        else:
+            #removing features returned by houdini and their corresponding feature vector entries. 
+            (remainingBaseBoolFeat, remainingDerivBoolFeat, featuresRemoved)  = \
+                self.removeFeatureFromFeaturelist(boolBaseFeat, derivFeats, indicesAllwaysTrue)
+            
+            (reaminingEntriesBaseBoolFv, reaminingEntriesDerivBoolFv) = \
+                self.removeFeatureEntryInFeatureVectors(boolBaseFeatVectors, derivFeatVectors, indicesAllwaysTrue)
+            
+            # features that are true on parent node should not be passed down to children;(they are redundantly also true in child nodes)
+            exclude = exclude + featuresRemoved
+            lookAhead = len(intBaseFeatVectors[0])
+            
+            ######################################
+            #bug: chooseFeatureImplication does not update reamining bool features or feature vectors. Idx is with respect to updates
+            #solver = Solver()
+            solver.add(allTrueFormula.formulaZ3 == BoolVal(True))
+            solver.push()
+            (f,idx, posBaseFv, negBaseFv, remainingBaseBoolFeat, remainingDerivBoolFeat ) = \
+                self.chooseFeatureImplication(allTrueFormula,intBaseFeat,remainingBaseBoolFeat , remainingDerivBoolFeat, \
+                    Featurizer.mergeFeatureVectors(intBaseFeatVectors,reaminingEntriesBaseBoolFv) , reaminingEntriesDerivBoolFv, lookAhead, solver, call )
+            ######################################
+            if idx < 0:
+                print("Predicate: "+ call + " for k = "+ str(k)+" : None")
+                logger.info("Predicate: "+ call + " for k = "+ str(k)+" : None"+"\n")
+                return allTrueFormula, boolFeatToReturn
+            #TODO: choose should return boolBasePosFv and intBasePosFv ...
+            #(f,idx, posBaseFv, negBaseFv) = \
+            #    self.chooseFeature2(remainingBaseBoolFeat + remainingDerivBoolFeat, \
+            #        Featurizer.mergeFeatureVectors(intBaseFeatVectors,reaminingEntriesBaseBoolFv), reaminingEntriesDerivBoolFv, call, lookAhead)
+            logger.info("Predicate: "+ call + " for k = "+ str(k)+" : "+ str(f)+"\n")
+            print("Predicate chosen at "+ call+" : "+str(f))
+            
+            #featureSplitRemoved == f 
+            (newBoolBaseFeat, newDeriveBaseFeat, featureSplitRemoved) = \
+                self.removeFeatureFromFeaturelist(remainingBaseBoolFeat, remainingDerivBoolFeat, [idx])
+            # if predicate to split on is in derivedFeatures, then add to exclude list; 
+            if len(remainingBaseBoolFeat) == len(newBoolBaseFeat):
+                exclude = exclude + (f,)
+            else:
+                # if predicate to split is in baseFeatures, the update posBaseFv and negBaseFv feature vectors
+                posBaseFv = self.removeFeatureEntryInBaseFv(posBaseFv,[idx+lookAhead])
+                negBaseFv = self.removeFeatureEntryInBaseFv(negBaseFv,[idx+lookAhead])
+            #push(allTrue)
+            posPost boolFeatToReturnPos = self.learn3( k-1,\
+                intBaseFeat, newBoolBaseFeat, posBaseFv, exclude, solver, call + " Left", newBoolBaseFeat)  #recursive call
+            
+            logger.info(call +" Left: " + " for k = "+ str(k)+" : "+ posPost.toInfix())
+            print(call +" Left: " + " for k = "+ str(k)+" : "+ posPost.toInfix())
+
+            negPost, boolFeatToReturnNeg = self.learn3( k-1,\
+                intBaseFeat, newBoolBaseFeat, negBaseFv, exclude, solver, call +" Right",  newBoolBaseFeat) #recursive call
+            
+            solver.pop()
+            unionOfSubTrees = boolFeatToReturnPos.union(boolFeatToReturnNeg)
+            allUniqueBoolFeat = boolFeatToReturn.union(unionOfSubTrees) 
+            logger.info(call +" Right: " + " for k = "+ str(k)+" : "+ negPost.toInfix())
+            print(call +" Right: " + " for k = "+ str(k)+" : "+ negPost.toInfix())
+
+            disjunctivePost  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3, Not(f.varZ3) )))
+            precisPost = PrecisFormula(disjunctivePost)
+            return precisPost, allUniqueBoolFeat
+
     #baseFeartureVectors : List of lists but the inner list are FeatureVector datatype
     def learn3(self, k, intBaseFeat, boolBaseFeat, baseFeatureValues, exclude, solver, call):
         #on the empty set of data points, return true
