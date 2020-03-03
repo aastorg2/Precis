@@ -227,18 +227,15 @@ class DisjunctiveLearner:
 
             posFvs = Featurizer.mergeFeatureVectors(posBoolBaseFv, fvPosDeriv)
             negFvs = Featurizer.mergeFeatureVectors(negBoolBaseFv, fvNegDeriv)
-            if len(fvPos) == 0 or len(fvNeg) == 0:
-                irrelevantFeatures = irrelevantFeatures + (feature,)
-                irrelevantIndices.append(idx)
-                continue
-        
-            (posAllTrueFormula, posIndicesAllwaysTrue) = houdini.learn2(boolFeatures , posFvs, call+" from implication check-- positive split of pred "+str(feature))
-            (negAllTrueFormula, negIndicesAllwaysTrue) = houdini.learn2(boolFeatures , negFvs, call+" from implication check-- negative split of pred "+str(feature))
-            print((call+ " Good Split pred: "+ str(feature)+"\n"))
-            #logger.info(call+ " Good Split pred: "+ str(feature)+"\n")
-            #logger.info(call+ " featurePos conjunct: "+ str(posAllTrueFormula.toInfix())+"\n")
-            #logger.info(call+ " featureNeg conjunct: "+ str(negAllTrueFormula.toInfix())+"\n")
             
+            (posAllTrueFormula, posIndicesAllwaysTrue) = houdini.learn2(boolFeatures , posFvs, call+" from implication check-- split from pred "+str(feature))
+            (negAllTrueFormula, negIndicesAllwaysTrue) = houdini.learn2(boolFeatures , negFvs, call+" from implication check-- split from pred "+str(feature))
+            
+           
+            if len(fvPos) != 0 and len(fvNeg) != 0:
+                logger.info(call+ " implication check-- split pred: "+ str(feature))
+                logger.info(call+ " implication check-- featurePos: "+ str(posAllTrueFormula.toInfix()))
+                logger.info(call+ " implication check-- featureNeg: "+ str(negAllTrueFormula.toInfix())+"\n")
                 
                 
             #disjunct z3 type

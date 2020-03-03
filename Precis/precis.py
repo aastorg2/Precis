@@ -305,7 +305,8 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
             if output_tree != None: # phase1: exhaust trees at k
                 currentBestTreeAtK = output_tree.parseWithHoudiniWithPruning(condAtoms,strCondBoolFvs)
                 currentBestTree = output_tree
-            elif currentBestTree != None: #phase 2: check if there is a better tree before moving on to k+1. Note however when currentBestTree is None, then it must mean there was no tree of depth k so will skip checking at k+1
+            elif currentBestTree != None: #phase 2: check if there is a better tree before moving on to k+1. Note however when currentBestTree is None, then it must mean 
+                #there was no tree of depth k so will skip checking at k+1
                 # at this point, currentBestTreeAtK has the best tree of depth k. So now, we check if there exist a better tree of depth k+1
                 copy2StrBoolFvs = list(strBoolFvs)
                 s1 = Solver()
@@ -459,6 +460,7 @@ def replaceInfixToAtoms(postcondtion, atoms, boolFeatures):
     
     
     for idx in range(len(boolFeatures) - 1 , -1,-1): # this code relies on the fact that Not(boolExpr) occurs later in list than boolExpr
+    #for idx in range(0 ,len(boolFeatures)):
         postcondtion = postcondtion.replace(boolFeatures[idx].varName, atoms[idx])
     return postcondtion
     
