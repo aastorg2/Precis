@@ -29,7 +29,7 @@ namespace ObserverTypeExtractor
         // Note: $var with "Name" doesn't need to be path, but $var without "Name" should be the exact path
         public Utility(string sln, string testProjectName, string testFileName)
         {
-            Debug.Assert(File.Exists(sln));
+            Debug.Assert(File.Exists(sln), "solution file doesn't exist!!!");
             this.workspace = MSBuildWorkspace.Create();
             this.solution = workspace.OpenSolutionAsync(sln).Result;
             //Console.WriteLine(testProjectName);
