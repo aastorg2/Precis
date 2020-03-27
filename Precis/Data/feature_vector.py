@@ -30,6 +30,9 @@ class FeatureVector:
         self.counterexampleLabel = True
 
     def AddValues(self, precisFeatureZ3, value, idx):
+        if "true (0x" in value:
+            print("debug branch")
+            value = 'True'
         self.CheckValueType(precisFeatureZ3, value)
         if is_int(precisFeatureZ3):
             self.valuesZ3 += (IntVal(value), )
