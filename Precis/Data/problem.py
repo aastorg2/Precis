@@ -20,10 +20,10 @@ class Problem:
         self.puts = puts
 
     # Use C# code to extract the observer methods and corresponding types to an output file
-    def ExtractObservers(self, PUTName, outputFile):
+    def ExtractObservers(self, PUTName, outputFile, mode):
         # assert PUTName in self.PUTs, 'PUTName not found or does not match PUTs given in constructor!!!'
         observerExtractor = os.path.abspath('../ObserverExtractor/ObserverExtractor/bin/Debug/ObserverExtractor.exe')
-        cmd = observerExtractor + ' ' + self.sln + ' ' + self.projectName + ' ' + self.testFileName + ' ' + PUTName + ' ' + outputFile
+        cmd = observerExtractor + ' ' + self.sln + ' ' + self.projectName + ' ' + self.testFileName + ' ' + PUTName + ' ' + outputFile + ' ' +mode
         os.system(cmd)
 
     # Read the output file and parse the observer methods
