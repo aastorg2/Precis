@@ -28,7 +28,7 @@ def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
     sygusFileName = "postcondition.sl"
     #assumes MSBuils.exe in path
     inst = Instrumenter("MSBuild.exe", "../Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
-    p.ExtractObservers(PUTName, outputFile)
+    p.ExtractObservers(PUTName, outputFile, "precis")
     
     # returns list of base features
     baseFeatures: Tuple[PrecisFeature] = p.ReadObserversFromFile(outputFile)
@@ -194,7 +194,7 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
     sygusFileName = "postcondition.sl"
     #assumes MSBuils.exe in path
     inst = Instrumenter("MSBuild.exe", "../Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
-    p.ExtractObservers(PUTName, outputFile)
+    p.ExtractObservers(PUTName, outputFile, "precis")
     
     # returns list of base features
     baseFeatures: Tuple[PrecisFeature] = p.ReadObserversFromFile(outputFile)
@@ -224,6 +224,8 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
         pexTime = time.time() - startTimePex
         totalPexTime = totalPexTime + pexTime
         
+        #copy tests
+        evaluation.copyTestFilesToEvaluationDir(pex.testsLocation, destinationOfTests, rounds)
 
         if all(baseFeatureVectors[i].testLabel for i in range(0, len(baseFeatureVectors))):
             #In the first round, 
@@ -276,6 +278,7 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
         (condAtoms,strCondBoolFvs, universallyTrue) = removeUniversallyTrueFalse(atoms, strBoolFvs)
         
         condPostSmtAtom = removeTopMostCommonConjunct(universallyTrue,postSmtAtom)
+        #condPostSmtAtom = "true"
         print("tree from dt w/ synthesis:\n "+ condPostSmtAtom)
         k = 1
         config = False
@@ -336,6 +339,7 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
                 else:
                     break
             else:# this is hit when we have a conjunctive case
+                print("there is no disjunctive formula")
                 break
 
         
@@ -511,8 +515,7 @@ if __name__ == '__main__':
     testFileName = 'StackContractTest.cs'
     testNamepace = 'Stack.Test'
     testClass = 'StackContractTest'
-    stackPUTs = ['PUT_PushContract', 'PUT_PopContract',
-                 'PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract']
+    stackPUTs = ['PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract', 'PUT_PopContract','PUT_PushContract']
     
 
     #stackPUTs = ['PUT_ContainsContract']
@@ -638,6 +641,7 @@ if __name__ == '__main__':
     heapPUTs = ['PUT_AddContract', 'PUT_MinimumContract', 'PUT_RemoveMinimumContract', 'PUT_RemoveAtContract',
                      'PUT_IndexOfContract', 'PUT_UpdateContract', 'PUT_MinimumUpdateContract']
     
+    
     pBinaryHeap = Problem(sln, projectName, testDebugFolder, testDll,
                  testFileName, testNamepace, testClass,heapPUTs)
     
@@ -663,8 +667,9 @@ if __name__ == '__main__':
 
     angello = True
     if angello:
-        #pHashSet.puts=['PUT_RemoveContract']
-        subjects.append(pStack)
+        pArrayList.puts =['PUT_IndexOfContract']
+        pArrayList.puts =['PUT_CountContract']
+        subjects.append(pArrayList)
     else:
         pass
 
