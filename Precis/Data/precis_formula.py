@@ -161,17 +161,17 @@ class PrecisFormula:
             sys.exit(-9)
         
         # return result
-        result = list(result)
+        results = list(result)
         completeConjunct = []
-        for i in range(0,len(result)):
-            conjunction = result[i]
+        for i in range(0,len(results)):
+            conjunction = results[i]
             completeDisjunct = []
             for literal in conjunction:
                 #if i >= 1 and  literal in result[i-1]:
                 #    continue
                 completeDisjunct.append(literal)
 
-            completeConjunct.append(And(completeDisjunct))
+            completeConjunct.append(simplify(And(completeDisjunct)))
 
         simplifiedPrecondition = Or(completeConjunct)
         return simplifiedPrecondition
