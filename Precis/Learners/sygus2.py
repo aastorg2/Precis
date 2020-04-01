@@ -1,10 +1,29 @@
-from Learners.command_runner2 import runCommand
 import re
+import sys
+import os
+from os import path
+
+print("In sygus2.py: \n" + str(sys.path))
+
+sys.path.append( "..\\" )
+from Learners.feature_synthesis import FeatureSynthesis
 from Learners.houdini import Houdini
-from Data.precis_formula import PrecisFormula
+from Learners.disjunctive_learner import DisjunctiveLearner
+
+from Learners.houdini import Houdini
+from Learners.command_runner2 import runCommand
+from Learners.houdini import Houdini
+
 from Data.precis_feature import PrecisFeature
+from Data.feature_vector import FeatureVector
+from Data.precis_formula import PrecisFormula
 from z3 import *
 import logging
+
+
+
+from Data.feature_vector import FeatureVector
+
 distcintConditionals = True
 
 
@@ -39,11 +58,7 @@ class Nd:
             #Houdini
             houdini = Houdini()
             (conjunct, indexes) = houdini.learnHoudiniString(condAtoms, condBoolFvs)
-            
-            if len(conjunct) == 0:
-                infixConjunct = 'true'    
-            else:
-                infixConjunct = '(and ' + ' '.join(conjunct) + ')'
+            infixConjunct = 'true' if len(conjunct) == 0 else '(and ' + ' '.join(conjunct) + ')'   
             return infixConjunct
             # if len(self.data) == 1:
             #     return self.data[0]
@@ -59,16 +74,12 @@ class Nd:
             commonConjuct , idxs = houdini2.learnHoudiniString(condAtoms, condBoolFvs)
             idxs.reverse()
             remainingAtoms = Nd.removeCommonTerms(condAtoms, idxs)
-            remainingBoolFvs = Nd.removeCommonFvs(condBoolFvs,idxs)
+            remainingBoolFvs = Nd.removeCommonStrFvs(condBoolFvs,idxs)
             # inneficient way to check
             idx = remainingAtoms.index(self.data) if self.data in remainingAtoms else -1
             if idx == -1: # case where the predicate chosen to split is actually a common term meaning that it will all fvs to one side leaving the other empty
                 assert( (condAtoms.index(self.data) if self.data in condAtoms else -1) != -1)
-                if len(commonConjuct) != 0:
-                    earlyRet = "(and "+ ' '.join(commonConjuct) + ")"
-                else:
-                    earlyRet = 'true'
-
+                earlyRet = 'true' if len(commonConjuct) == 0 else "(and "+ ' '.join(commonConjuct) + ")"
                 return earlyRet
 
             (pPos, pNeg) = Nd.split(idx, remainingBoolFvs)
@@ -107,7 +118,7 @@ class Nd:
             commonConjuct , idxs = houdini2.learnHoudiniString(atoms, boolFvs)
             idxs.reverse()
             remainingAtoms = Nd.removeCommonTerms(atoms, idxs)
-            remainingBoolFvs = Nd.removeCommonFvs(boolFvs,idxs)
+            remainingBoolFvs = Nd.removeCommonStrFvs(boolFvs,idxs)
             idx = remainingAtoms.index(self.data) if self.data in remainingAtoms else -1
             if idx == -1: # case where the predicate chosen to split is actually a common term meaning that it will all fvs to one side leaving the other empty
                 assert( (atoms.index(self.data) if self.data in atoms else -1) != -1)
@@ -129,17 +140,18 @@ class Nd:
             
             return ret
     
-    def parseWithHoudiniWithZ3Expr(self, atoms, boolFeatures, boolFvs, s, call):
+    def parseWithHoudiniWithZ3Expr(self, atoms, boolFeatures, boolStrFvs, boolFvs, s, call):
         if len(boolFvs) == 0:
             return  PrecisFormula(BoolVal(False))
         if not self.left and not self.right:
             #Houdini
             houdini = Houdini()
-            (conjunct, indexes) = houdini.learnHoudiniString(boolFeatures, boolFvs)
-            if len(conjunct) == 0:
+            #houdini should return tuples
+            (conjunct, indexes, leafConjunctsZ3expr) = houdini.learn4(boolFeatures, boolFvs, call)
+            if len(leafConjunctsZ3expr) == 0:
                 infixConjunct = PrecisFormula(BoolVal(True))    
             else:
-                infixConjunct = PrecisFormula(And([f.varZ3 for f in conjunct]))
+                infixConjunct = PrecisFormula(And([ pf.varZ3  for pf in leafConjunctsZ3expr ] ))
             
             return infixConjunct            
         else:
@@ -151,12 +163,14 @@ class Nd:
             #(pPos, pNeg) = split(self,data, boolFvs)
             
             houdini2 = Houdini()
-            commonConjuct , idxs = houdini2.learnHoudiniString(atoms, boolFvs)
-            commonConjuctPrecisFeat , idxs = houdini2.learnHoudiniString(boolFeatures, boolFvs)
-            idxs.reverse()
-            remainingAtoms = Nd.removeCommonTerms(atoms, idxs)
-            remainingAtomsPrecisFeat = Nd.removeCommonTerms(boolFeatures, idxs)
-            remainingBoolFvs = Nd.removeCommonFvs(boolFvs,idxs)
+            commonConjuct , idxsAtoms = houdini2.learnHoudiniString(atoms, boolStrFvs)
+            commonConjuctPrecisFeat , idxsExpr, commonConjunctsZ3expr = houdini2.learn4(boolFeatures, boolFvs, call)
+            idxsAtoms.reverse()
+            idxsExpr.reverse()
+            remainingAtoms = Nd.removeCommonTerms(atoms, idxsAtoms)
+            remainingAtomsPrecisFeat = Nd.removeCommonTerms(boolFeatures, idxsExpr)
+            remainingAtomsStrBoolFv = Nd.removeCommonStrFvs(boolStrFvs, idxsAtoms)
+            remainingBoolFvs = Nd.removeCommonFvs(boolFvs,idxsExpr)
             
             #s.add(And( [f.varZ3 for f in commonConjuctPrecisFeat] if len(commonConjuct) > 0 else [BoolVal(True),BoolVal(True)] ) == BoolVal(True))
             #s.push()
@@ -164,30 +178,37 @@ class Nd:
             idx = remainingAtoms.index(self.data) if self.data in remainingAtoms else -1
             if idx == -1: # case where the predicate chosen to split is actually a common term meaning that it will all fvs to one side leaving the other empty
                 assert( (atoms.index(self.data) if self.data in atoms else -1) != -1)
-                if len(commonConjuct) != 0:
-                    earlyRet =  PrecisFormula(And([f.varZ3 for f in commonConjuctPrecisFeat]))
+                if len(commonConjunctsZ3expr) != 0:
+                    earlyRet =  PrecisFormula(And([f for f in commonConjunctsZ3expr]))
                 else:
                     earlyRet = PrecisFormula(BoolVal(True))
                 print("Predicate: "+ call + " : None")
                 logger.info("Predicate "+ call + " : None"+"\n")
                 return earlyRet
-            
-
-            (pPos, pNeg) = Nd.split(idx, remainingBoolFvs)
+            (pStrPos, pStrNeg) = Nd.split(idx,remainingAtomsStrBoolFv) 
+            (pPos, pNeg) = Nd.split(idx,remainingBoolFvs)
             splitPred = remainingAtomsPrecisFeat[idx] # chosen predicate to split on LOG THIS
+            
+            remainingAtomsPrecisFeat = Nd.removeCommonTerms(remainingAtomsPrecisFeat, [idx])
+            remainingAtoms = Nd.removeCommonTerms(remainingAtoms, [idx])
+            
+            pStrPos = Nd.removeCommonStrFvs(pStrPos, [idx])
+            pStrNeg = Nd.removeCommonStrFvs(pStrNeg, [idx])
+            pPos = Nd.removeCommonFvs(pPos,[idx])
+            pNeg = Nd.removeCommonFvs(pNeg,[idx])
 
             logger.info("Predicate "+ call + " : "+ str(splitPred)+"\n")
             print("Predicate chosen at " + call +" : "+str(splitPred))
 
-            right = self.right.parseWithHoudiniWithZ3Expr(remainingAtoms,remainingAtomsPrecisFeat, pPos, s, call + " Right").formulaZ3
+            right = self.right.parseWithHoudiniWithZ3Expr(remainingAtoms,remainingAtomsPrecisFeat, pStrPos,  pPos, s, call + " Right").formulaZ3
 
 
-            left = self.left.parseWithHoudiniWithZ3Expr(remainingAtoms,remainingAtomsPrecisFeat , pNeg, s, call + " Left").formulaZ3
+            left = self.left.parseWithHoudiniWithZ3Expr(remainingAtoms,remainingAtomsPrecisFeat , pStrNeg,  pNeg, s, call + " Left").formulaZ3
             #s.pop() 
-            if len(commonConjuct) != 0:
+            if len(commonConjunctsZ3expr) != 0:
                 
                 #ret = PrecisFormula( And( And([f.varZ3 for f in commonConjuctPrecisFeat]), Or( Not(splitPred.varZ3), self.right.parseWithHoudiniWithZ3Expr(remainingAtoms,remainingAtomsPrecisFeat, pPos).varZ3), Or(splitPred.varZ3, self.left.parseWithHoudiniWithZ3Expr(remainingAtoms,remainingAtomsPrecisFeat pNeg) ) ))
-                ret = PrecisFormula(And(And( [f.varZ3 for f in commonConjuctPrecisFeat] ), And(Or(Not(splitPred.varZ3), right ), Or(splitPred.varZ3, left )) ))
+                ret = PrecisFormula( And(And( [f.varZ3 for f in commonConjunctsZ3expr]), And(Or(Not(splitPred.varZ3), right ), Or(splitPred.varZ3, left )) ))
                 
             else:
                 #ret = "( (!(" + self.data + ") || " + self.right.parseWithHoudini(remainingAtoms, pPos) \
@@ -198,21 +219,39 @@ class Nd:
             #ret = PrecisFormula(ret.precisSimplify())
             return ret
     
+
+    @staticmethod
+    def removeCommonStrFvs(strBoolFvs, reversedIndexes):
+        updateBoolFvs = []
+        for vecIdx in range(0, len(strBoolFvs)):
+            changedBoolFv  = list(strBoolFvs[vecIdx])
+            for idx in reversedIndexes:
+                changedBoolFv = changedBoolFv[0:idx] + changedBoolFv[idx+1:]
+            updateBoolFvs.append(changedBoolFv)
+        return updateBoolFvs
+
+
     @staticmethod
     def removeCommonFvs(boolFvs, reversedIndexes):
+        updateBoolFvs = []
         for vecIdx in range(0, len(boolFvs)):
+            changedBoolFv  = FeatureVector.copyFeatureVector(boolFvs[vecIdx])
             for idx in reversedIndexes:
-                boolFvs[vecIdx] = boolFvs[vecIdx][0:idx] + boolFvs[vecIdx][idx+1:]
-        return boolFvs
+                changedBoolFv.values = changedBoolFv.values[0:idx] + changedBoolFv.values[idx+1:]
+                changedBoolFv.valuesZ3 = changedBoolFv.valuesZ3[0:idx] + changedBoolFv.valuesZ3[idx+1:]
+            updateBoolFvs.append(changedBoolFv)
+        
+        return updateBoolFvs
 
     @staticmethod
     #atoms can be a list of any type(i.e string, Z3expr) 
     def removeCommonTerms(atoms, reversedIndexes):
          # in place reverse
+        updatedAtoms = tuple(atoms)
         for idx in reversedIndexes:
-            atoms = atoms[0:idx] + atoms[idx+1: ]
+            updatedAtoms = updatedAtoms[0:idx] + updatedAtoms[idx+1: ]
             #atoms[]
-        return atoms
+        return updatedAtoms
 
     #@staticmethod
     #def findIndex(p, atom):
@@ -224,9 +263,10 @@ class Nd:
         listNeg= []
         #index = Nd.getIndex(predicate)
         for vector in boolFvs:
-            if vector[predIndex] == "false":
+            # to handle str typed feature vector := str(vector[predIndex]).lower()
+            if is_false(vector[predIndex]) or  str(vector[predIndex]).lower() == "false":
                 listNeg.append(vector)
-            else:
+            elif is_true(vector[predIndex]) or str(vector[predIndex]).lower() == "true":
                 listPos.append(vector)
         return (listPos, listNeg)
     
@@ -518,10 +558,14 @@ class SygusDisjunctive:
         with open("sygus.sl", "w") as file:
             file.write(constraint)
         
-        output = runCommand(["./Learners/cvc4-2020-02-06-win64-opt.exe", "--sygus-out=sygus-standard",  "--lang=sygus2", "sygus.sl"])
+        #output = runCommand(["./Learners/cvc4.exe", "--sygus-out=sygus-standard",  "--lang=sygus2", "sygus.sl"])
+        current = path.dirname(path.abspath(__file__))
+        currentCvc4 =current+"\\cvc4.exe"
+        print(currentCvc4)
+        output = runCommand([currentCvc4, "--sygus-out=sygus-standard",  "--lang=sygus2", "sygus.sl"])
         
         if output: 
-            if "\r\nb" in output: 
+            if "\r\n" in output: 
                 output = re.sub("\'?\\r\\nb\'?", "\n", output)
 
             valuation = re.findall('\s*\(define\-fun\s+(.*)\s+\(\s*\)\s+Bool\s+(.*)\s*\)', output) 
@@ -633,22 +677,27 @@ class SygusDisjunctive:
         return None
 
 
-def main(): 
-
+#def main(): 
+if __name__ == '__main__':
+    print("here")
     solver1 = SygusDisjunctive(
 
-                    ["cond1", "cond2", "x>3", "x>=1", "eq1", "eq2", "eq3"],
+                    ["cond1", "cond2", "cond3", "cond4", "eq1", "eq2", "eq3"],
                     
                     [["true", "false", "true", "true","true", "false", "true"],
                     ["true", "true", "true", "true","false", "false", "false"]],
                     
-                    k=2,
-                    cdt="(and cond1 x>3)"
+                    k=1,
+                    cdt="(and cond1 cond3 )"
                 )
-    
+    print(os.getcwd())
     output_tree = solver1.run_sygus()
-    stringTree = output_tree.parse()
-    print(stringTree)
+    print(output_tree)
+    if output_tree != None:
+        stringTree = output_tree.parseWithHoudiniWithPruning(["cond1", "cond2", "cond3", "cond4", "eq1", "eq2", "eq3"], [["true", "false", "true", "true","true", "false", "true"],["true", "true", "true", "true","false", "false", "false"]] )
+        print(stringTree)
+    print("no output")
+    #print(stringTree)
     
     # t = "true"
     # f = "false"

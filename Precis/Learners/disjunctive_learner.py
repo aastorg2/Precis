@@ -4,6 +4,7 @@ from Data.feature_vector import FeatureVector
 from Data.precis_formula import PrecisFormula
 from Learners.houdini import Houdini
 from featurizer import Featurizer
+from Learners.feature_synthesis import FeatureSynthesis
 from os import sys
 from typing import List, Tuple, Type
 import math
@@ -35,8 +36,8 @@ class DisjunctiveLearner:
     def learn4(self, k, intBaseFeat, boolBaseFeat, baseFeatureValues, exclude, solver, call):
         #on the empty set of data points, return true
         if len(baseFeatureValues) == 0:
-            print("called learn3 with 0 feature vectors")
-            logger.info("called learn3 with 0 feature vectors")
+            print("called learn4 with 0 feature vectors")
+            logger.info("called learn4 with 0 feature vectors")
             return PrecisFormula(BoolVal(False))
         #rename  splitIntoBoolAndIntFeatureVectors
         (intBaseFeatVectors, boolBaseFeatVectors) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeat, boolBaseFeat, baseFeatureValues)
@@ -50,6 +51,8 @@ class DisjunctiveLearner:
         #boolFeatToReturn = boolFeatToReturn.union(allBoolFeatures)
         houdini = Houdini()
         (allTrueFormula, indicesAllwaysTrue, conjuncts) = houdini.learn4(boolFeatures , boolFvs, call)
+        
+        print("common conjuction: k="+str(k)+" "+allTrueFormula.toInfix())
         logger.info("Houdini AlwaysTrue for k="+str(k)+" : "+ allTrueFormula.toInfix()+"\n")
         smtConjunct = "true"
         if len(conjuncts) != 0:
@@ -117,7 +120,7 @@ class DisjunctiveLearner:
             postSmt = "(and "+ smtConjunct +" "+ "(ite "+f.varName +" "+ smtPos+" "+smtNeg +"))"
             disjunctivePost  = And(allTrueFormula.formulaZ3, Or(And(posPost.formulaZ3, f.varZ3), And(negPost.formulaZ3, Not(f.varZ3) )))
             precisPost = PrecisFormula(disjunctivePost)
-            return precisPost, allUniqueBoolFeat,postSmt
+            return precisPost, allUniqueBoolFeat, postSmt
 
     #baseFeartureVectors : List of lists but the inner list are FeatureVector datatype
     def learn3(self, k, intBaseFeat, boolBaseFeat, baseFeatureValues, exclude, solver, call):
@@ -227,10 +230,11 @@ class DisjunctiveLearner:
 
             posFvs = Featurizer.mergeFeatureVectors(posBoolBaseFv, fvPosDeriv)
             negFvs = Featurizer.mergeFeatureVectors(negBoolBaseFv, fvNegDeriv)
-            
-            (posAllTrueFormula, posIndicesAllwaysTrue) = houdini.learn2(boolFeatures , posFvs, call+" implication check-- bad split pred "+str(feature))
-            (negAllTrueFormula, negIndicesAllwaysTrue) = houdini.learn2(boolFeatures , negFvs, call+" implication check-- bad split pred "+str(feature))
+            #consider adding check to not call houdini with empty list of posFvs or negFvs
+            (posAllTrueFormula, posIndicesAllwaysTrue, conjunctsPos) = houdini.learn4(boolFeatures , posFvs, call+" implication check-- bad split pred "+str(feature))
+            (negAllTrueFormula, negIndicesAllwaysTrue, conjunctsNeg) = houdini.learn4(boolFeatures , negFvs, call+" implication check-- bad split pred "+str(feature))
             if (is_true(posAllTrueFormula.formulaZ3) and len(negFvs) == 0) or (is_true(negAllTrueFormula.formulaZ3) and len(posFvs) == 0):
+                print(call+ " implication check-- bad split pred: "+ str(feature))
                 irrelevantIndices.append(idx)
                 continue
            
@@ -257,6 +261,7 @@ class DisjunctiveLearner:
                 irrelevantIndices.append(idx)
             #splitting adds new information
             elif str(check) == 'sat':
+                print("passed implication check: "+ feature.varName)
                 pass
             else:
                 # solver does not know

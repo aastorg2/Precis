@@ -1,10 +1,11 @@
 from z3 import *
 import itertools
+
+from Learners.sygus_lia import SygusLIA
 from Data.precis_feature import PrecisFeature
 from Learners.sygus import Sygus
 from os import sys, path
 from Data.shell import Shell
-from Learners.sygus_lia import SygusLIA
 
 from typing import List, Tuple
 class FeatureSynthesis:
@@ -39,12 +40,14 @@ class FeatureSynthesis:
         derivedFeatures = ()
         assert(len(intFeatures) > 0)
         #assert(len(boolFeatures) > 0)
-        derivedFeatures: Tuple[PrecisFeature] = self.CreateEqualities(intFeatures)
         derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateInequalities(intFeatures)
+        derivedFeatures: Tuple[PrecisFeature] = self.CreateEqualities(intFeatures)
         derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateEqualitiesWithConstants(intFeatures)
         derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateInequalitiesWithConstants(intFeatures)
+        #temporarily changed order
         if len(boolFeatures) > 0: # there exist any base bool observer methods
-            negationBaseBoolFeatures: Tuple[PrecisFeature] = self.createNegationBool(boolFeatures)
+            pass # do not create negation to reduce space of formulas DT synthesizer has to explore
+            #negationBaseBoolFeatures: Tuple[PrecisFeature] = self.createNegationBool(boolFeatures)
         
         return negationBaseBoolFeatures + derivedFeatures
         #return derivedFeatures
@@ -84,10 +87,12 @@ class FeatureSynthesis:
             shell.writeToFile(self.temporaryFolder,self.sygusFileName, sygusProblem )
             synthizedExprStr = sygusSynthesizer.learn(self.temporaryFolder,self.sygusFileName)
             if synthizedExprStr == "No Solutions!":
+                print("no solution synthesis")
                 continue
             declMap = { f.varName : f.varZ3 for f in intFeatures}
             synthesizedFeature = "(= "+ postFeaturesIdxs[0].varName +" " +synthizedExprStr +")" 
             sygusExpr = parse_smt2_string("(assert "+ synthesizedFeature+ " )",decls=declMap)
+            print("======================= synthesized feature: "+ str(sygusExpr[0]))
             synthesizedFeatures += (PrecisFeature(True, str(sygusExpr[0]), str(sygusExpr[0].sort()), None, sygusExpr[0]),)#assumes only return list of length == 1(sygusExpr) 
             #print(sygusExpr.ctx)
             #print(postFeaturesIdxs[0].varZ3.ctx)
@@ -117,16 +122,16 @@ class FeatureSynthesis:
             lessThanExpr = feat2.varZ3 < feat1.varZ3
             lessThanExprReversed = feat1.varZ3 < feat2.varZ3
             lessThanEqualExpr = feat2.varZ3 <= feat1.varZ3
-            lessThanEqualExprReversed = feat1.varZ3 <= feat2.varZ3
+            #lessThanEqualExprReversed = feat1.varZ3 <= feat2.varZ3
             
             lessThanDerived = PrecisFeature(True, str(lessThanExpr), str(lessThanExpr.sort()), None, lessThanExpr)
             lessThanEqualDerived = PrecisFeature(True, str(lessThanEqualExpr), str(lessThanEqualExpr.sort()), None, lessThanEqualExpr)
             lessThanDerivedRev = PrecisFeature(True, str(lessThanExprReversed), str(lessThanExprReversed.sort()), None, lessThanExprReversed)
-            lessThanEqualDerivedRev = PrecisFeature(True, str(lessThanEqualExprReversed), str(lessThanEqualExprReversed.sort()), None, lessThanEqualExprReversed)
+            #lessThanEqualDerivedRev = PrecisFeature(True, str(lessThanEqualExprReversed), str(lessThanEqualExprReversed.sort()), None, lessThanEqualExprReversed)
             inequalitiesFeatures += (lessThanDerived,)
             inequalitiesFeatures += (lessThanEqualDerived,)
             inequalitiesFeatures += (lessThanDerivedRev,)
-            inequalitiesFeatures += (lessThanEqualDerivedRev,)
+            #inequalitiesFeatures += (lessThanEqualDerivedRev,)
             
         return inequalitiesFeatures
 
@@ -144,14 +149,15 @@ class FeatureSynthesis:
             #if feat1.isNew == False and feat2.isNew == False: # skip comparison among variables of the pre state only
             #    continue
             #print (feat1, feat2)
-            notEqualExpr = feat2.varZ3 != feat1.varZ3 
+            #removing negation of equalities for now
+            #notEqualExpr = feat2.varZ3 != feat1.varZ3 
             equalExpr = feat2.varZ3  == feat1.varZ3 
             #print(notEqualExpr)
             #print(notEqualExpr.sort())
             #print(type(notEqualExpr))
-            notEqualDerived = PrecisFeature(True, str(notEqualExpr), str(notEqualExpr.sort()), None, notEqualExpr)
+            #notEqualDerived = PrecisFeature(True, str(notEqualExpr), str(notEqualExpr.sort()), None, notEqualExpr)
             equalDerived = PrecisFeature(True, str(equalExpr), str(equalExpr.sort()), None, equalExpr)
-            equalitiesFeatures += (notEqualDerived,)
+            #equalitiesFeatures += (notEqualDerived,)
             equalitiesFeatures += (equalDerived,)
         return equalitiesFeatures
 

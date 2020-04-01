@@ -60,7 +60,16 @@ class FeatureVector:
         # Check bool
         assert(((value.upper() == 'TRUE') or (value.upper() == 'FALSE')) == is_bool(precisFeatureZ3))
     # End of DEBUG method
-        
+
+
+    def getStrFeatureVectorsOnly(self):
+        output = '('
+        output += self.values[0]
+        for fvIdx in range(1,len(self.values)):
+            output += ', '+ self.values[fvIdx]
+        output = output + ')'
+        return output
+
     def __str__(self):
         output = '('
         for value in self.values:

@@ -14,9 +14,10 @@ import io
 from lxml import etree
 
 def runCommand(args):
+    executionRun = None
     try:
         executionOutput = ""
-        executionRun = subprocess.Popen(args, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        executionRun = subprocess.Popen(args, stdout = subprocess.PIPE)
         for line in executionRun.stdout:
             executionOutput += os.linesep + str(line.rstrip())
         executionRun.stdout.close()

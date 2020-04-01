@@ -7,20 +7,22 @@ from Data.precis_feature import PrecisFeature
 from Data.precis_formula import PrecisFormula
 from Data.feature_vector import FeatureVector
 from Teachers.pex import Pex
+from Teachers.instrumenter import Instrumenter
 from Learners.feature_synthesis import FeatureSynthesis
 from Learners.houdini import Houdini
 from Learners.disjunctive_learner import DisjunctiveLearner
-from Teachers.instrumenter import Instrumenter
+from Learners.sygus2 import SygusDisjunctive
+from Learners.houdini import Houdini
 from featurizer import Featurizer
 import shutil
 from typing import List, Tuple, Type
 import logging
 import evaluation
-from Learners.sygus2 import SygusDisjunctive
-from Learners.houdini import Houdini
-import command_runner
+
+import Teachers.command_runner
 import operator
 
+print("In precis.py: \n" + str(sys.path))
 #learning function 1 --- based decision tree
 def learnPostUpToK(p, PUTName, outputFile, k, destinationOfTests):
     sygusExecutable = "./Learners/EnumerativeSolver/bin/starexec_run_Default"
@@ -252,7 +254,8 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
         postcondition, allBoolFeats, postSmt = disLearner.learn4( 2, intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors, (), ss,"root")
         endDtTime = time.time() - startDtLearningTime 
         dtWithSynthesisLearningTime = dtWithSynthesisLearningTime + endDtTime
-        
+        print("++++++++++++++++++++++")
+        print(PrecisFormula(postcondition.precisSimplify()).toInfix())
         allBoolFeatsList = list(allBoolFeats)
         #print(intBaseFeatVectors, boolBaseFeatVectors)
         #print(intBaseFeatures, boolBaseFeatures)
@@ -266,15 +269,16 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
         boolFvs = Featurizer.mergeFeatureVectors(boolBaseFeatVectors,derivFeatVectors)
         boolFeatures = boolBaseFeatures + derivFeats
         atoms = generateAtomPredicates(len(boolFeatures))
-        strBoolFvs = [ str(fv).lower().replace("(","").replace(")","").split(", ") for fv in boolFvs ]
+        strBoolFvs = [ fv.getStrFeatureVectorsOnly().lower().replace("(","").replace(")","").split(", ") for fv in boolFvs ]
         postSmtAtom  = replaceInfixToAtoms(postSmt,atoms,boolFeatures)
         
         houdini = Houdini()
         (conjunct, indexes) = houdini.learnHoudiniString(atoms, strBoolFvs)
-        (conjunctZ3, idxs) = houdini.learn2(boolFeatures, boolFvs, "root")
+        (conjunctPrecis, idxs, conjuncts) = houdini.learn4(boolFeatures, boolFvs, "root")
 
         sygusConjunct = '(and ' + ' '.join(conjunct) + ')'
-        regularConjunct = replace(sygusConjunct, atoms, boolFeatures)
+        #no way to know if feature in boolFeatures should be negated
+        #regularConjunct = replace(sygusConjunct, atoms, boolFeatures)
         (condAtoms,strCondBoolFvs, universallyTrue) = removeUniversallyTrueFalse(atoms, strBoolFvs)
         
         condPostSmtAtom = removeTopMostCommonConjunct(universallyTrue,postSmtAtom)
@@ -282,7 +286,7 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
         print("tree from dt w/ synthesis:\n "+ condPostSmtAtom)
         k = 1
         config = False
-        currentBestTreeAtK = condPostSmtAtom
+        currentBestTreeAtK = 'true'
         #currentBestTreeAtK = 'true'
         currentBestTree = None
         stringTree = ""
@@ -312,10 +316,11 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
                 #there was no tree of depth k so will skip checking at k+1
                 # at this point, currentBestTreeAtK has the best tree of depth k. So now, we check if there exist a better tree of depth k+1
                 copy2StrBoolFvs = list(strBoolFvs)
+                copyboolFvs = list (boolFvs)
                 s1 = Solver()
                 print("best tree at depth k")
                 print("disjunctive sygus format:\n"+currentBestTreeAtK)
-                print("z3 simplified:\n"+PrecisFormula(currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy2StrBoolFvs, s1, "root").precisSimplify()).toInfix()+"\n") # destroys copy2StrBoolFvs
+                print("z3 simplified:\n"+PrecisFormula(currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy2StrBoolFvs, copyboolFvs, s1, "root").precisSimplify()).toInfix()+"\n") # destroys copy2StrBoolFvs
                 
                 print("checking if there exist a tree at k+1 depth that is tigher?")
                 solver2 = SygusDisjunctive(
@@ -330,10 +335,11 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
                 totalLearningTime = totalLearningTime + kExecTime
                 if output_tree != None:
                     copy3StrBoolFvs = list(strBoolFvs)
+                    copy2boolFvs = list (boolFvs)
                     print("Yes, best tree at k+1")
                     currentBestTreeAtK = output_tree.parseWithHoudiniWithPruning(condAtoms,strCondBoolFvs)
                     print("disjunctive sygus format:\n"+currentBestTreeAtK)
-                    print("z3 simplified:\n"+PrecisFormula(output_tree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy3StrBoolFvs, s1, "root").precisSimplify()).toInfix()+"\n")# destroys copy3StrBoolFvs
+                    print("z3 simplified:\n"+PrecisFormula(output_tree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy3StrBoolFvs, copy2boolFvs, s1, "root").precisSimplify()).toInfix()+"\n")# destroys copy3StrBoolFvs
                     currentBestTree = output_tree
                     k = k + 1
                 else:
@@ -363,10 +369,10 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
             s = Solver()
             logger1.info("Final Tree ====")
             logger1.info(f"Round: {rounds}")
-            candidatePostcondition = currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copyStrBoolFvs, s, "root")
+            candidatePostcondition = currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copyStrBoolFvs, boolFvs, s, "root")
         else:
-            stringTreeReplaced = PrecisFormula(conjunctZ3.precisSimplify()).toInfix() #Debugging
-            candidatePostcondition = conjunctZ3
+            stringTreeReplaced = PrecisFormula(conjunctPrecis.precisSimplify()).toInfix() #Debugging
+            candidatePostcondition = conjunctPrecis
 
         strCandidatePostCondition = PrecisFormula(candidatePostcondition.precisSimplify()).toInfix()
         inst.instrumentPostString(p, strCandidatePostCondition, PUTName)
@@ -423,7 +429,9 @@ def removeTopMostCommonConjunct(universallyTrue, postcondition):
     if not "ite" in postcondition:
         return "true"
     condPost = ""
-    regPattern = '\(and \(and (?:(?:cond[0-9]+\s*)*|true)\)'
+    # '\(and \(and (?:(?:\(not cond[0-9]+\)\s*|cond[0-9]+\s*)*|true)\)' --> original workin regex
+    #regPattern = "(\(and \(and (\(not cond[0-9]+\)\s*|cond[0-9]+\s*)*|true\))"
+    regPattern = '\(and \(and (?:(?:\(not cond[0-9]+\)\s*|cond[0-9]+\s*)*|true)\)'
     matches = re.findall(regPattern, postcondition)
     if len(matches) > 0:
         condPost = postcondition.replace(matches[0],"(and " )
@@ -451,6 +459,8 @@ def removeUniversallyTrueFalse(atoms, strBoolFvs ):
             idxsValuesToKeep.append(idx)
         elif init == 'true':
             universallyTrue.append(atoms[idx])
+        elif init == 'false':
+            universallyTrue.append("(not "+ atoms[idx]+")")
     #remove values from feature vectors
     for fv in strBoolFvs:
         updatedFv= []
@@ -459,14 +469,32 @@ def removeUniversallyTrueFalse(atoms, strBoolFvs ):
         strCondTrueFvs.append(updatedFv)
 
     return (remainingCondTruePredicates,strCondTrueFvs,universallyTrue)
-            
-def replaceInfixToAtoms(postcondtion, atoms, boolFeatures):
+
+#boolFeatures will not contain negation        
+def replaceInfixToAtoms(postcondition, atoms, boolFeatures):
     
     
     for idx in range(len(boolFeatures) - 1 , -1,-1): # this code relies on the fact that Not(boolExpr) occurs later in list than boolExpr
     #for idx in range(0 ,len(boolFeatures)):
-        postcondtion = postcondtion.replace(boolFeatures[idx].varName, atoms[idx])
-    return postcondtion
+        if idx == 23:
+            print("debugger")
+        strZ3FeatureToReplace = boolFeatures[idx].varName
+        strZ3FeatureNegated = str(Not(boolFeatures[idx].varZ3))      
+        #both positive and negative case  
+        if strZ3FeatureNegated in postcondition and strZ3FeatureToReplace in postcondition:
+            postcondition = postcondition.replace(strZ3FeatureNegated, "(not "+atoms[idx]+")")
+            postcondition = postcondition.replace(strZ3FeatureToReplace, atoms[idx])
+        
+        #only positive case
+        elif strZ3FeatureToReplace in postcondition:
+            postcondition = postcondition.replace(strZ3FeatureToReplace, atoms[idx])  
+            #assert(False)#"error same cond mapt to Not(x==1) and x==1"
+        #only negative case
+        elif strZ3FeatureNegated in postcondition and strZ3FeatureToReplace not in postcondition:
+            postcondition = postcondition.replace(strZ3FeatureNegated, "(not "+atoms[idx]+")")
+        
+
+    return postcondition
     
 def replace(postcondtion, atoms, boolFeatures):
     import re
@@ -476,6 +504,7 @@ def replace(postcondtion, atoms, boolFeatures):
     output = postcondtion
     for idx in range (len(matches) - 1, -1, -1):
         index = getIndex(matches[idx])
+
         output = output.replace(matches[idx], boolFeatures[index].varName)
     # This code may not generalize if applied to exression of comparisons applied to integer boolean features to integer boolean features
     output = output.replace("Not", "!")
@@ -667,9 +696,10 @@ if __name__ == '__main__':
 
     angello = True
     if angello:
-        pArrayList.puts =['PUT_IndexOfContract']
-        pArrayList.puts =['PUT_CountContract']
-        subjects.append(pArrayList)
+        #pDictionary.puts =['PUT_RemoveContract']
+        #subjects.append(pDictionary)
+        pHashSet.puts = ['PUT_AddContract']
+        subjects.append(pHashSet)
     else:
         pass
 
