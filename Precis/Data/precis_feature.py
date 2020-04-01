@@ -36,7 +36,8 @@ class PrecisFeature:
 
             if varType.upper() == 'INT':
                 self.varZ3 = Int(varName)
-            elif varType.upper() == 'FLOAT':
+            #refactor ObserverExtractor so that when it sees a float type (in C#), it outputs REAL as its type in typeOM.txt
+            elif varType.upper() == 'FLOAT' or varType.upper() == 'REAL':
                 self.varZ3 = Real(varName)
             elif varType.upper() == 'BOOL':
                 self.varZ3 = Bool(varName)
@@ -45,7 +46,7 @@ class PrecisFeature:
             
     # DEBUG method
     def CheckVarType(self, varType):
-        assert varType.upper() == 'INT' or varType.upper() == 'FLOAT' or varType.upper() == 'BOOL', 'Only variables with type int, float and bool are supported!!!'
+        assert varType.upper() == 'INT' or varType.upper() == 'FLOAT' or varType.upper() == 'REAL' or varType.upper() == 'BOOL', 'Only variables with type int, float and bool are supported!!!'
 
     def __str__(self):
         return self.varName
