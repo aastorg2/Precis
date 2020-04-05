@@ -90,7 +90,7 @@ class DisjunctiveLearner:
             #    self.chooseFeature2(remainingBaseBoolFeat + remainingDerivBoolFeat, \
             #        Featurizer.mergeFeatureVectors(intBaseFeatVectors,reaminingEntriesBaseBoolFv), reaminingEntriesDerivBoolFv, call, lookAhead)
             logger.info("Predicate: "+ call + " for k = "+ str(k)+" : "+ str(f)+"\n")
-            print("Predicate chosen at "+ call+" : "+str(f))
+            print("Predicate: "+ call+" : "+str(f))
             
             #featureSplitRemoved == f 
             (newBoolBaseFeat, newDeriveBaseFeat, featureSplitRemoved) = \
