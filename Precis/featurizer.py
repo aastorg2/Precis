@@ -103,7 +103,36 @@ class Featurizer:
             derivedFeatureVector.valuesZ3 = derivedTupleValuesZ3
             derivedFeatureVector.values = tuple(str(i) for i in derivedTupleValuesZ3)
             allDerivedFeatureVectors.append(derivedFeatureVector)
+        return allDerivedFeatureVectors
         
+    @staticmethod
+    def generateDerivedFeatureVectorsFromIntFeats( derivedFeatures, intBaseFeatures, baseFeatureVectors):
+        
+        #print(derivedFeatures)
+        #print(baseFeatureVectors)
+        #print ("here")
+        #print(intBaseFeatures)
+        pairs = list()
+        #consider
+        allDerivedFeatureVectors = list()
+        for f in baseFeatureVectors:
+            #print("feature vec: " +str(f))
+            pairs = Featurizer.generateFeatureValueMapping(intBaseFeatures,f)
+            #print(pairs)
+            #print(type(pairs))
+            derivedTupleValuesZ3 = ()
+            for df in derivedFeatures:
+                deriveFeatVec = substitute(df.varZ3 , pairs)
+                deriveFeatVecValue = simplify(deriveFeatVec)
+                derivedTupleValuesZ3 += (deriveFeatVecValue,)
+
+            # Assert: # of derived feature values(i.e. length of derived feature vector(tuple)) should be the same as
+            # Assert: # of derived features (.i.e length of list of derived features)
+            assert(len(derivedTupleValuesZ3) == len(derivedFeatures))
+            derivedFeatureVector = FeatureVector([], [], str(f.testLabel))
+            derivedFeatureVector.valuesZ3 = derivedTupleValuesZ3
+            derivedFeatureVector.values = tuple(str(i) for i in derivedTupleValuesZ3)
+            allDerivedFeatureVectors.append(derivedFeatureVector)    
         #print(allDerivedFeatureVectors)
         return allDerivedFeatureVectors
 
@@ -136,7 +165,7 @@ class Featurizer:
         pairs = list()
         # consider removing check for perfomances in cases where the number of feature vectors gets large.
         # number of base features should be the same as the number of entries in feature vector(values of said features)
-        assert(len(featureVector) == len(baseFeatures))
+        #assert(len(featureVector) == len(baseFeatures))
         for i in  range(len(baseFeatures)):
             #print("type of featVec", type(featureVector[i]))
             pair = (baseFeatures[i].varZ3 , featureVector[i])
