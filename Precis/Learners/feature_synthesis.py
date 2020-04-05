@@ -2,7 +2,8 @@ from z3 import *
 import itertools
 
 from Learners.sygus_lia import SygusLIA
-from Data.precis_feature import PrecisFeature
+from Data.precis_feature import *
+#from Data.precis_feature import PrecisFeature
 from Learners.sygus import Sygus
 from os import sys, path
 from Data.shell import Shell
@@ -40,8 +41,8 @@ class FeatureSynthesis:
         derivedFeatures = ()
         assert(len(intFeatures) > 0)
         #assert(len(boolFeatures) > 0)
+        derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateEqualities(intFeatures)
         derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateInequalities(intFeatures)
-        derivedFeatures: Tuple[PrecisFeature] = self.CreateEqualities(intFeatures)
         derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateEqualitiesWithConstants(intFeatures)
         derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateInequalitiesWithConstants(intFeatures)
         #temporarily changed order
