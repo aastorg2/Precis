@@ -1,7 +1,14 @@
 from z3 import *
 
-class PrecisFeature:
 
+
+
+class PrecisFeature:
+    # Python notes: variables declared outside method by inside class are "class variables"
+    # those declared inside __init__ method as instance variables.
+    # class variable is updated
+    #ID = 0
+    
     # varName: string; variable name
     varName = ""
     # isNew: string; True: New_*, False, Old_*, None: feature is derived
@@ -10,6 +17,7 @@ class PrecisFeature:
     varZ3 = None
     # isDerived: bool; whether the feature is derived
     isDerived = None
+    
     
     # isDerived: bool
     # varName: string; variable name
@@ -21,7 +29,6 @@ class PrecisFeature:
         if isDerived:
             # Check variable type
             self.CheckVarType(varType)
-
             self.varName = str(varZ3)
             self.isNew = isNew
             self.varZ3 = varZ3
@@ -43,7 +50,13 @@ class PrecisFeature:
                 self.varZ3 = Bool(varName)
             else:
                 raise Exception('Unknown type!')
-            
+
+        #FreshInt gets unique constant with respect to context
+        #atom: name of literal identifier
+        #if self.atom == None:
+        arithRefId = FreshInt("cond")
+        self.atom = str(arithRefId).replace("!","")
+
     # DEBUG method
     def CheckVarType(self, varType):
         assert varType.upper() == 'INT' or varType.upper() == 'FLOAT' or varType.upper() == 'REAL' or varType.upper() == 'BOOL', 'Only variables with type int, float and bool are supported!!!'
@@ -57,7 +70,9 @@ class PrecisFeature:
     
     #TODO: consider implementing equality that checks Ast equality
     def __eq__(self, otherFeature):
-        return hasattr(otherFeature, 'varZ3') and hasattr(otherFeature, 'varName') and self.varZ3.eq(otherFeature.varZ3)
+        # eq(simplify(self.varZ3), simplify(otherFeature.varZ3)) --> so that 1+x
+        return hasattr(otherFeature, 'varZ3') and hasattr(otherFeature, 'varName') and (eq(self.varZ3, otherFeature.varZ3) \
+            or (eq(self.varZ3.decl(), otherFeature.varZ3.decl()) and (set(self.varZ3.children()) == set(otherFeature.varZ3.children()))  )  )
 
     def __hash__(self):
         return self.varZ3.hash() 

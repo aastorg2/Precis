@@ -129,7 +129,11 @@ namespace ObserverTypeExtractor
 
             foreach (AssignmentExpressionSyntax assExprNode in assignNodes)
             {
-                IdentifierNameSyntax left = (IdentifierNameSyntax)assExprNode.Left;
+                var kind = assExprNode.Left.Kind();
+                if (kind.Equals(SyntaxKind.ElementAccessExpression))
+                    continue;
+
+                              IdentifierNameSyntax left = (IdentifierNameSyntax)assExprNode.Left;
                 if (left == null) continue;
 
                 Microsoft.CodeAnalysis.TypeInfo typeInfo = model.GetTypeInfo(left);

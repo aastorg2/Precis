@@ -12,6 +12,7 @@ class FeatureVector:
     testLabel = None
     #kinds = ()
     #TODO: need a way to construct a FeatureVector where the values are already Z3 boolref values
+    ctx = Context()
 
     def __init__(self, precisFeatureList, values, testLabel):
         self.values = values
@@ -28,6 +29,9 @@ class FeatureVector:
 
         #TODO: counterexample label should not set here but at client side
         self.counterexampleLabel = True
+
+        arithRefId = FreshInt("id", FeatureVector.ctx)
+        self.ID = str(arithRefId).replace("!","")
 
     def AddValues(self, precisFeatureZ3, value, idx):
         if "true (0x" in value:

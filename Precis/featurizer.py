@@ -60,8 +60,10 @@ class Featurizer:
                 elif is_int(fVal):
                     intVal +=(str(fVal),)
             intOnlyFV = FeatureVector(intFeats, intVal, str(bf.testLabel))
+            intOnlyFV.ID = bf.ID
             #check for empty boolVal tuple when there are 0 boolean base features
             boolOnlyFV = FeatureVector(boolFeats, boolVal, str(bf.testLabel))
+            boolOnlyFV.ID = bf.ID
             #print(boolOnlyFV)
             #print(bf)
             intFVs.append(intOnlyFV)
@@ -102,9 +104,10 @@ class Featurizer:
             derivedFeatureVector = FeatureVector([], [], str(f.testLabel))
             derivedFeatureVector.valuesZ3 = derivedTupleValuesZ3
             derivedFeatureVector.values = tuple(str(i) for i in derivedTupleValuesZ3)
+            derivedFeatureVector.ID = f.ID
             allDerivedFeatureVectors.append(derivedFeatureVector)
         return allDerivedFeatureVectors
-        
+
     @staticmethod
     def generateDerivedFeatureVectorsFromIntFeats( derivedFeatures, intBaseFeatures, baseFeatureVectors):
         
@@ -155,6 +158,8 @@ class Featurizer:
         mergedFvs = []
         for i in range(0,len(baseBoolFvs)):
             merged = baseBoolFvs[i]+ derivBoolFvs[i]
+            assert(baseBoolFvs[i].ID == derivBoolFvs[i].ID)
+            merged.ID = baseBoolFvs[i].ID
             mergedFvs.append(merged)
         return mergedFvs 
             

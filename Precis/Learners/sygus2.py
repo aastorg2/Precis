@@ -7,12 +7,11 @@ print("In sygus2.py: \n" + str(sys.path))
 
 sys.path.append( "..\\" )
 from Learners.feature_synthesis import FeatureSynthesis
-from Learners.houdini import Houdini
-from Learners.disjunctive_learner import DisjunctiveLearner
+#from Learners.houdini import Houdini
+#from Learners.disjunctive_learner import DisjunctiveLearner
 
-from Learners.houdini import Houdini
 from Learners.command_runner2 import runCommand
-from Learners.houdini import Houdini
+#from Learners.houdini import Houdini
 
 from Data.precis_feature import PrecisFeature
 from Data.feature_vector import FeatureVector
@@ -50,7 +49,7 @@ class Nd:
             #(ite  x>=1 (ite  eq2 * * ) * ) ---> (x>1 => ((eq2 =>  ) and (!eq2 => )) ) and (!x>1 => *) 
             ret = " ".join(["(ite ", str(self.data),str(self.right),  str(self.left), ")"])
             return ret
-    
+    """
     def parseWithHoudiniWithPruning (self, condAtoms, condBoolFvs):
         if len(condBoolFvs) == 0:
             return 'false'
@@ -218,7 +217,7 @@ class Nd:
 
             #ret = PrecisFormula(ret.precisSimplify())
             return ret
-    
+    """
 
     @staticmethod
     def removeCommonStrFvs(strBoolFvs, reversedIndexes):
@@ -287,6 +286,9 @@ class Node(Nd):
     
 
 class SygusDisjunctive:
+
+    
+
     def __init__(self, pred_names, pred_data,  k, cdt="true"):
         #self.cond_pred = pred_names
         #self.cond_pred = [x.replace(" ","aaa") for x in pred_names]
@@ -295,6 +297,8 @@ class SygusDisjunctive:
         #print(self.cond_pred)
         self.cond_pred_data = pred_data
         
+
+        self.atomToPrecisFeat = {precisF.atom: precisF for precisF in self.cond_pred}
         assert(k>0)
         self.k = k
         
@@ -306,14 +310,14 @@ class SygusDisjunctive:
         for k_itr in range(self.k):
             self.pvariables[k_itr] = []
             for p_itr in self.cond_pred:
-                self.pvariables[k_itr].append('p_'+str(k_itr) + '_' + p_itr)
+                self.pvariables[k_itr].append('p_'+str(k_itr) + '_' + p_itr.atom)
                 
         self.wvariables = [] 
         self.uvariables = []
         
         for pred  in self.cond_pred: 
-            self.wvariables.append('w_'+pred)
-            self.uvariables.append('u_'+pred)
+            self.wvariables.append('w_'+pred.atom)
+            self.uvariables.append('u_'+pred.atom)
         
         self.p_count=0
         self.q_count=0  
@@ -405,7 +409,7 @@ class SygusDisjunctive:
     
     def define_CDT(self):
         ret = "(define-fun cdt (" 
-        ret +=  ' '.join([ "( " + x + " Bool)" for x in self.cond_pred])
+        ret +=  ' '.join([ "( " + x.atom + " Bool)" for x in self.cond_pred])
         ret += ") Bool \n " + self.cdt + "\n)\n"  
         return ret
     
@@ -432,11 +436,11 @@ class SygusDisjunctive:
             if self.k > 1:
                 for p_itr in range(len(self.cond_pred)):
                     for i in range(self.k):
-                        ret += "(=>  p_" + str(i) + "_" + self.cond_pred[p_itr] + " (and true "
+                        ret += "(=>  p_" + str(i) + "_" + self.cond_pred[p_itr].atom + " (and true "
                         for j in range(self.k):
                             if i == j:
                                 continue
-                            ret += " (not p_" + str(j) + "_" + self.cond_pred[p_itr] + " )" 
+                            ret += " (not p_" + str(j) + "_" + self.cond_pred[p_itr].atom + " )" 
                         ret += ") )\n"
         
         
@@ -475,8 +479,8 @@ class SygusDisjunctive:
             ret = " (selectme "
             end = "" 
             for p_itr in range(len(self.cond_pred)):
-                    ret += " " + self.cond_pred_data[s_i][p_itr] + " "
-                    end += " p_"+ str(k) + "_" + self.cond_pred[p_itr] + " "
+                    ret += " " + str(self.cond_pred_data[s_i][p_itr]).lower() + " "
+                    end += " p_"+ str(k) + "_" + self.cond_pred[p_itr].atom + " "
             ret += end + ") "
             selectme_list.append(ret)
 
@@ -508,9 +512,9 @@ class SygusDisjunctive:
             
             ret = "(and \n"
             for cond_itr in range(len(self.cond_pred)):
-                ret += "(=> (not " + self.cond_pred[cond_itr] + " )\n(or\n"
+                ret += "(=> (not " + self.cond_pred[cond_itr].atom + " )\n(or\n"
                 ret += '\n'.join(self.zip_column('(and', root.selectme, 
-                                    '(not ' ,  [ x[cond_itr] for x in self.cond_pred_data],  '))' ))
+                                    '(not ' ,  [ str(x[cond_itr]).lower() for x in self.cond_pred_data],  '))' ))
                 ret += "\n)\n)\n"
             ret += ")\n"
             
@@ -527,7 +531,7 @@ class SygusDisjunctive:
             root.left.selectme = self.zip_column(root.selectme, "(not ", current_selectme, ")")
             root.right.selectme = self.zip_column(root.selectme, current_selectme)
             
-            root.constraint = "(selectme  " + " ".join(self.cond_pred) + " " + " ".join([x  for x in self.pvariables[root.k]]) + " )\n"
+            root.constraint = "(selectme  " + " ".join([p.atom for p in self.cond_pred]) + " " + " ".join([x  for x in self.pvariables[root.k]]) + " )\n"
              
             self.label_tree(root.left )
             self.label_tree(root.right)
@@ -546,10 +550,10 @@ class SygusDisjunctive:
     
     
     def generate_eval(self, root):
-        ret= str("(define-fun eval (" + ' '.join(["( " + x + " Bool)" for x in self.cond_pred]) 
+        ret= str("(define-fun eval (" + ' '.join(["( " + x.atom + " Bool)" for x in self.cond_pred]) 
                                    + ") Bool\n")
         #print("here "+self.tree_to_smt(root).replace("aaa"," "))
-        ret += self.tree_to_smt(root).replace("aaa"," ") + "\n)\n"
+        ret += self.tree_to_smt(root) + "\n)\n"
         return ret
     
     
@@ -563,7 +567,8 @@ class SygusDisjunctive:
         currentCvc4 =current+"\\cvc4.exe"
         print(currentCvc4)
         output = runCommand([currentCvc4, "--sygus-out=sygus-standard",  "--lang=sygus2", "sygus.sl"])
-        
+        print("cvc4 output: ")
+        print(output)
         if output: 
             if "\r\n" in output: 
                 output = re.sub("\'?\\r\\nb\'?", "\n", output)
@@ -663,7 +668,7 @@ class SygusDisjunctive:
                 for i in range(self.k):
                     for element in soln:
                         if 'p_' + str(i) + '_' in element[0] and element[1] == 'true':
-                            predicates_chosen[i] = element[0].replace('p_' + str(i) + '_', '')
+                            predicates_chosen[i] = self.atomToPrecisFeat[element[0].replace('p_' + str(i) + '_', '')]
                             break
                 
                 new_root = self.project_copy(root, predicates_chosen)

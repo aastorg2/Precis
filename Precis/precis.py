@@ -286,8 +286,8 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
         print("tree from dt w/ synthesis:\n "+ condPostSmtAtom)
         k = 1
         config = False
+        #currentBestTreeAtK = condPostSmtAtom
         currentBestTreeAtK = 'true'
-        #currentBestTreeAtK = 'true'
         currentBestTree = None
         stringTree = ""
         stringTreeReplaced = ""
@@ -378,8 +378,229 @@ def SynthTightDT(p, PUTName, outputFile, destinationOfTests, maxK):
         inst.instrumentPostString(p, strCandidatePostCondition, PUTName)
         rounds = rounds + 1
         
+def SynthTightDT2(p, PUTName, outputFile, destinationOfTests, maxK):
+    sygusExecutable = "./Learners/EnumerativeSolver/bin/starexec_run_Default"
+    tempLocation = "../tempLocation"
+    sygusFileName = "postcondition.sl"
+    #assumes MSBuils.exe in path
+    inst = Instrumenter("MSBuild.exe", "../Instrumenter/Instrumenter/bin/Debug/Instrumenter.exe")
+    p.ExtractObservers(PUTName, outputFile, "precis")
     
+    # returns list of base features
+    baseFeatures: Tuple[PrecisFeature] = p.ReadObserversFromFile(outputFile)
+    allPostconditions = []
+    allBaseFeatureVectors = []
 
+    synthesizer = FeatureSynthesis(sygusExecutable, tempLocation, sygusFileName)
+    currentStringTree = "false"
+    inst.instrumentPostString(p, currentStringTree, PUTName)
+    
+    rounds = 1
+    totalPexTime = 0.0
+    totalLearningTime = 0.0
+    currentPostcondition = None
+    candidatePost = None
+    simplifiedPost =""
+    print(p, PUTName, outputFile, destinationOfTests)
+    dtWithSynthesisLearningTime = 0.0
+
+    intBaseFeatures, boolBaseFeatures = Featurizer.getIntAndBoolFeatures(baseFeatures)
+    templateFeats = synthesizer.GenerateDerivedFeatures(intBaseFeatures, boolBaseFeatures) 
+    
+    newCount = None
+    oldCount = None
+    precisFeat = None
+    # for intFeat in intBaseFeatures:
+    #     if intFeat.varName == "New_dCount":
+    #         newCount = intFeat
+    #     if intFeat.varName == "Old_dCount":
+    #         oldCount = intFeat
+    # if newCount != None and oldCount != None:
+    #     exprMinus = oldCount.varZ3 - IntVal(1)
+    #     exprEq = newCount.varZ3 == exprMinus
+    #     print(exprEq)
+    #     precisFeat = PrecisFeature(True, str(exprEq), str(exprEq.sort()), None, exprEq)
+    # if precisFeat != None:
+    #     templateFeats = templateFeats + (precisFeat,)
+
+    while True:
+        print("============================================================================= starting round: " + str(rounds))
+        #For this kind of learner, consider optimizing by generating fixed templates once. Only call sygus per round.
+        pex = Pex()
+            
+        
+        startTimePex = time.time()
+        baseFeatureVectors: List[FeatureVector] = pex.RunTeacher(p, PUTName, baseFeatures)
+        pexTime = time.time() - startTimePex
+        totalPexTime = totalPexTime + pexTime
+        
+        #copy tests
+        evaluation.copyTestFilesToEvaluationDir(pex.testsLocation, destinationOfTests, rounds)
+
+        if all(baseFeatureVectors[i].testLabel for i in range(0, len(baseFeatureVectors))):
+            #In the first round, 
+            print("found it")
+            simplifiedPost = PrecisFormula(candidatePost.precisSimplify()).toInfix()
+            return candidatePost, candidatePost.toInfix(), simplifiedPost, rounds, totalPexTime, totalLearningTime, len(allBaseFeatureVectors)
+            #break
+        if rounds == 16:
+            print("did not find it - Max Rounds")
+            break
+        
+        print("Pex Finished")
+        allBaseFeatureVectors.extend(baseFeatureVectors)
+        
+        (intBaseFeatVectors, boolBaseFeatVectors) = Featurizer.getBoolAndIntFeatureVectors(intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors)
+        
+        
+        synthFeats = synthesizer.synthesizeFeatures(intBaseFeatures, boolBaseFeatures, allBaseFeatureVectors)
+        uniqueSynthFeats = tuple([f for f in synthFeats if f not in templateFeats])
+        
+        derivFeats = templateFeats + uniqueSynthFeats
+        derivFeatVecs = Featurizer.generateDerivedFeatureVectors(derivFeats, intBaseFeatures+boolBaseFeatures,allBaseFeatureVectors)
+        # will have to change order: boolBaseFeatures at the end, while deriv at the beginning.
+        #boolFeats = boolBaseFeatures + derivFeats
+        boolFeats =  derivFeats + boolBaseFeatures
+        #boolFeatVecs = Featurizer.mergeFeatureVectors(boolBaseFeatVectors, derivFeatVecs)
+        boolFeatVecs = Featurizer.mergeFeatureVectors(derivFeatVecs, boolBaseFeatVectors)
+        
+
+
+        k = 1
+        config = False
+        #currentBestTreeAtK = condPostSmtAtom
+        currentBestTreeAtK = 'true'
+        currentBestTree = None
+        stringTree = ""
+        stringTreeReplaced = ""
+        timePerK = []
+        houdini = Houdini(intBaseFeatures, boolBaseFeatures, intBaseFeatVectors, boolBaseFeatVectors, derivFeats, synthesizer)
+        
+        conditionalFeats,conditionalFvs,alwaysTrue = removeUniversallyTrueFalse(boolFeats, boolFeatVecs) 
+        #conditionalFeats = boolFeats 
+        #conditionalFvs = boolFeatVecs 
+        withSynth = False
+        synthesizedFeatures = ()
+        while True and k <= maxK:
+            featWithSynt = conditionalFeats
+            fvWithSynth = conditionalFvs
+            
+            if k == maxK:
+                logger1.info("Reached max k: "+ str(maxK)+ " for round: "+ str(rounds)+ " in problem: "+ PUTName)
+
+            print("=================================================== solving for k="+str(k))
+            if len(synthesizedFeatures) > 0:
+                withSynth = True
+                featWithSynt = conditionalFeats + synthesizedFeatures
+                synthFvs = Featurizer.generateDerivedFeatureVectors(synthesizedFeatures,intBaseFeatures+boolBaseFeatures, allBaseFeatureVectors)
+                fvWithSynth = Featurizer.mergeFeatureVectors(conditionalFvs, synthFvs)
+            
+            solver1 = SygusDisjunctive(
+                            conditionalFeats if not withSynth else featWithSynt,
+                            conditionalFvs if not withSynth else fvWithSynth,
+                            k=k,
+                            cdt=currentBestTreeAtK)
+            startKExecTime = time.time()
+            output_tree = solver1.run_sygus()
+            kExecTime = time.time() - startKExecTime
+            timePerK.append( (k, kExecTime) )
+            totalLearningTime = totalLearningTime + kExecTime
+            
+            if output_tree != None: # phase1: exhaust trees at k
+                print("++++++++++++++ tree root: "+ output_tree.data.varName)
+                currentBestTreeAtK, currentTighterPost, synthFeatures = houdini.houdiniSynthesis(output_tree, featWithSynt, fvWithSynth, "root")
+                if len(synthFeatures)> 0:
+                    synthesizedFeatures = addIfNotThereAlready(synthesizedFeatures, synthFeatures)
+                    #updating global state
+                    houdini.derivBoolFeats = addIfNotThereAlready(houdini.derivBoolFeats , synthesizedFeatures)
+                    templateFeats = addIfNotThereAlready(templateFeats,synthesizedFeatures)
+                    
+                currentBestTree = output_tree
+
+            
+            elif currentBestTree != None: #phase 2: check if there is a better tree before moving on to k+1. Note however when currentBestTree is None, then it must mean 
+                #there was no tree of depth k so will skip checking at k+1
+                # at this point, currentBestTreeAtK has the best tree of depth k. So now, we check if there exist a better tree of depth k+1
+                #copy2StrBoolFvs = list(strBoolFvs)
+                #copyboolFvs = list (boolFvs)
+                
+                print("best tree at depth k")
+                print("disjunctive sygus format:\n"+currentBestTreeAtK)
+                #print("z3 simplified:\n"+PrecisFormula(currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy2StrBoolFvs, copyboolFvs, s1, "root").precisSimplify()).toInfix()+"\n") # destroys copy2StrBoolFvs
+                
+                print("checking if there exist a tree at k+1 depth that is tigher?")
+                solver2 = SygusDisjunctive(
+                            conditionalFeats if not withSynth else featWithSynt,
+                            conditionalFvs if not withSynth else fvWithSynth,
+                            k=(k+1),
+                            cdt=currentBestTreeAtK)
+                startKExecTime = time.time()
+                output_tree = solver2.run_sygus()
+                kExecTime = time.time() - startKExecTime
+                timePerK.append( (k, kExecTime) )
+                totalLearningTime = totalLearningTime + kExecTime
+                if output_tree != None:
+                    #copy3StrBoolFvs = list(strBoolFvs)
+                    #copy2boolFvs = list (boolFvs)
+                    print("Yes, tighter tree at k+1")
+                    currentBestTreeAtK, currentTighterPost, synthFeatures = houdini.houdiniSynthesis(output_tree, featWithSynt, fvWithSynth, "root")
+                    if len(synthFeatures)> 0:
+                        synthesizedFeatures = addIfNotThereAlready(synthesizedFeatures, synthFeatures)
+                        #updating global state 
+                        houdini.derivBoolFeats = addIfNotThereAlready(houdini.derivBoolFeats , synthesizedFeatures)
+                        templateFeats = addIfNotThereAlready(templateFeats,synthesizedFeatures)
+                    
+                    print("disjunctive sygus format:\n"+currentBestTreeAtK)
+                    print("post precis: \n"+ PrecisFormula(currentTighterPost.precisSimplify()).toInfix())
+                    #print("z3 simplified:\n"+PrecisFormula(output_tree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy3StrBoolFvs, copy2boolFvs, s1, "root").precisSimplify()).toInfix()+"\n")# destroys copy3StrBoolFvs
+                    currentBestTree = output_tree
+                    k = k + 1
+                else:
+                    break
+            else:# this is hit when we have a conjunctive case
+                print("there is no disjunctive formula")
+                break
+
+        
+        print("round: "+str(rounds))
+        for idx in range(0, len(timePerK)):
+            print("k= "+str(timePerK[idx][0]) +" " +str(timePerK[idx][1]))
+        
+        listOfTimesPerK = [entry[1] for entry in timePerK]
+        print("sygu disjunc. learning time in this round: "+ str(sum(map(float, listOfTimesPerK))) )
+        print("sygu disjunc. learning time across all rounds: "+ str( totalLearningTime))
+        print("total learning time (all rounds): "+ str(totalLearningTime))
+        print("Total pex time: "+str(totalPexTime))
+        
+        if currentBestTree != None: # this is only false when there are no disjunctive concept and the tighest post is conjunctive
+            #copyStrBoolFvs = list(strBoolFvs)
+            #stringTree = currentBestTree.parseWithHoudini(atoms, strBoolFvs) #this call detroys strBoolFvs
+            #stringTreeReplaced = replace(stringTree, atoms, boolFeatures)
+            #s = Solver()
+            logger1.info("Final Tree ====")
+            logger1.info(f"Round: {rounds}")
+            #candidatePostcondition = currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copyStrBoolFvs, boolFvs, s, "root")
+            
+            smtCandidatePost, candidatePost, synthFeatures = houdini.houdiniSynthesis(currentBestTree, conditionalFeats, conditionalFvs, "root")
+            # learn6 does not return predicates that are always false
+            #simplifiedPost = PrecisFormula(candidatePost.precisSimplify()).toInfix()
+            candidatePost = PrecisFormula(candidatePost.precisSimplify())
+            conjunctPrecis, indices, conjuncts = houdini.learn6(boolFeats, boolFeatVecs,"root")
+            candidatePost = PrecisFormula(And(conjunctPrecis.formulaZ3, candidatePost.formulaZ3))
+            print("learned candidate post: "+ candidatePost.toInfix())
+            #smtCandidatePost, candidatePost, synthFeatures = houdini.houdiniSynthesis(currentBestTree, boolFeats, boolFeatVecs, "root")
+
+        else:
+            print("no disjunctive formula")
+            conjunctPrecis, indices, conjuncts = houdini.learn5(boolFeats, boolFeatVecs,"root")
+            #stringTreeReplaced = PrecisFormula(conjunctPrecis.precisSimplify()).toInfix() #Debugging
+            candidatePost = conjunctPrecis
+
+        strCandidatePost = PrecisFormula(candidatePost.precisSimplify()).toInfix()
+        print("candidate post: "+ strCandidatePost)
+        inst.instrumentPostString(p, strCandidatePost, PUTName)
+        rounds = rounds + 1    
+        
 
 def runSynthTightDT(p, putList, projectName, outputFile):
     logger1.info("Problem: "+projectName+"\n")
@@ -390,7 +611,7 @@ def runSynthTightDT(p, putList, projectName, outputFile):
         assert(locationOfTests != None)
 
         logger1.info("PUT: "+putName+"\n")
-        (currentPost, learnedPostStr, simplifiedPostStr, rounds, pexTime, learnTime, totalSamples) = SynthTightDT(p, putName, outputFile, locationOfTests , 20)
+        (currentPost, learnedPostStr, simplifiedPostStr, rounds, pexTime, learnTime, totalSamples) = SynthTightDT2(p, putName, outputFile, locationOfTests , 20)
         print("learnerd post:")
         print(learnedPostStr +"\n")
         print("simplified post:")
@@ -423,6 +644,14 @@ def runSynthTightDT(p, putList, projectName, outputFile):
         print("results: " +solver.check())
         """
 
+
+def addIfNotThereAlready(features, synthFeats):
+    featRet = features
+    for f in synthFeats:
+        if  f not in features:
+            featRet =  featRet + (f,)
+    return featRet
+
 def removeTopMostCommonConjunct(universallyTrue, postcondition):
     import re
 
@@ -439,36 +668,52 @@ def removeTopMostCommonConjunct(universallyTrue, postcondition):
     return condPost
 
 #refactor such you always overwrite a list of list of feature vectors.
-def removeUniversallyTrueFalse(atoms, strBoolFvs ):
-    workList = {key: True for key in range(0, len(atoms))}
-    remainingCondTruePredicates = []
+def removeUniversallyTrueFalse(boolFeats, boolFvs ):
+    workList = {key: True for key in range(0, len(boolFeats))}
+    remainingCondTruePredicates = tuple()
     idxsValuesToKeep = []
+    idxsToRemove = []
     init = ""
     strCondTrueFvs=[]
     universallyTrue=[]
-    for idx in range(len(atoms) -1 ,-1,-1): # no need to start from the end :Refactor
+    for idx in range(0, len(boolFeats)): # no need to start from the end :Refactor
         # we just want to keep those predicate whole values change from initial value
         # predicates whole value never change from the initial are always true or always false
-        init = strBoolFvs[0][idx]
+        init = boolFvs[0][idx]
         keep = False
-        for fv in strBoolFvs:
-            if fv[idx] != init:
+        for fv in boolFvs:
+            if is_true(simplify(fv[idx] != init)):
                 keep = True
-        if keep:
-            remainingCondTruePredicates.append(atoms[idx])
-            idxsValuesToKeep.append(idx)
-        elif init == 'true':
-            universallyTrue.append(atoms[idx])
-        elif init == 'false':
-            universallyTrue.append("(not "+ atoms[idx]+")")
+        
+        if not keep:
+            idxsToRemove.append(idx)
+            #remainingCondTruePredicates.append(boolFeats[idx])
+            #idxsValuesToKeep.append(idx)
+        else:
+            remainingCondTruePredicates += (boolFeats[idx],)
+        #elif is_true(init):
+        #    universallyTrue.append(boolFeats[idx])
+        
+        #elif is_false(init):
+        #    universallyTrue.append( boolFeats[idx])
     #remove values from feature vectors
-    for fv in strBoolFvs:
-        updatedFv= []
-        for idx in idxsValuesToKeep:
-            updatedFv.append(fv[idx])
-        strCondTrueFvs.append(updatedFv)
+    idxsToRemove.reverse()
+    
+    condTrueFvs = []
+    for vecIdx in range(0, len(boolFvs)):
+        changedBoolFv = None
+        if len(idxsToRemove) > 0:
+            changedBoolFv  = FeatureVector.copyFeatureVector(boolFvs[vecIdx])
+            for idx in idxsToRemove:
+                changedBoolFv.values = changedBoolFv.values[0:idx] + changedBoolFv.values[idx+1:]
+                changedBoolFv.valuesZ3 = changedBoolFv.valuesZ3[0:idx] + changedBoolFv.valuesZ3[idx+1:]
+                changedBoolFv.ID = boolFvs[vecIdx].ID
+            condTrueFvs.append(changedBoolFv)
+            
+        else:
+            condTrueFvs.append(boolFvs[vecIdx])
 
-    return (remainingCondTruePredicates,strCondTrueFvs,universallyTrue)
+    return (remainingCondTruePredicates,condTrueFvs,universallyTrue)
 
 #boolFeatures will not contain negation        
 def replaceInfixToAtoms(postcondition, atoms, boolFeatures):
@@ -550,7 +795,7 @@ if __name__ == '__main__':
     #stackPUTs = ['PUT_ContainsContract']
     pStack = Problem(sln, projectName, testDebugFolder, testDll,
                 testFileName, testNamepace, testClass,stackPUTs)
-    
+
     #p.puts = ['PUT_PushContract']
     #p.puts = ['PUT_PeekContract']
     #runSynthTightDT(p, p.puts, p.projectName , outputFileType)
@@ -696,10 +941,16 @@ if __name__ == '__main__':
 
     angello = True
     if angello:
+        #pDictionary.puts =['PUT_SetContract']
+        #subjects.append(pDictionary)
         #pDictionary.puts =['PUT_RemoveContract']
         #subjects.append(pDictionary)
-        pHashSet.puts = ['PUT_AddContract']
+        #, 'PUT_ContainsContract'
+        pHashSet.puts = ['PUT_ContainsContract']
+        #pHashSet.puts = ['PUT_CountContract']
         subjects.append(pHashSet)
+        #pQueue.puts =['PUT_CountContract']
+        #subjects.append(pQueue)
     else:
         pass
 
