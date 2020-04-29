@@ -101,6 +101,7 @@ class FeatureSynthesis:
             declMap = { f.varName : f.varZ3 for f in intFeatures}
             synthesizedFeature = "(= "+ postFeaturesIdxs[0].varName +" " +synthizedExprStr +")" 
             sygusExpr = parse_smt2_string("(assert "+ synthesizedFeature+ " )",decls=declMap)
+            print("number of features synthesize: "+ str(len(sygusExpr)))
             print("")
             print("======================================== synthesized feature: "+ str(sygusExpr[0]))
             if  "Old_dCount - 1" in str(sygusExpr[0]):

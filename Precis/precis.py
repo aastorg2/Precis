@@ -167,7 +167,7 @@ def runLearnPostTest(p, putList, projectName, outputFile, k):
     logger1.info("Problem: "+projectName+"\n")
     
     # delete old pex files first
-    if os.path.exists(p.testDebugFolder):
+    if os.path.exists(...):
         shutil.rmtree(p.testDebugFolder)
 
     for PUTName in putList:
@@ -581,13 +581,15 @@ def SynthTightDT2(p, PUTName, outputFile, destinationOfTests, maxK):
             logger1.info(f"Round: {rounds}")
             #candidatePostcondition = currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copyStrBoolFvs, boolFvs, s, "root")
             
-            smtCandidatePost, candidatePost, synthFeatures = houdini.houdiniSynthesis(currentBestTree, conditionalFeats, conditionalFvs, "root")
+            smtCandidatePost, candidatePost, synthFeatures = houdini.houdiniSynthesis(currentBestTree, featWithSynt, fvWithSynth, "root")
             # learn6 does not return predicates that are always false
             #simplifiedPost = PrecisFormula(candidatePost.precisSimplify()).toInfix()
+            print("learned candidate post(before simplify): "+ candidatePost.toInfix())
             candidatePost = PrecisFormula(candidatePost.precisSimplify())
+            print()
             conjunctPrecis, indices, conjuncts = houdini.learn6(boolFeats, boolFeatVecs,"root")
-            candidatePost = PrecisFormula(And(conjunctPrecis.formulaZ3, candidatePost.formulaZ3))
-            print("learned candidate post: "+ candidatePost.toInfix())
+            conjunctZ3simple = conjunctPrecis.precisSimplify()
+            candidatePost = PrecisFormula(And(conjunctZ3simple,candidatePost.formulaZ3))
             #smtCandidatePost, candidatePost, synthFeatures = houdini.houdiniSynthesis(currentBestTree, boolFeats, boolFeatVecs, "root")
 
         else:
@@ -625,7 +627,9 @@ def runSynthTightDT(p, putList, projectName, outputFile):
         logger1.info("pex time: "+str(pexTime)+"\n")
         logger1.info("learn time: "+str(learnTime)+"\n")
         logger1.info("Samples: "+str(totalSamples)+"\n")
-
+        #delete directory where pex initially stores tests -> we don't want old test seeding pex
+        if os.path.exists(p.testDebugFolder):
+            shutil.rmtree(p.testDebugFolder)
         #f = open("testingData.txt", "a")
         #f.write("PUT: "+putName)
         #f.write("simplified Post")
@@ -943,12 +947,11 @@ if __name__ == '__main__':
     if angello:
         #pDictionary.puts =['PUT_SetContract']
         #subjects.append(pDictionary)
-        #pDictionary.puts =['PUT_RemoveContract']
-        #subjects.append(pDictionary)
+        subjects.append(pArrayList)
         #, 'PUT_ContainsContract'
-        pHashSet.puts = ['PUT_ContainsContract']
+        #pHashSet.puts = ['PUT_ContainsContract']
         #pHashSet.puts = ['PUT_CountContract']
-        subjects.append(pHashSet)
+        #subjects.append(pArrayList)
         #pQueue.puts =['PUT_CountContract']
         #subjects.append(pQueue)
     else:

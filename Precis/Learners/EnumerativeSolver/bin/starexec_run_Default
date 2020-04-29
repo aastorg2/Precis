@@ -4,4 +4,4 @@
 
 #../lib/ld-linux-x86-64.so.2 --library-path ../lib ./esolver-synthlib -s 10000 -m 64000000000 -i $1
 
-../lib/ld-linux-x86-64.so.2 --library-path ../lib ./esolver-synthlib  -s 20  -i "$1"
+../lib/ld-linux-x86-64.so.2 --library-path ../lib ./esolver-synthlib  -s 10  -i "$1"

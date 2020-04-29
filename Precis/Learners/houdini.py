@@ -282,8 +282,11 @@ class Houdini:
         if len(boolFvs) == 0:
             # Todo: add PrecisFormula.False member in PrecisFormulaClass
             return "false", PrecisFormula(BoolVal(False)), ()
+        
         precisConjunction, indices, conjuncts = self.learn5(boolFeats, boolFvs, call)
         commonSMTConjunct = 'true' if len(conjuncts) == 0 else '(and ' + ' '.join([c.atom for c in conjuncts] ) + ')'
+        
+        print("Predicate chosen at " + call +" : \n"+str(tree.data))
         
         if not tree.left and not tree.right:
             synthFeats = tuple()
@@ -299,10 +302,13 @@ class Houdini:
             
             if len(uniqueFeats) > 0:
                 commonSMTConjunctSynth = "(and "+commonSMTConjunct +" "+ ' '.join([c.atom for c in uniqueFeats] )+")" 
-                precisConjunctionSynth = PrecisFormula(And(precisConjunction.formulaZ3, And([c.varZ3 for c in uniqueFeats])))
+                #precisConjunctionSynth = PrecisFormula(And(precisConjunction.formulaZ3, And([c.varZ3 for c in uniqueFeats])))
+                precisConjunctionSynth = PrecisFormula(And(uniqueFeats[0].varZ3,precisConjunction.formulaZ3  ))# assuming only one feature
+                #typically only one is synthesized
+                logger1.info("Adding synthesized feature: "+ str(uniqueFeats[0].varZ3)+"\n" )
                 return commonSMTConjunctSynth, precisConjunctionSynth, uniqueFeats
 
-            return commonSMTConjunct, precisConjunction, []
+            return commonSMTConjunct, precisConjunction, ()
         else:
             
             indices.reverse()
