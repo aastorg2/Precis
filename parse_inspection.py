@@ -30,9 +30,10 @@ def read_files(dir, files, tag):
                     name = extract("PUT_(.*)\s", benchmark)
                     if not name:
                         continue
-                    smt = extract("smt check:\s?(.*)\s", benchmark)
-                    formula = extract("CNF simplified \(smt\):(.*)\s", benchmark)
-                    json_result = {"smt": smt, tag+"_formula": formula}
+                    smt_result = extract("smt check:\s?(.*)\s", benchmark)
+                    formula = extract("CNF simplified:(.*)\s", benchmark)
+                    prefix_formula = extract("CNF simplified \(smt\):(.*)\s", benchmark)
+                    json_result = {"smt": smt_result, tag+"_prefix_formula": prefix_formula, tag+"_formula": formula}
                     result[problem][name] = json_result
                 except:
                     pass
@@ -55,7 +56,8 @@ def merge(a, b):
     return a
     
 
-def format_summary(result_json, all=True):
+#Leaving all param as False because we currently only care about cases where precis is strictly better
+def format_summary(result_json, all=False):
     res = ""
     for test, test_details in result_json.items():
         res += "Problem " + test + "\n\n"
