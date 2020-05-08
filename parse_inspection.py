@@ -66,10 +66,12 @@ def format_summary(result_json, all=False):
                 res += "PUT_" + file + "\n"
                 try:
                     res += "Precis post:" + file_details['precis_formula'] + "\n"
+                    #res += "Precis SMT post:" + file_details['precis_prefix_formula'] + "\n"
                 except:
                     pass
                 try: 
                     res += "Daikon post:" + file_details['daikon_formula'] + "\n"
+                    #res += "Daikon SMT post:" + file_details['daikon_prefix_formula'] + "\n"
                 except:
                     pass
                 res += "\n"
@@ -102,7 +104,7 @@ def main():
     daikon_result = read_files(daikon_dir, commonfiles, "daikon")
     
     summary_result = merge(precis_result, daikon_result)
-    result = format_summary(summary_result, all=True)
+    result = format_summary(summary_result, all=False)
     
     with open(output_file, "w") as file:
         file.write(result)
