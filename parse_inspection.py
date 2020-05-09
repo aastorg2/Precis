@@ -33,7 +33,7 @@ def read_files(dir, files, tag):
                     smt_result = extract("smt check:\s?(.*)\s", benchmark)
                     formula = extract("CNF simplified:(.*)\s", benchmark)
                     prefix_formula = extract("CNF simplified \(smt\):(.*)\s", benchmark)
-                    json_result = {"smt": smt_result, tag+"_prefix_formula": prefix_formula, tag+"_formula": formula}
+                    json_result = {"smt": smt_result, tag+"_prefix_formula": prefix_formula, tag+"_formula": formula, "name": name}
                     result[problem][name] = json_result
                 except:
                     pass
@@ -56,27 +56,21 @@ def merge(a, b):
     return a
     
 
-#Leaving all param as False because we currently only care about cases where precis is strictly better
-def format_summary(result_json, all=False):
-    res = ""
+def format_summary(result_json, rules):
+    result = [""]*len(rules)
     for test, test_details in result_json.items():
-        res += "Problem " + test + "\n\n"
+        result[:] = [ res + "Problem " + test + "\n\n" for res in result]
         for file, file_details in test_details.items():
-            if file_details['smt'] == "Precis" or (all and not file_details['smt']):
-                res += "PUT_" + file + "\n"
+            for index, fn in enumerate(rules):
                 try:
-                    res += "Precis post:" + file_details['precis_formula'] + "\n"
-                    #res += "Precis SMT post:" + file_details['precis_prefix_formula'] + "\n"
-                except:
+                    result[index] += fn(file_details)
+                except: 
                     pass
-                try: 
-                    res += "Daikon post:" + file_details['daikon_formula'] + "\n"
-                    #res += "Daikon SMT post:" + file_details['daikon_prefix_formula'] + "\n"
-                except:
-                    pass
-                res += "\n"
-    return res
-     
+    
+    for index, fn in enumerate(rules):
+        with open("summary_" + fn.__name__ +".txt", "w") as file:
+            file.write(result[index])
+    
 
 def get_file_names(dir):
     files  = (glob.glob(dir + '/inspected_results_*Test'))
@@ -84,32 +78,87 @@ def get_file_names(dir):
     # inspected_results_BinaryHeapTest
 
 
+
+
+
+# ====================Rules==================== #
+
+def print_file_details(file_details):
+    res = "PUT_" + file_details["name"] + "\n"
+    res += "Precis post:" + file_details['precis_formula'] + "\n"
+    res += "Daikon post:" + file_details['daikon_formula'] + "\n"
+    res += "\n"
+    return res
+
+
+def all_benchmarks(file_details):
+    return print_file_details(file_details)
+
+
+def precis_stronger(file_details):
+    res = ""
+    if file_details['smt'] == "Precis":
+        res = print_file_details(file_details)
+    return res
+    
+
+def daikon_true(file_details):
+    res = ""
+    if "true" in file_details['daikon_formula']:
+        res = print_file_details(file_details)
+    return res
+
+
+def precis_disjunct(file_details):
+    res = ""
+    if "||" in file_details['precis_formula'] and "||" not in file_details['daikon_formula']:
+        res = print_file_details(file_details)
+    return res
+
+
+def common_predicates(file_details):
+    def tokenize(formula):
+        return set([ x.strip() for x in formula.replace("(", "").replace(")", "").split("&&")]) 
+   
+    def tokens_to_string(tokens):
+        return " && ".join(list(tokens))
+    
+    res = ""
+    if "||" not in file_details['precis_formula'] and "||" not in file_details['daikon_formula'] and "true" not in file_details['daikon_formula']:
+        res += "PUT_" +  file_details["name"] + "\n"
+        precis_set = tokenize(file_details['precis_formula'])
+        daikon_set = tokenize(file_details['daikon_formula'])
+        intersect = precis_set.intersection(daikon_set)
+        
+        res += "Precis post: " + tokens_to_string(intersect) + " && **" +  tokens_to_string(precis_set.difference(intersect)) + "**\n"
+        res += "Daikon post: " + tokens_to_string(intersect) + " && **" +  tokens_to_string(daikon_set.difference(intersect)) + "**\n"
+        res += "\n"
+    return res
+    
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--precis", "-p", type=str, nargs=1, required=True)
     parser.add_argument("--daikon", "-d", type=str, nargs=1, required=True)
-    parser.add_argument("--output", "-o", type=str, nargs=1, required=True)
 
     args = parser.parse_args()
     precis_dir = args.precis[0]
     daikon_dir = args.daikon[0]
-    output_file = args.output[0]
 
     # precis_dir = "..\\ContractsSubjects\\Results\\Inspections\\CurrentInspections"
     # daikon_dir = "..\\ContractsSubjects\\Results\\Inspections\\DaikonInspections"
-    # output_file = "result.txt"
     
     commonfiles = list((get_file_names(precis_dir)).intersection(get_file_names(daikon_dir)))
     precis_result = read_files(precis_dir, commonfiles, "precis")
     daikon_result = read_files(daikon_dir, commonfiles, "daikon")
     
     summary_result = merge(precis_result, daikon_result)
-    result = format_summary(summary_result, all=False)
     
-    with open(output_file, "w") as file:
-        file.write(result)
+    rules = [all_benchmarks, precis_stronger, daikon_true, precis_disjunct, common_predicates]
+    format_summary(summary_result, rules)
 
 
-# Sample run: python parse_inspection.py --precis  ..\\ContractsSubjects\\Results\\Inspections\\CurrentInspections --daikon ..\\ContractsSubjects\\Results\\Inspections\\DaikonInspections --output result.txt
+# Sample run: python parse_inspection.py --precis  ..\\ContractsSubjects\\Results\\Inspections\\CurrentInspections --daikon ..\\ContractsSubjects\\Results\\Inspections\\DaikonInspections 
 
 main()
