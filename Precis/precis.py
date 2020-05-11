@@ -476,129 +476,137 @@ def SynthTightDT2(p, PUTName, outputFile, destinationOfTests, maxK):
         timePerK = []
         houdini = Houdini(intBaseFeatures, boolBaseFeatures, intBaseFeatVectors, boolBaseFeatVectors, derivFeats, synthesizer)
         
-        conditionalFeats,conditionalFvs,alwaysTrue = removeUniversallyTrueFalse(boolFeats, boolFeatVecs) 
-        #conditionalFeats = boolFeats 
-        #conditionalFvs = boolFeatVecs 
-        withSynth = False
-        synthesizedFeatures = ()
-        while True and k <= maxK:
-            featWithSynt = conditionalFeats
-            fvWithSynth = conditionalFvs
-            
-            if k == maxK:
-                logger1.info("Reached max k: "+ str(maxK)+ " for round: "+ str(rounds)+ " in problem: "+ PUTName)
+        beginLearning = time.time()
+        conjunctPrecis, indices, conjuncts = houdini.learn5(boolFeats, boolFeatVecs,"root")
+        endLearning = time.time() - beginLearning
+        totalLearningTime += endLearning
+        #region disjunctive solver
+        # conditionalFeats,conditionalFvs,alwaysTrue = removeUniversallyTrueFalse(boolFeats, boolFeatVecs) 
+        # #conditionalFeats = boolFeats 
+        # #conditionalFvs = boolFeatVecs 
+        # withSynth = False
+        # synthesizedFeatures = ()
 
-            print("=================================================== solving for k="+str(k))
-            if len(synthesizedFeatures) > 0:
-                withSynth = True
-                featWithSynt = conditionalFeats + synthesizedFeatures
-                synthFvs = Featurizer.generateDerivedFeatureVectors(synthesizedFeatures,intBaseFeatures+boolBaseFeatures, allBaseFeatureVectors)
-                fvWithSynth = Featurizer.mergeFeatureVectors(conditionalFvs, synthFvs)
+        # while True and k <= maxK:
+        #     featWithSynt = conditionalFeats
+        #     fvWithSynth = conditionalFvs
             
-            solver1 = SygusDisjunctive(
-                            conditionalFeats if not withSynth else featWithSynt,
-                            conditionalFvs if not withSynth else fvWithSynth,
-                            k=k,
-                            cdt=currentBestTreeAtK)
-            startKExecTime = time.time()
-            output_tree = solver1.run_sygus()
-            kExecTime = time.time() - startKExecTime
-            timePerK.append( (k, kExecTime) )
-            totalLearningTime = totalLearningTime + kExecTime
+        #     if k == maxK:
+        #         logger1.info("Reached max k: "+ str(maxK)+ " for round: "+ str(rounds)+ " in problem: "+ PUTName)
+
+        #     print("=================================================== solving for k="+str(k))
+        #     if len(synthesizedFeatures) > 0:
+        #         withSynth = True
+        #         featWithSynt = conditionalFeats + synthesizedFeatures
+        #         synthFvs = Featurizer.generateDerivedFeatureVectors(synthesizedFeatures,intBaseFeatures+boolBaseFeatures, allBaseFeatureVectors)
+        #         fvWithSynth = Featurizer.mergeFeatureVectors(conditionalFvs, synthFvs)
             
-            if output_tree != None: # phase1: exhaust trees at k
-                print("++++++++++++++ tree root: "+ output_tree.data.varName)
-                currentBestTreeAtK, currentTighterPost, synthFeatures = houdini.houdiniSynthesis(output_tree, featWithSynt, fvWithSynth, "root")
-                if len(synthFeatures)> 0:
-                    synthesizedFeatures = addIfNotThereAlready(synthesizedFeatures, synthFeatures)
-                    #updating global state
-                    houdini.derivBoolFeats = addIfNotThereAlready(houdini.derivBoolFeats , synthesizedFeatures)
-                    templateFeats = addIfNotThereAlready(templateFeats,synthesizedFeatures)
+        #     solver1 = SygusDisjunctive(
+        #                     conditionalFeats if not withSynth else featWithSynt,
+        #                     conditionalFvs if not withSynth else fvWithSynth,
+        #                     k=k,
+        #                     cdt=currentBestTreeAtK)
+        #     startKExecTime = time.time()
+        #     output_tree = solver1.run_sygus()
+        #     kExecTime = time.time() - startKExecTime
+        #     timePerK.append( (k, kExecTime) )
+        #     totalLearningTime = totalLearningTime + kExecTime
+            
+        #     if output_tree != None: # phase1: exhaust trees at k
+        #         print("++++++++++++++ tree root: "+ output_tree.data.varName)
+        #         currentBestTreeAtK, currentTighterPost, synthFeatures = houdini.houdiniSynthesis(output_tree, featWithSynt, fvWithSynth, "root")
+        #         if len(synthFeatures)> 0:
+        #             synthesizedFeatures = addIfNotThereAlready(synthesizedFeatures, synthFeatures)
+        #             #updating global state
+        #             houdini.derivBoolFeats = addIfNotThereAlready(houdini.derivBoolFeats , synthesizedFeatures)
+        #             templateFeats = addIfNotThereAlready(templateFeats,synthesizedFeatures)
                     
-                currentBestTree = output_tree
+        #         currentBestTree = output_tree
 
             
-            elif currentBestTree != None: #phase 2: check if there is a better tree before moving on to k+1. Note however when currentBestTree is None, then it must mean 
-                #there was no tree of depth k so will skip checking at k+1
-                # at this point, currentBestTreeAtK has the best tree of depth k. So now, we check if there exist a better tree of depth k+1
-                #copy2StrBoolFvs = list(strBoolFvs)
-                #copyboolFvs = list (boolFvs)
+        #     elif currentBestTree != None: #phase 2: check if there is a better tree before moving on to k+1. Note however when currentBestTree is None, then it must mean 
+        #         #there was no tree of depth k so will skip checking at k+1
+        #         # at this point, currentBestTreeAtK has the best tree of depth k. So now, we check if there exist a better tree of depth k+1
+        #         #copy2StrBoolFvs = list(strBoolFvs)
+        #         #copyboolFvs = list (boolFvs)
                 
-                print("best tree at depth k")
-                print("disjunctive sygus format:\n"+currentBestTreeAtK)
-                #print("z3 simplified:\n"+PrecisFormula(currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy2StrBoolFvs, copyboolFvs, s1, "root").precisSimplify()).toInfix()+"\n") # destroys copy2StrBoolFvs
+        #         print("best tree at depth k")
+        #         print("disjunctive sygus format:\n"+currentBestTreeAtK)
+        #         #print("z3 simplified:\n"+PrecisFormula(currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy2StrBoolFvs, copyboolFvs, s1, "root").precisSimplify()).toInfix()+"\n") # destroys copy2StrBoolFvs
                 
-                print("checking if there exist a tree at k+1 depth that is tigher?")
-                solver2 = SygusDisjunctive(
-                            conditionalFeats if not withSynth else featWithSynt,
-                            conditionalFvs if not withSynth else fvWithSynth,
-                            k=(k+1),
-                            cdt=currentBestTreeAtK)
-                startKExecTime = time.time()
-                output_tree = solver2.run_sygus()
-                kExecTime = time.time() - startKExecTime
-                timePerK.append( (k, kExecTime) )
-                totalLearningTime = totalLearningTime + kExecTime
-                if output_tree != None:
-                    #copy3StrBoolFvs = list(strBoolFvs)
-                    #copy2boolFvs = list (boolFvs)
-                    print("Yes, tighter tree at k+1")
-                    currentBestTreeAtK, currentTighterPost, synthFeatures = houdini.houdiniSynthesis(output_tree, featWithSynt, fvWithSynth, "root")
-                    if len(synthFeatures)> 0:
-                        synthesizedFeatures = addIfNotThereAlready(synthesizedFeatures, synthFeatures)
-                        #updating global state 
-                        houdini.derivBoolFeats = addIfNotThereAlready(houdini.derivBoolFeats , synthesizedFeatures)
-                        templateFeats = addIfNotThereAlready(templateFeats,synthesizedFeatures)
+        #         print("checking if there exist a tree at k+1 depth that is tigher?")
+        #         solver2 = SygusDisjunctive(
+        #                     conditionalFeats if not withSynth else featWithSynt,
+        #                     conditionalFvs if not withSynth else fvWithSynth,
+        #                     k=(k+1),
+        #                     cdt=currentBestTreeAtK)
+        #         startKExecTime = time.time()
+        #         output_tree = solver2.run_sygus()
+        #         kExecTime = time.time() - startKExecTime
+        #         timePerK.append( (k, kExecTime) )
+        #         totalLearningTime = totalLearningTime + kExecTime
+        #         if output_tree != None:
+        #             #copy3StrBoolFvs = list(strBoolFvs)
+        #             #copy2boolFvs = list (boolFvs)
+        #             print("Yes, tighter tree at k+1")
+        #             currentBestTreeAtK, currentTighterPost, synthFeatures = houdini.houdiniSynthesis(output_tree, featWithSynt, fvWithSynth, "root")
+        #             if len(synthFeatures)> 0:
+        #                 synthesizedFeatures = addIfNotThereAlready(synthesizedFeatures, synthFeatures)
+        #                 #updating global state 
+        #                 houdini.derivBoolFeats = addIfNotThereAlready(houdini.derivBoolFeats , synthesizedFeatures)
+        #                 templateFeats = addIfNotThereAlready(templateFeats,synthesizedFeatures)
                     
-                    print("disjunctive sygus format:\n"+currentBestTreeAtK)
-                    print("post precis: \n"+ PrecisFormula(currentTighterPost.precisSimplify()).toInfix())
-                    #print("z3 simplified:\n"+PrecisFormula(output_tree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy3StrBoolFvs, copy2boolFvs, s1, "root").precisSimplify()).toInfix()+"\n")# destroys copy3StrBoolFvs
-                    currentBestTree = output_tree
-                    k = k + 1
-                else:
-                    break
-            else:# this is hit when we have a conjunctive case
-                print("there is no disjunctive formula")
-                break
+        #             print("disjunctive sygus format:\n"+currentBestTreeAtK)
+        #             print("post precis: \n"+ PrecisFormula(currentTighterPost.precisSimplify()).toInfix())
+        #             #print("z3 simplified:\n"+PrecisFormula(output_tree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy3StrBoolFvs, copy2boolFvs, s1, "root").precisSimplify()).toInfix()+"\n")# destroys copy3StrBoolFvs
+        #             currentBestTree = output_tree
+        #             k = k + 1
+        #         else:
+        #             break
+        #     else:# this is hit when we have a conjunctive case
+        #         print("there is no disjunctive formula")
+        #         break
 
         
-        print("round: "+str(rounds))
-        for idx in range(0, len(timePerK)):
-            print("k= "+str(timePerK[idx][0]) +" " +str(timePerK[idx][1]))
+        # print("round: "+str(rounds))
+        # for idx in range(0, len(timePerK)):
+        #     print("k= "+str(timePerK[idx][0]) +" " +str(timePerK[idx][1]))
         
-        listOfTimesPerK = [entry[1] for entry in timePerK]
-        print("sygu disjunc. learning time in this round: "+ str(sum(map(float, listOfTimesPerK))) )
-        print("sygu disjunc. learning time across all rounds: "+ str( totalLearningTime))
-        print("total learning time (all rounds): "+ str(totalLearningTime))
-        print("Total pex time: "+str(totalPexTime))
+        # listOfTimesPerK = [entry[1] for entry in timePerK]
+        # print("sygu disjunc. learning time in this round: "+ str(sum(map(float, listOfTimesPerK))) )
+        # print("sygu disjunc. learning time across all rounds: "+ str( totalLearningTime))
+        # print("total learning time (all rounds): "+ str(totalLearningTime))
+        # print("Total pex time: "+str(totalPexTime))
         
-        if currentBestTree != None: # this is only false when there are no disjunctive concept and the tighest post is conjunctive
-            #copyStrBoolFvs = list(strBoolFvs)
-            #stringTree = currentBestTree.parseWithHoudini(atoms, strBoolFvs) #this call detroys strBoolFvs
-            #stringTreeReplaced = replace(stringTree, atoms, boolFeatures)
-            #s = Solver()
-            logger1.info("Final Tree ====")
-            logger1.info(f"Round: {rounds}")
-            #candidatePostcondition = currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copyStrBoolFvs, boolFvs, s, "root")
+        # if currentBestTree != None: # this is only false when there are no disjunctive concept and the tighest post is conjunctive
+        #     #copyStrBoolFvs = list(strBoolFvs)
+        #     #stringTree = currentBestTree.parseWithHoudini(atoms, strBoolFvs) #this call detroys strBoolFvs
+        #     #stringTreeReplaced = replace(stringTree, atoms, boolFeatures)
+        #     #s = Solver()
+        #     logger1.info("Final Tree ====")
+        #     logger1.info(f"Round: {rounds}")
+        #     #candidatePostcondition = currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copyStrBoolFvs, boolFvs, s, "root")
             
-            smtCandidatePost, candidatePost, synthFeatures = houdini.houdiniSynthesis(currentBestTree, featWithSynt, fvWithSynth, "root")
-            # learn6 does not return predicates that are always false
-            #simplifiedPost = PrecisFormula(candidatePost.precisSimplify()).toInfix()
-            print("learned candidate post(before simplify): "+ candidatePost.toInfix())
-            candidatePost = PrecisFormula(candidatePost.precisSimplify())
-            print()
-            conjunctPrecis, indices, conjuncts = houdini.learn6(boolFeats, boolFeatVecs,"root")
-            conjunctZ3simple = conjunctPrecis.precisSimplify()
-            candidatePost = PrecisFormula(And(conjunctZ3simple,candidatePost.formulaZ3))
-            #smtCandidatePost, candidatePost, synthFeatures = houdini.houdiniSynthesis(currentBestTree, boolFeats, boolFeatVecs, "root")
+        #     smtCandidatePost, candidatePost, synthFeatures = houdini.houdiniSynthesis(currentBestTree, featWithSynt, fvWithSynth, "root")
+        #     # learn6 does not return predicates that are always false
+        #     #simplifiedPost = PrecisFormula(candidatePost.precisSimplify()).toInfix()
+        #     print("learned candidate post(before simplify): "+ candidatePost.toInfix())
+        #     candidatePost = PrecisFormula(candidatePost.precisSimplify())
+        #     print()
+        #     conjunctPrecis, indices, conjuncts = houdini.learn6(boolFeats, boolFeatVecs,"root")
+        #     conjunctZ3simple = conjunctPrecis.precisSimplify()
+        #     candidatePost = PrecisFormula(And(conjunctZ3simple,candidatePost.formulaZ3))
+        #     #smtCandidatePost, candidatePost, synthFeatures = houdini.houdiniSynthesis(currentBestTree, boolFeats, boolFeatVecs, "root")
 
-        else:
-            print("no disjunctive formula")
-            conjunctPrecis, indices, conjuncts = houdini.learn5(boolFeats, boolFeatVecs,"root")
-            #stringTreeReplaced = PrecisFormula(conjunctPrecis.precisSimplify()).toInfix() #Debugging
-            candidatePost = conjunctPrecis
-
-        strCandidatePost = PrecisFormula(candidatePost.precisSimplify()).toInfix()
+        # else:
+        #     print("no disjunctive formula")
+        #     conjunctPrecis, indices, conjuncts = houdini.learn5(boolFeats, boolFeatVecs,"root")
+        #     #stringTreeReplaced = PrecisFormula(conjunctPrecis.precisSimplify()).toInfix() #Debugging
+        #     candidatePost = conjunctPrecis
+        
+        #endregion
+        candidatePost = conjunctPrecis
+        strCandidatePost = PrecisFormula(conjunctPrecis.precisSimplify()).toInfix()
         print("candidate post: "+ strCandidatePost)
         inst.instrumentPostString(p, strCandidatePost, PUTName)
         rounds = rounds + 1    
