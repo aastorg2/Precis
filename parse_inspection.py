@@ -94,6 +94,11 @@ def print_file_details(file_details):
 def all_benchmarks(file_details):
     return print_file_details(file_details)
 
+def equivalent(file_details):
+    res = ""
+    if file_details['smt'] == "Equivalent":
+        res = print_file_details(file_details)
+    return res
 
 def precis_stronger(file_details):
     res = ""
@@ -155,7 +160,7 @@ def main():
     
     summary_result = merge(precis_result, daikon_result)
     
-    rules = [all_benchmarks, precis_stronger, daikon_true, precis_disjunct, common_predicates]
+    rules = [all_benchmarks, precis_stronger, daikon_true, precis_disjunct, common_predicates, equivalent]
     format_summary(summary_result, rules)
 
 
