@@ -1,0 +1,82 @@
+Problem: StackTest
+
+PUT: PUT_PeekContract
+
+===== Final Result for PUT_PeekContract
+
+postcondition: 
+((!(New_s1Count < Old_s1Count)) && New_s1Count <= Old_s1Count && (!(Old_s1Count < New_s1Count)) && Old_s1Count <= New_s1Count && 1 <= Old_s1Count && 0 < Old_s1Count && 0 <= Old_s1Count && -1 < Old_s1Count && -1 <= Old_s1Count && 1 <= New_s1Count && 0 < New_s1Count && 0 <= New_s1Count && -1 < New_s1Count && -1 <= New_s1Count && (!(New_s1Count != Old_s1Count)) && New_s1Count == Old_s1Count && (!(0 == Old_s1Count)) && (!(-1 == Old_s1Count)) && (!(0 == New_s1Count)) && (!(-1 == New_s1Count)) && (!((!(New_ContainsNewRet)))) && New_ContainsNewRet)
+rounds: 5
+
+simplified post: 
+((New_s1Count == Old_s1Count && (!(0 == Old_s1Count)) && (!(-1 == Old_s1Count)) && New_ContainsNewRet && Old_s1Count >= -1))
+pex time: 41.29629421234131
+
+learn time: 1.2288017272949219
+
+Samples: 9
+
+PUT: PUT_CountContract
+
+===== Final Result for PUT_CountContract
+
+postcondition: 
+(0 <= New_Ret && -1 < New_Ret && -1 <= New_Ret && (!(-1 == New_Ret)))
+rounds: 6
+
+simplified post: 
+(((!(-1 == New_Ret)) && New_Ret >= -1))
+pex time: 43.03290796279907
+
+learn time: 1.621997594833374
+
+Samples: 19
+
+PUT: PUT_ContainsContract
+
+===== Final Result for PUT_ContainsContract
+
+postcondition: 
+((!(New_s1Count < Old_s1Count)) && New_s1Count <= Old_s1Count && (!(Old_s1Count < New_s1Count)) && Old_s1Count <= New_s1Count && 0 <= Old_s1Count && -1 < Old_s1Count && -1 <= Old_s1Count && 0 <= New_s1Count && -1 < New_s1Count && -1 <= New_s1Count && (!(New_s1Count != Old_s1Count)) && New_s1Count == Old_s1Count && (!(-1 == Old_s1Count)) && (!(-1 == New_s1Count)))
+rounds: 4
+
+simplified post: 
+((New_s1Count == Old_s1Count && (!(-1 == New_s1Count)) && New_s1Count >= -1))
+pex time: 30.82296133041382
+
+learn time: 1.2629852294921875
+
+Samples: 13
+
+PUT: PUT_PopContract
+
+===== Final Result for PUT_PopContract
+
+postcondition: 
+(New_s1Count < Old_s1Count && New_s1Count <= Old_s1Count && (!(Old_s1Count < New_s1Count)) && (!(Old_s1Count <= New_s1Count)) && (!(New_Ret < Old_Top)) && New_Ret <= Old_Top && (!(Old_Top < New_Ret)) && Old_Top <= New_Ret && 1 <= Old_s1Count && 0 < Old_s1Count && 0 <= Old_s1Count && -1 < Old_s1Count && -1 <= Old_s1Count && 0 <= New_s1Count && -1 < New_s1Count && -1 <= New_s1Count && New_s1Count != Old_s1Count && (!(New_s1Count == Old_s1Count)) && (!(New_Ret != Old_Top)) && New_Ret == Old_Top && (!(0 == Old_s1Count)) && (!(-1 == Old_s1Count)) && (!(-1 == New_s1Count)) && New_s1Count == Old_s1Count - 1)
+rounds: 3
+
+simplified post: 
+((New_Ret == Old_Top && (!(-1 == New_s1Count)) && New_s1Count == -1 + Old_s1Count && New_s1Count >= -1))
+pex time: 25.218682050704956
+
+learn time: 1.3282957077026367
+
+Samples: 15
+
+PUT: PUT_PushContract
+
+===== Final Result for PUT_PushContract
+
+postcondition: 
+((!(New_s1Count < Old_s1Count)) && (!(New_s1Count <= Old_s1Count)) && Old_s1Count < New_s1Count && Old_s1Count <= New_s1Count && (!(Old_x < New_Top)) && Old_x <= New_Top && (!(New_Top < Old_x)) && New_Top <= Old_x && 0 <= Old_s1Count && -1 < Old_s1Count && -1 <= Old_s1Count && 1 <= New_s1Count && 0 < New_s1Count && 0 <= New_s1Count && -1 < New_s1Count && -1 <= New_s1Count && New_s1Count != Old_s1Count && (!(New_s1Count == Old_s1Count)) && (!(Old_x != New_Top)) && Old_x == New_Top && (!(-1 == Old_s1Count)) && (!(0 == New_s1Count)) && (!(-1 == New_s1Count)) && (!((!(New_s1ContainsX)))) && New_s1Count == Old_s1Count + 1 && New_s1ContainsX)
+rounds: 5
+
+simplified post: 
+((Old_x == New_Top && (!(0 == New_s1Count)) && (!(-1 == New_s1Count)) && New_s1Count == 1 + Old_s1Count && New_s1ContainsX && New_s1Count >= -1))
+pex time: 47.44547653198242
+
+learn time: 3.936034917831421
+
+Samples: 21
+

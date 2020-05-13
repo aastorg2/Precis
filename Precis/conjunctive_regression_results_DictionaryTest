@@ -1,0 +1,113 @@
+Problem: DictionaryTest
+
+PUT: PUT_AddContract
+
+===== Final Result for PUT_AddContract
+
+postcondition: 
+((!(New_dCount < Old_dCount)) && (!(New_dCount <= Old_dCount)) && Old_dCount < New_dCount && Old_dCount <= New_dCount && 0 <= Old_dCount && -1 < Old_dCount && -1 <= Old_dCount && 1 <= New_dCount && 0 < New_dCount && 0 <= New_dCount && -1 < New_dCount && -1 <= New_dCount && New_dCount != Old_dCount && (!(New_dCount == Old_dCount)) && (!(-1 == Old_dCount)) && (!(0 == New_dCount)) && (!(-1 == New_dCount)) && (!(Old_dContainsKeyX)) && (!((!(New_dContainsKeyX)))) && (!((!(New_dContainsValueY)))) && New_dCount == Old_dCount + 1 && (!(Old_dContainsKeyX)) && New_dContainsKeyX && New_dContainsValueY)
+rounds: 3
+
+simplified post: 
+(((!(0 == New_dCount)) && (!(-1 == New_dCount)) && New_dCount == 1 + Old_dCount && (!(Old_dContainsKeyX)) && New_dContainsKeyX && New_dContainsValueY && New_dCount >= -1))
+pex time: 1520.7048509120941
+
+learn time: 1.473005771636963
+
+Samples: 21
+
+PUT: PUT_RemoveContract
+
+===== Final Result for PUT_RemoveContract
+
+postcondition: 
+(New_dCount <= Old_dCount && (!(Old_dCount < New_dCount)) && 0 <= Old_dCount && -1 < Old_dCount && -1 <= Old_dCount && 0 <= New_dCount && -1 < New_dCount && -1 <= New_dCount && (!(-1 == Old_dCount)) && (!(-1 == New_dCount)) && (!(New_dContainsKeyX)) && (!(New_dContainsKeyX)))
+rounds: 4
+
+simplified post: 
+((New_dCount <= Old_dCount && (!(-1 == New_dCount)) && (!(New_dContainsKeyX)) && New_dCount >= -1))
+pex time: 2093.684577703476
+
+learn time: 1.848036766052246
+
+Samples: 32
+
+PUT: PUT_GetContract
+
+===== Final Result for PUT_GetContract
+
+postcondition: 
+((!(New_dCount < Old_dCount)) && New_dCount <= Old_dCount && (!(Old_dCount < New_dCount)) && Old_dCount <= New_dCount && 1 <= Old_dCount && 0 < Old_dCount && 0 <= Old_dCount && -1 < Old_dCount && -1 <= Old_dCount && 1 <= New_dCount && 0 < New_dCount && 0 <= New_dCount && -1 < New_dCount && -1 <= New_dCount && (!(New_dCount != Old_dCount)) && New_dCount == Old_dCount && (!(0 == Old_dCount)) && (!(-1 == Old_dCount)) && (!(0 == New_dCount)) && (!(-1 == New_dCount)) && (!((!(Old_dContainsKeyX)))) && (!((!(New_dContainsKeyX)))) && (!((!(New_ContainsValueNewRet)))) && Old_dContainsKeyX && New_dContainsKeyX && New_ContainsValueNewRet)
+rounds: 3
+
+simplified post: 
+((New_dCount == Old_dCount && (!(0 == Old_dCount)) && (!(-1 == Old_dCount)) && Old_dContainsKeyX && New_dContainsKeyX && New_ContainsValueNewRet && Old_dCount >= -1))
+pex time: 1157.117737531662
+
+learn time: 1.4919977188110352
+
+Samples: 22
+
+PUT: PUT_SetContract
+
+===== Final Result for PUT_SetContract
+
+postcondition: 
+((!(New_dCount < Old_dCount)) && Old_dCount <= New_dCount && 0 <= Old_dCount && -1 < Old_dCount && -1 <= Old_dCount && 1 <= New_dCount && 0 < New_dCount && 0 <= New_dCount && -1 < New_dCount && -1 <= New_dCount && (!(-1 == Old_dCount)) && (!(0 == New_dCount)) && (!(-1 == New_dCount)) && (!((!(New_dContainsValueY)))) && (!((!(New_dContainsKeyX)))) && New_dContainsValueY && New_dContainsKeyX)
+rounds: 3
+
+simplified post: 
+((Old_dCount <= New_dCount && (!(-1 == Old_dCount)) && (!(0 == New_dCount)) && New_dContainsValueY && New_dContainsKeyX && Old_dCount >= -1))
+pex time: 374.5304174423218
+
+learn time: 1.7860467433929443
+
+Samples: 28
+
+PUT: PUT_ContainsKeyContract
+
+===== Final Result for PUT_ContainsKeyContract
+
+postcondition: 
+((!(New_dCount < Old_dCount)) && New_dCount <= Old_dCount && (!(Old_dCount < New_dCount)) && Old_dCount <= New_dCount && 0 <= Old_dCount && -1 < Old_dCount && -1 <= Old_dCount && 0 <= New_dCount && -1 < New_dCount && -1 <= New_dCount && (!(New_dCount != Old_dCount)) && New_dCount == Old_dCount && (!(-1 == Old_dCount)) && (!(-1 == New_dCount)))
+rounds: 4
+
+simplified post: 
+((New_dCount == Old_dCount && (!(-1 == Old_dCount)) && Old_dCount >= -1))
+pex time: 314.3042268753052
+
+learn time: 1.4599838256835938
+
+Samples: 27
+
+PUT: PUT_ContainsValueContract
+
+===== Final Result for PUT_ContainsValueContract
+
+postcondition: 
+((!(New_dCount < Old_dCount)) && New_dCount <= Old_dCount && (!(Old_dCount < New_dCount)) && Old_dCount <= New_dCount && 0 <= Old_dCount && -1 < Old_dCount && -1 <= Old_dCount && 0 <= New_dCount && -1 < New_dCount && -1 <= New_dCount && (!(New_dCount != Old_dCount)) && New_dCount == Old_dCount && (!(-1 == Old_dCount)) && (!(-1 == New_dCount)))
+rounds: 4
+
+simplified post: 
+((New_dCount == Old_dCount && (!(-1 == Old_dCount)) && Old_dCount >= -1))
+pex time: 189.6979570388794
+
+learn time: 1.2630150318145752
+
+Samples: 20
+
+PUT: PUT_CountContract
+
+===== Final Result for PUT_CountContract
+
+postcondition: 
+(0 <= New_Ret && -1 < New_Ret && -1 <= New_Ret && (!(-1 == New_Ret)))
+rounds: 2
+
+simplified post: 
+(((!(-1 == New_Ret)) && New_Ret >= -1))
+pex time: 83.41787028312683
+
+learn time: 0.04200267791748047
+
+Samples: 5
