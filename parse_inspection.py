@@ -100,6 +100,18 @@ def precis_stronger(file_details):
     if file_details['smt'] == "Precis":
         res = print_file_details(file_details)
     return res
+
+def equivalent(file_details):
+    res = ""
+    if file_details['smt'] == "Equivalent":
+        res = print_file_details(file_details)
+    return res
+
+def unknown(file_details):
+    res = ""
+    if file_details['smt'] == "Unknown":
+        res = print_file_details(file_details)
+    return res
     
 
 def daikon_true(file_details):
@@ -155,7 +167,7 @@ def main():
     
     summary_result = merge(precis_result, daikon_result)
     
-    rules = [all_benchmarks, precis_stronger, daikon_true, precis_disjunct, common_predicates]
+    rules = [all_benchmarks, precis_stronger, daikon_true, precis_disjunct, common_predicates, equivalent, unknown]
     format_summary(summary_result, rules)
 
 
