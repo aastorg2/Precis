@@ -893,10 +893,10 @@ if __name__ == '__main__':
     testFileName = 'UndirectedGraphContractTest.cs'
     testNamepace = 'UndirectedGraph.Test'
     testClass = 'UndirectedGraphContractTest'
-    ugraphPUTs = ['PUT_AddVertexContract', 'PUT_RemoveVertexContract','PUT_ClearAdjacentEdgesContract','PUT_ContainsEdgeContract', 'PUT_RemoveVertexContract',
-                    'PUT_ContainsEdgeIntContract', 'PUT_AdjacentEdgeContract', 'PUT_IsVerticesEmptyContract', 'PUT_VertexCountContract', 'PUT_ContainsVertexContract',
-                    'PUT_AddEdgeContract', 'PUT_RemoveEdgeContract', 'PUT_IsEdgesEmptyContract', 'PUT_EdgeCountContract', 'PUT_AdjacentDegreeContract',
-                    'PUT_IsAdjacentEdgesEmptyContract']
+    ugraphPUTs = ['PUT_VertexCountContract', 'PUT_EdgeCountContract', 'PUT_IsVerticesEmptyContract', 'PUT_IsEdgesEmptyContract',
+                  'PUT_AdjacentDegreeContract', 'PUT_IsAdjacentEdgesEmptyContract', 'PUT_ClearAdjacentEdgesContract', 'PUT_AddVertexContract',
+                  'PUT_AdjacentEdgeContract', 'PUT_ContainsVertexContract', 'PUT_RemoveVertexContract', 'PUT_RemoveEdgeContract',
+                  'PUT_AddEdgeContract', 'PUT_ContainsEdgeContract', 'PUT_ContainsEdgeIntContract']
 
     #ugraphPUTs = ['PUT_AddEdgeContract', 'PUT_RemoveEdgeContract', 'PUT_IsEdgesEmptyContract', 'PUT_EdgeCountContract', 'PUT_AdjacentDegreeContract']
     #ugraphPUTs = ['PUT_IsAdjacentEdgesEmptyContract']
