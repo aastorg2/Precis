@@ -916,8 +916,8 @@ if __name__ == '__main__':
     testFileName = 'BinaryHeapContractTest.cs'
     testNamepace = 'BinaryHeap.Test'
     testClass = 'BinaryHeapContractTest'
-    heapPUTs = ['PUT_AddContract', 'PUT_MinimumContract', 'PUT_RemoveMinimumContract', 'PUT_RemoveAtContract',
-                     'PUT_IndexOfContract', 'PUT_UpdateContract', 'PUT_MinimumUpdateContract']
+    heapPUTs = ['PUT_MinimumContract', 'PUT_MinimumUpdateContract', 'PUT_UpdateContract', 'PUT_RemoveAtContract',
+                     'PUT_RemoveMinimumContract', 'PUT_AddContract', 'PUT_IndexOfContract']
     
     
     pBinaryHeap = Problem(sln, projectName, testDebugFolder, testDll,
