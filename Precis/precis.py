@@ -904,11 +904,12 @@ if __name__ == '__main__':
     testFileName = 'UndirectedGraphContractTest.cs'
     testNamepace = 'UndirectedGraph.Test'
     testClass = 'UndirectedGraphContractTest'
-    ugraphPUTs = ['PUT_AddVertexContract', 'PUT_RemoveVertexContract','PUT_ClearAdjacentEdgesContract','PUT_ContainsEdgeContract',
-                    'PUT_ContainsEdgeIntContract', 'PUT_AdjacentEdgeContract', 'PUT_IsVerticesEmptyContract', 'PUT_VertexCountContract', 'PUT_ContainsVertexContract',
-                    'PUT_AddEdgeContract', 'PUT_RemoveEdgeContract', 'PUT_IsEdgesEmptyContract', 'PUT_EdgeCountContract', 'PUT_AdjacentDegreeContract',
-                    'PUT_IsAdjacentEdgesEmptyContract']
-    
+
+    ugraphPUTs = ['PUT_VertexCountContract', 'PUT_EdgeCountContract', 'PUT_IsVerticesEmptyContract', 'PUT_IsEdgesEmptyContract',
+                  'PUT_AdjacentDegreeContract', 'PUT_IsAdjacentEdgesEmptyContract', 'PUT_ClearAdjacentEdgesContract', 'PUT_AddVertexContract',
+                  'PUT_AdjacentEdgeContract', 'PUT_ContainsVertexContract', 'PUT_RemoveVertexContract', 'PUT_RemoveEdgeContract',
+                  'PUT_AddEdgeContract', 'PUT_ContainsEdgeContract', 'PUT_ContainsEdgeIntContract']
+
     #ugraphPUTs = ['PUT_AddEdgeContract', 'PUT_RemoveEdgeContract', 'PUT_IsEdgesEmptyContract', 'PUT_EdgeCountContract', 'PUT_AdjacentDegreeContract']
     #ugraphPUTs = ['PUT_IsAdjacentEdgesEmptyContract']
 
@@ -927,9 +928,9 @@ if __name__ == '__main__':
     testFileName = 'BinaryHeapContractTest.cs'
     testNamepace = 'BinaryHeap.Test'
     testClass = 'BinaryHeapContractTest'
-    heapPUTs = ['PUT_AddContract', 'PUT_MinimumContract', 'PUT_RemoveMinimumContract', 'PUT_RemoveAtContract',
-                     'PUT_IndexOfContract', 'PUT_UpdateContract', 'PUT_MinimumUpdateContract']
-    #heapPUTs = ['PUT_IndexOfContract','PUT_RemoveAtContract' ,'PUT_UpdateContract', 'PUT_MinimumUpdateContract']
+
+    heapPUTs = ['PUT_MinimumContract', 'PUT_MinimumUpdateContract', 'PUT_UpdateContract', 'PUT_RemoveAtContract',
+                     'PUT_RemoveMinimumContract', 'PUT_AddContract', 'PUT_IndexOfContract']
     
     
     pBinaryHeap = Problem(sln, projectName, testDebugFolder, testDll,
