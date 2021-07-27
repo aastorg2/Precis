@@ -54,6 +54,8 @@ Disjunctive (PexChoose):
 Disjunctive (Alternate Semantics):
 Disjunctive (Truly):
 
+smt check:
+
 Truly Safe:
 
 Analysis:
