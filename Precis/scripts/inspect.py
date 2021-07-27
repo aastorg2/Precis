@@ -54,7 +54,7 @@ Disjunctive (PexChoose):
 Disjunctive (Alternate Semantics):
 Disjunctive (Truly):
 
-Label:
+Truly Safe:
 
 Analysis:
 """
