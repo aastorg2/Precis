@@ -1,3 +1,5 @@
+#TODO: Ahmad change this so that you only read one "Problem" entry; of you see another Problem entry output a warning message but still create the inspection file 
+# for the first problem
 #Still need to label entries if alternate arguement is passed
 SUBJECT = "SUBJECT"
 
