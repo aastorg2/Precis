@@ -106,7 +106,7 @@ class Sygus:
         linuxFullPath = shell.getAbsolutePathByOs(directory +"/" +sygusFileName, "wsl")
         #print("fullpath: ", linuxFullPath)
         args = " ".join([Shell.wslBin(), './' + execBin, linuxFullPath])
-        print(args)
+        #print(args)
         result = shell.runCommand(args, path)
         if result == "No Solutions!":
             return "No Solutions!"
