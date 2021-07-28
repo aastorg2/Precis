@@ -46,7 +46,7 @@ class FeatureVector:
             self.valuesZ3 += (BoolVal(value.upper() == 'TRUE'), )
     
     @staticmethod
-    def copyFeatureVector(fv : 'FeatureVector'): 
+    def copyFeatureVector(fv): 
         if not isinstance(fv, FeatureVector):
             assert False, "type of parameter fv is not FeatureVector"
         else:
