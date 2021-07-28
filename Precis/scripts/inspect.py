@@ -105,18 +105,10 @@ rounds: {rounds}
             line = f"\n{lines[lineIndex]}"
             currentContract.cases += line
             contracts[currentContract.name] = currentContract
-#         if len(re.findall("Not[(]k[0-2] -> k[0-2][)][?]", lines[lineIndex])) > 0:
-#             valid = "False"
-#             if "unsat" in lines[lineIndex]:
-#                 valid = "True"
-#             start = lines[lineIndex].rindex("(") + 1
-#             end = lines[lineIndex].rindex(")")
-#             line = f"""
-# {lines[lineIndex][start:end]}: {valid}
-# """
-#             currentContract.cases += line
-#             if "k2" in line:
-#                 contracts[currentContract.name] = currentContract
+            
+        if "Problem" in lines[lineIndex]:
+            print("WARNING:\n\tRegression contains more than one problem")
+            break
 
         if not ovveride: readyInspection.write(line)
     line = f"""
