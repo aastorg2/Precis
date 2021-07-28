@@ -640,7 +640,7 @@ if __name__ == '__main__':
     testNamepace = 'Stack.Test'
     testClass = 'StackContractTest'
     stackPUTs = ['PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract', 'PUT_PopContract','PUT_PushContract']
-    stackPUTs = ['PUT_PushContract']
+    
     
 
     pStack = Problem(sln, projectName, testDebugFolder, testDll,
@@ -660,7 +660,7 @@ if __name__ == '__main__':
     testNamepace = 'HashSet.Test'
     testClass = 'HashSetContractTest'
     hashsetPUTs = ['PUT_AddContract', 'PUT_RemoveContract','PUT_ContainsContract','PUT_CountContract']
-    hashsetPUTs = ['PUT_AddContract']
+    
     
 
     pHashSet = Problem(sln, projectName, testDebugFolder, testDll,
@@ -789,12 +789,12 @@ if __name__ == '__main__':
     angello = True
     if angello:
         subjects.append(pStack)        
-        #subjects.append(pQueue)
+        subjects.append(pQueue)
         subjects.append(pHashSet)
-        #subjects.append(pDictionary)
-        #subjects.append(pArrayList)
-        #subjects.append(pBinaryHeap)
-        #subjects.append(pUndirectedGraph)
+        subjects.append(pDictionary)
+        subjects.append(pArrayList)
+        subjects.append(pBinaryHeap)
+        subjects.append(pUndirectedGraph)
         
         #, 'PUT_ContainsContract'
         #pHashSet.puts = ['PUT_ContainsContract']
