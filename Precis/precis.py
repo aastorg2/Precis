@@ -641,7 +641,6 @@ if __name__ == '__main__':
     testClass = 'StackContractTest'
     stackPUTs = ['PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract', 'PUT_PopContract','PUT_PushContract']
     
-    
 
     pStack = Problem(sln, projectName, testDebugFolder, testDll,
                 testFileName, testNamepace, testClass,stackPUTs)
@@ -793,8 +792,8 @@ if __name__ == '__main__':
         subjects.append(pHashSet)
         subjects.append(pDictionary)
         subjects.append(pArrayList)
-        subjects.append(pBinaryHeap)
-        subjects.append(pUndirectedGraph)
+        #subjects.append(pBinaryHeap)
+        #subjects.append(pUndirectedGraph)
         
         #, 'PUT_ContainsContract'
         #pHashSet.puts = ['PUT_ContainsContract']
@@ -828,10 +827,13 @@ if __name__ == '__main__':
             print(prob.puts)
             # run all cases up to k
             #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
-            
+            try:
             #cProfile.run("runSynthTightDT(prob, prob.puts ,prob.projectName , outputFileType)",filename="profileUGraph")
-            runSynthTightDT(prob, prob.puts ,prob.projectName , outputFileType)
-            
+                runSynthTightDT(prob, prob.puts ,prob.projectName , outputFileType)
+            except:
+                logger1.info(f"Unexpected error: {sys.exc_info()[0]}") 
+                logger1.info(f"Unexpected error: {sys.exc_info()[1]}")
+                logger1.info(f"Unexpected error: {sys.exc_info()[2]}")
             #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
             
             #Run one test and one case
