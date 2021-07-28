@@ -49,8 +49,8 @@ class FeatureSynthesis:
 
         assert(len(intFeatures) > 0)
         #assert(len(boolFeatures) > 0)
-        derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateEqualitiesWithConstants(intFeatures) # TODO: should be 1
-        derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateEqualities(intFeatures) # TODO: should be 2
+        derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateEqualitiesWithConstants(intFeatures) 
+        derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateEqualities(intFeatures) 
         derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateInequalities(intFeatures)
         derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateInequalitiesWithConstants(intFeatures)
         
@@ -146,8 +146,8 @@ class FeatureSynthesis:
             #    continue
             lessThanExpr = feat2.varZ3 < feat1.varZ3
             lessThanEqualExpr = feat2.varZ3 <= feat1.varZ3
-            lessThanExprReversed = feat1.varZ3 < feat2.varZ3 #TODO remove this because we already create negations
-            lessThanEqualExprReversed = feat1.varZ3 <= feat2.varZ3 #TODO remove this because we already create negations
+            lessThanExprReversed = feat1.varZ3 < feat2.varZ3
+            lessThanEqualExprReversed = feat1.varZ3 <= feat2.varZ3
             
             lessThanDerived = PrecisFeature(True, str(lessThanExpr), str(lessThanExpr.sort()), None, lessThanExpr)
             lessThanEqualDerived = PrecisFeature(True, str(lessThanEqualExpr), str(lessThanEqualExpr.sort()), None, lessThanEqualExpr)
@@ -176,7 +176,7 @@ class FeatureSynthesis:
             #    continue
             #print (feat1, feat2)
             #removing negation of equalities for now
-            notEqualExpr = feat2.varZ3 != feat1.varZ3 # TODO: remove this one because we have negations
+            notEqualExpr = feat2.varZ3 != feat1.varZ3 
             equalExpr = feat2.varZ3  == feat1.varZ3 
             
             notEqualDerived = PrecisFeature(True, str(notEqualExpr), str(notEqualExpr.sort()), None, notEqualExpr)
