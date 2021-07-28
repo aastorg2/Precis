@@ -35,6 +35,7 @@ class Pex:
 
     def RunTeacher(self, problem, PUTName, precisFeatureList) -> List[FeatureVector]:
         args = self.GetExecCommand(problem.testDll, PUTName, problem.testNamespace, problem.testClass)
+        print((' ').join(args))
         pexOutput = command_runner.runCommand(args)
         
         self.reportBaseLocation = problem.testDebugFolder
