@@ -52,7 +52,7 @@ class Shell:
                 return absPath
             elif osType == "linux" or osType == "wsl":
                 # git linux path by calling wsl -a
-                print(Shell.wslBin() + ' wslpath -a \'' + absPath + '\'')
+                #print(Shell.wslBin() + ' wslpath -a \'' + absPath + '\'')
                 
                 return self.runCommand( Shell.wslBin() + ' wslpath -a \'' + absPath + '\'')
         except Exception as ex:

@@ -35,6 +35,7 @@ class Pex:
 
     def RunTeacher(self, problem, PUTName, precisFeatureList) -> List[FeatureVector]:
         args = self.GetExecCommand(problem.testDll, PUTName, problem.testNamespace, problem.testClass)
+        print((' ').join(args))
         pexOutput = command_runner.runCommand(args)
         
         self.reportBaseLocation = problem.testDebugFolder
@@ -57,6 +58,8 @@ class Pex:
                 print("ideally, this test should be re-ran since path bounds exceeded")
                 continue
             singlePoint = ()
+            #exceptionChain[0].xpath('./exception')[0].get('typeDisplayName')
+            # name: AssertionException
             for value in test.xpath('./value'):
                 if re.match("^\$.*", value.xpath('./@name')[0]):
                     val = str(value.xpath('string()'))

@@ -289,7 +289,7 @@ class SygusDisjunctive:
 
     
 
-    def __init__(self, pred_names, pred_data,  k, cdt="true"):
+    def __init__(self, pred_names, pred_data, rounds, k, cdt="true"):
         #self.cond_pred = pred_names
         #self.cond_pred = [x.replace(" ","aaa") for x in pred_names]
         self.cond_pred = pred_names
@@ -305,7 +305,14 @@ class SygusDisjunctive:
         self.cdt = cdt
         self.dp_trees = {}
         self.all_trees = self.generate_all_trees(k)
-        
+        logger.info(f"trees at round: {rounds} for k = {k}\n")
+        logger.info(f"number of boolean variabes {len(pred_names)}\n")
+        logger.info(f"number of datapoints {len(pred_data)}\n")
+        logger.info(f"number of trees generated for {len(self.all_trees)}\n")
+        logger.info(f"trees\n")
+        for tree in self.all_trees:
+            logger.info(f"{tree}\n")
+
         self.pvariables = {}
         for k_itr in range(self.k):
             self.pvariables[k_itr] = []

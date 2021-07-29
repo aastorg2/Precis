@@ -20,7 +20,8 @@ class Houdini:
         self.boolBaseFvs = boolBaseFeatVectors
         self.derivBoolFeats = derivFeats
         self.predicateSynthesizer = synthesizer
-    
+        self.predSynthTime = 0
+
     def learn(self,features,featureVectors,call):
         assert(len(featureVectors) > 0)
         
@@ -286,29 +287,32 @@ class Houdini:
         precisConjunction, indices, conjuncts = self.learn5(boolFeats, boolFvs, call)
         commonSMTConjunct = 'true' if len(conjuncts) == 0 else '(and ' + ' '.join([c.atom for c in conjuncts] ) + ')'
         
-        print("Predicate chosen at " + call +" : \n"+str(tree.data))
-        
+        print(f"Predicate chosen at  {call}  :  {tree.data}")
+        logger1.info(f"Predicate chosen at  {call}  :  {tree.data}")
         if not tree.left and not tree.right:
             synthFeats = tuple()
             uniqueFeats = tuple()
+            timeSpent = 0.0
             print("####################### Feature Vector Count: "+ str(len(boolFvs)))
             if len(boolFvs) >= 1:
                 fvIds = [bfv.ID for bfv in boolFvs]
                 
                 relevantIntFvs = [ iFv  for iFv in self.intBaseFvs if iFv.ID in fvIds ]
-                synthFeats = self.predicateSynthesizer.synthesizeFeatures(self.intBaseFeat, self.boolBaseFeat, relevantIntFvs)
-                
-                uniqueFeats = tuple([ f for f in synthFeats if f not in self.derivBoolFeats]) #consider removing this line
-            
+                #Shambo: remove synthesis call here for RQ4b. Perhaps this whole if case can go away.   
+                synthFeats, timeSpent = self.predicateSynthesizer.synthesizeFeatures(self.intBaseFeat, self.boolBaseFeat, relevantIntFvs)
+
+                uniqueFeats = tuple([ f for f in synthFeats if f not in self.derivBoolFeats]) 
+
             if len(uniqueFeats) > 0:
                 commonSMTConjunctSynth = "(and "+commonSMTConjunct +" "+ ' '.join([c.atom for c in uniqueFeats] )+")" 
                 #precisConjunctionSynth = PrecisFormula(And(precisConjunction.formulaZ3, And([c.varZ3 for c in uniqueFeats])))
                 precisConjunctionSynth = PrecisFormula(And(uniqueFeats[0].varZ3,precisConjunction.formulaZ3  ))# assuming only one feature
                 #typically only one is synthesized
-                logger1.info("Adding synthesized feature: "+ str(uniqueFeats[0].varZ3)+"\n" )
-                return commonSMTConjunctSynth, precisConjunctionSynth, uniqueFeats
+                print(f"Adding Unique synthesized feature: {uniqueFeats[0].varZ3}\n" )
+                logger1.info(f"Adding Unique synthesized feature: {uniqueFeats[0].varZ3}\n" )
+                return commonSMTConjunctSynth, precisConjunctionSynth, uniqueFeats, timeSpent
 
-            return commonSMTConjunct, precisConjunction, ()
+            return commonSMTConjunct, precisConjunction, () ,  timeSpent
         else:
             
             indices.reverse()
@@ -321,21 +325,21 @@ class Houdini:
                 return commonSMTConjunct, precisConjunction, ()
 
             splitPred = tree.data
-            print("Predicate chosen at " + call +" : \n"+str(splitPred))
-            logger1.info("Predicate chosen at " + call +" : "+str(splitPred))
+            print(f"Predicate chosen at {call}: {splitPred}")
+            logger1.info(f"Predicate chosen at {call}: {splitPred}")
 
             (posFv, negFv) = Houdini.split(idx, condboolFvs)
             remainingBoolFeats = Houdini.removeCommonTerms(condBoolFeats, [idx])
             remPosFv = Houdini.removeCommonFvs(posFv, [idx])
             remNegFv = Houdini.removeCommonFvs(negFv, [idx])
 
-            rightSmt, rightPrecis, posFeatSynth = self.houdiniSynthesis(tree.right, remainingBoolFeats, remPosFv, call+" right")
-            leftSmt, leftPrecis, negFeatSynth = self.houdiniSynthesis(tree.left, remainingBoolFeats, remNegFv, call+" left")
+            rightSmt, rightPrecis, posFeatSynth, rightPredSynthTimeSpent = self.houdiniSynthesis(tree.right, remainingBoolFeats, remPosFv, call+" right")
+            leftSmt, leftPrecis, negFeatSynth, leftPredSynthTimeSpent = self.houdiniSynthesis(tree.left, remainingBoolFeats, remNegFv, call+" left")
 
             smtPost = "(and "+ commonSMTConjunct +" "+ "(ite "+ tree.data.atom + " " + rightSmt + " "+ leftSmt+" "+"))"
             #And(Or(Not(splitPred.varZ3), right ), Or(splitPred.varZ3, left )) )
             precisPost = PrecisFormula(And(precisConjunction.formulaZ3, And(Or(Not(splitPred.varZ3), rightPrecis.formulaZ3) , Or(splitPred.varZ3, leftPrecis.formulaZ3))))
-        return smtPost, precisPost, tuple(set(posFeatSynth).union(set(negFeatSynth)))
+        return smtPost, precisPost, tuple(set(posFeatSynth).union(set(negFeatSynth))), rightPredSynthTimeSpent + leftPredSynthTimeSpent
     
     @staticmethod
     def removeCommonFvs(boolFvs, reversedIndexes):

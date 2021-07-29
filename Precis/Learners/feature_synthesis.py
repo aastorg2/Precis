@@ -1,6 +1,6 @@
 from z3 import *
 import itertools
-
+import time
 from Learners.sygus_lia import SygusLIA
 from Data.precis_feature import *
 #from Data.precis_feature import PrecisFeature
@@ -9,6 +9,11 @@ from os import sys, path
 from Data.shell import Shell
 
 from typing import List, Tuple
+import logging
+
+logger1 = logging.getLogger("Results.FeatureSynthesis")
+
+
 class FeatureSynthesis:
 
     #binary executable to run sygus solver
@@ -44,11 +49,10 @@ class FeatureSynthesis:
 
         assert(len(intFeatures) > 0)
         #assert(len(boolFeatures) > 0)
-        
+        derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateEqualitiesWithConstants(intFeatures) 
+        derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateEqualities(intFeatures) 
         derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateInequalities(intFeatures)
         derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateInequalitiesWithConstants(intFeatures)
-        derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateEqualities(intFeatures)
-        derivedFeatures: Tuple[PrecisFeature] = derivedFeatures + self.CreateEqualitiesWithConstants(intFeatures) # temp
         
 
         #temporarily changed order
@@ -86,6 +90,7 @@ class FeatureSynthesis:
         logic = [["(set-logic LIA)"]]
         checkSynth = [["(check-synth)"]]
         synthesizedFeatures = ()
+        totalPredSynthTime = 0.0
         for postFeaturesIdxs  in [ (intFeatures[newIdx], newIdx) for newIdx in range(len(intFeatures)) if intFeatures[newIdx].isNew != None and intFeatures[newIdx].isNew]:
             #print(postFeaturesIdxs[0].varName)
             shell.removeSygusFile(self.temporaryFolder, self.sygusFileEndingPattern)
@@ -94,24 +99,30 @@ class FeatureSynthesis:
             constraints = sygusSynthesizer.addSemanticConstraints(postFeaturesIdxs[1],intOldVarAndIdxs, baseFeatureVectors)
             sygusProblem = sygusSynthesizer.constructSygusProblem(logic, grammar, constraints,checkSynth)
             shell.writeToFile(self.temporaryFolder,self.sygusFileName, sygusProblem )
+            startTime = time.time()
             synthizedExprStr = sygusSynthesizer.learn(self.temporaryFolder,self.sygusFileName)
+            endTime = time.time()- startTime
+            totalPredSynthTime = totalPredSynthTime +  endTime
             if synthizedExprStr == "No Solutions!":
-                print("======================================== no solution synthesis")
+                msg5 = "======================================== no solution synthesis"
+                print(msg5)
+                logger1.info(msg5)
                 continue
             declMap = { f.varName : f.varZ3 for f in intFeatures}
             synthesizedFeature = "(= "+ postFeaturesIdxs[0].varName +" " +synthizedExprStr +")" 
             sygusExpr = parse_smt2_string("(assert "+ synthesizedFeature+ " )",decls=declMap)
-            print("number of features synthesize: "+ str(len(sygusExpr)))
-            print("")
-            print("======================================== synthesized feature: "+ str(sygusExpr[0]))
-            if  "Old_dCount - 1" in str(sygusExpr[0]):
-                print("here")
+            msg2 = f"number of features synthesize: {len(sygusExpr)}"
+            print(msg2)
+            logger1.info(msg2)
+            msg3= f"======================================== synthesized feature: {sygusExpr[0]}"
+            print(msg3)
+            logger1.info(msg3)
             
             synthesizedFeatures += (PrecisFeature(True, str(sygusExpr[0]), str(sygusExpr[0].sort()), None, sygusExpr[0]),)#assumes only return list of length == 1(sygusExpr) 
             #print(sygusExpr.ctx)
             #print(postFeaturesIdxs[0].varZ3.ctx)
         #print(synthesizedFeatures)
-        return synthesizedFeatures
+        return (synthesizedFeatures, totalPredSynthTime)
 
 
 
@@ -226,6 +237,7 @@ class FeatureSynthesis:
             inequalitiesWithConstantsFeatures += (greaterThanEqualZeroExpr,)
             inequalitiesWithConstantsFeatures += (greaterThanNegOneExpr,)
             inequalitiesWithConstantsFeatures += (greaterThanEqualNegOneExpr,)
+            
         
         return inequalitiesWithConstantsFeatures
     
