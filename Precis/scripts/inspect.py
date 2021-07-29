@@ -39,6 +39,9 @@ def NewInspect(fileName, contracts, ovveride):
     resultSeen = False
     predicates = []
     rounds = ""
+    sysnthesis_time = ""
+    unique_features = ""
+    synthesized_features = []
     total_rounds = 0
     total_pextime = 0
     total_learntime = 0
@@ -105,7 +108,16 @@ rounds: {rounds}
             line = f"\n{lines[lineIndex]}"
             currentContract.cases += line
             contracts[currentContract.name] = currentContract
-            
+        if "synthesis time" in lines[lineIndex]:
+            synthesis_time = f"{lines[lineIndex]}"
+            currentContract.cases += synthesis_time
+        if "unique features" in lines[lineIndex]:
+            unique_features = f"{lines[lineIndex]}"
+            currentContract.cases += unique_features
+        if 'Synth Feature' in lines[lineIndex]:
+            colon = lines[lineIndex].index(":")
+            feature = lines[lineIndex][colon + 1:].strip()
+            synthesized_features.append(feature)
         if "Problem" in lines[lineIndex]:
             print("WARNING:\n\tRegression contains more than one problem")
             break
@@ -113,6 +125,11 @@ rounds: {rounds}
         if not ovveride: readyInspection.write(line)
     line = f"""
 ======================
+{synthesis_time}
+{unique_features}
+Synthesized Feautes:
+    {synthesized_features}
+
 Average Rounds: {total_rounds / (len(contracts) - 1)}
 
 Average Pex Time: {total_pextime / (len(contracts) - 1)}
@@ -120,111 +137,6 @@ Average Pex Time: {total_pextime / (len(contracts) - 1)}
 Average Learn Time: {total_learntime / (len(contracts) - 1)}
 """
     readyInspection.write(line)
-    if not ovveride: readyInspection.close()
-
-def Inspect(fileName, contracts, ovveride):
-    import re
-    path = getPath(fileName)
-    initInspection = open(path, 'r')
-    lines = initInspection.readlines()
-    initInspection.close()
-    header = lines[0]
-    if not ovveride:
-        spliceIndex = fileName.index("results")
-        fileName = fileName[spliceIndex:]
-        newFileName = "CurrentInspections\inspected_" + fileName
-        readyInspection = open(newFileName, 'w')
-        readyInspection.write(header)
-    contracts[SUBJECT] = header
-    predicate = "None"
-    predicateRight = "None"
-    predicateLeft = "None"
-    currentContract = None
-    for lineIndex in range(1, len(lines)):
-        line = ""
-        if "PUT: " in lines[lineIndex]:
-            splitIndex = lines[lineIndex].index(":") + 1
-            contract = lines[lineIndex][splitIndex:].lstrip().replace("\n", "")
-            currentContract = Contract(contract)
-            
-            line = f"""
----------------------
-{contract}
-Disjunctive (PexChoose):
-Disjunctive (Alternate Semantics):
-Disjunctive (Truly):
-"""
-            currentContract.disjunctivity = line
-        if "Case: k ==" in lines[lineIndex]:
-            currentCase = lines[lineIndex].index("==") + 3
-            case = lines[lineIndex][currentCase:]
-            while lineIndex < len(lines) and not "===== Final Result" in lines[lineIndex]:
-                if "Round" in lines[lineIndex]:
-                    predicate = "None"
-                    predicateRight = "None"
-                    predicateLeft = "None"
-                if "Predicate: root Left" in lines[lineIndex]:
-                    splitIndex = lines[lineIndex].rindex(":") + 1
-                    predicateLeft = lines[lineIndex][splitIndex:].lstrip().replace("\n", "")
-                if "Predicate: root Right" in lines[lineIndex]:
-                    splitIndex = lines[lineIndex].rindex(":") + 1
-                    predicateRight = lines[lineIndex][splitIndex:].lstrip().replace("\n", "")
-                if "Predicate: root for k =" in lines[lineIndex]:
-                    splitIndex = lines[lineIndex].rindex(":") + 1
-                    predicate = lines[lineIndex][splitIndex:].lstrip().replace("\n", "")
-                lineIndex += 1
-            if lineIndex >= len(lines):
-                break
-            line = f"""
-======
-k == {case}"""
-            currentContract.cases += line
-        if "postcondition k ==" in lines[lineIndex]:
-            line = f"""
-learned postcondition: {lines[lineIndex + 1]}"""
-            currentContract.cases += line
-        if "simplified post k ==" in lines[lineIndex]:
-            line = f"""
-simplified postcondition: {lines[lineIndex + 1]}
-predicate: {predicate}
-
-predicate right: {predicateRight}
-
-predicate left: {predicateLeft}
-
-Any:
-
-L:
-
-SubL:
-"""
-            currentContract.cases += line
-            if "2" in lines[lineIndex]:
-                currentContract.bestRefine = lines[lineIndex + 1]
-        if "pex time:" in lines[lineIndex]:
-            line = f"\n{lines[lineIndex]}"
-            currentContract.cases += line
-        if "learn time:" in lines[lineIndex]:
-            line = f"\n{lines[lineIndex]}"
-            currentContract.cases += line
-        if "Samples" in lines[lineIndex]:
-            line = f"\n{lines[lineIndex]}"
-            currentContract.cases += line
-            contracts[currentContract.name] = currentContract
-#         if len(re.findall("Not[(]k[0-2] -> k[0-2][)][?]", lines[lineIndex])) > 0:
-#             valid = "False"
-#             if "unsat" in lines[lineIndex]:
-#                 valid = "True"
-#             start = lines[lineIndex].rindex("(") + 1
-#             end = lines[lineIndex].rindex(")")
-#             line = f"""
-# {lines[lineIndex][start:end]}: {valid}
-# """
-#             currentContract.cases += line
-#             if "k2" in line:
-#                 contracts[currentContract.name] = currentContract
-
-        if not ovveride: readyInspection.write(line)
     if not ovveride: readyInspection.close()
 
 def OverrideInspections(fileName, oldSubject, newSubject):
