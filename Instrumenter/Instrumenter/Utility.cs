@@ -66,6 +66,20 @@ namespace ObserverTypeExtractor
                     this.workspace.TryApplyChanges(updated.Project.Solution);
                     break;
                 }
+
+                else if (expr.ToString().StartsWith(AssertionPex))
+                {
+                    SyntaxTriviaList trailing = expr.GetTrailingTrivia();
+                    SyntaxTriviaList leading = expr.GetLeadingTrivia();
+                    StatementSyntax newAsssertStatement = SyntaxFactory.ParseStatement(AssertionPex + "(" + postCondition + ");");
+                    newAsssertStatement = newAsssertStatement.WithLeadingTrivia(leading).WithTrailingTrivia(trailing);
+                    Console.WriteLine(newAsssertStatement.ToString());
+                    testClassEditor.ReplaceNode(expr, newAsssertStatement);
+                    Document updated = testClassEditor.GetChangedDocument();
+                    this.workspace.TryApplyChanges(updated.Project.Solution);
+                    break;
+
+                }
             }
         }
  
