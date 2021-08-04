@@ -355,6 +355,8 @@ def SynthTightDT2(p, PUTName, outputFile, destinationOfTests, maxK):
     
     uniqueSynthFeats = ()
     synthFeatReturn = ()
+    startTimeLimit = time.time()
+    timeLimit = 18000.0
     while True:
         msg4 = f"Round: {rounds} ====\n"
         print(msg4)
@@ -369,7 +371,8 @@ def SynthTightDT2(p, PUTName, outputFile, destinationOfTests, maxK):
         baseFeatureVectors: List[FeatureVector] = pex.RunTeacher(p, PUTName, baseFeatures)
         pexTime = time.time() - startTimePex
         totalPexTime = totalPexTime + pexTime
-        
+        if time.time() - startTimeLimit >= timeLimit:
+            return
         #copy tests
         evaluation.copyTestFilesToEvaluationDir(pex.testsLocation, destinationOfTests, rounds)
 
@@ -379,7 +382,7 @@ def SynthTightDT2(p, PUTName, outputFile, destinationOfTests, maxK):
             simplifiedPost = PrecisFormula(candidatePost.precisSimplify()).toInfix()
             return candidatePost, candidatePost.toInfix(), simplifiedPost, rounds, totalPexTime, totalLearningTime, len(allBaseFeatureVectors), predSyntTimeTotal, synthFeatReturn
 
-        if rounds == 20: # debugging purposely only because we should never trigger this
+        if rounds == 100: # debugging purposely only because we should never trigger this
             print("did not find it - Max Rounds")
             break
         
@@ -452,7 +455,9 @@ def SynthTightDT2(p, PUTName, outputFile, destinationOfTests, maxK):
             kExecTime = time.time() - startKExecTime
             timePerK.append( (k, kExecTime) )
             totalLearningTime = totalLearningTime + kExecTime
-            
+            # 5 hour time limit
+            if time.time() - startTimeLimit >= timeLimit:
+                return
 
             if output_tree != None: # phase1: exhaust trees at k
                 print("++++++++++++++ tree root: "+ output_tree.data.varName)
@@ -480,7 +485,7 @@ def SynthTightDT2(p, PUTName, outputFile, destinationOfTests, maxK):
                 print("disjunctive sygus format:\n"+currentBestTreeAtK)
                 #print("z3 simplified:\n"+PrecisFormula(currentBestTree.parseWithHoudiniWithZ3Expr(atoms, boolFeatures, copy2StrBoolFvs, copyboolFvs, s1, "root").precisSimplify()).toInfix()+"\n") # destroys copy2StrBoolFvs
                 
-                print("checking if there exist a tree at k+1 depth that is tigher?")
+                print(f"checking if there exist a tree with k+1= {k+1} conditionals that is tigher?")
                 solver2 = SygusDisjunctive(
                             conditionalFeats if not withSynth else featWithSynt,
                             conditionalFvs if not withSynth else fvWithSynth,
@@ -492,7 +497,9 @@ def SynthTightDT2(p, PUTName, outputFile, destinationOfTests, maxK):
                 kExecTime = time.time() - startKExecTime
                 totalLearningTime = totalLearningTime + kExecTime
                 timePerK.append( (k+1, kExecTime) )
-                
+                # 5 hour time limit
+                if time.time() - startTimeLimit >= timeLimit:
+                    return
                 if output_tree != None:
                     #copy3StrBoolFvs = list(strBoolFvs)
                     #copy2boolFvs = list (boolFvs)
@@ -540,7 +547,8 @@ def SynthTightDT2(p, PUTName, outputFile, destinationOfTests, maxK):
             
             smtCandidatePost, candidatePost, synthFeatures, timePredSynth = houdini.houdiniSynthesis(currentBestTree, featWithSynt, fvWithSynth, "root")
             if len(synthFeatures) !=0:
-                print("something wrong Need to check &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+                print("not expected Need to check &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+                logger1.info("not expected Need to check &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
             predSyntTimeTotal += timePredSynth
             # learn6 does not return predicates that are always false
             #simplifiedPost = PrecisFormula(candidatePost.precisSimplify()).toInfix()
@@ -578,6 +586,7 @@ def runSynthTightDT(p, putList, projectName, outputFile):
         learnTime = 0.0
         totalSamples = 0
         predSynthTime= 0.0
+        synthFeatures = ()
         logger1.info("PUT: "+putName+"\n")
 
         output = SynthTightDT2(p, putName, outputFile, locationOfTests , 20)
@@ -628,7 +637,7 @@ if __name__ == '__main__':
     # region logger
     
     # endregion
-    outputFileType = os.path.abspath('../typesOM.txt')
+    
     subjects = []
     
     #region Stack
@@ -640,7 +649,6 @@ if __name__ == '__main__':
     testNamepace = 'Stack.Test'
     testClass = 'StackContractTest'
     stackPUTs = ['PUT_PeekContract', 'PUT_CountContract', 'PUT_ContainsContract', 'PUT_PopContract','PUT_PushContract']
-    
 
     pStack = Problem(sln, projectName, testDebugFolder, testDll,
                 testFileName, testNamepace, testClass,stackPUTs)
@@ -805,7 +813,7 @@ if __name__ == '__main__':
         pass
 
     
-    
+    outputFileType = os.path.abspath('../typesOM.txt')
     evalutating = True 
     if evalutating:
         #stackPUTs = ['PUT_PushContract']
