@@ -51,12 +51,20 @@ class Pex:
         dataPoints = list()
         featureValues = None
         for test in tree.xpath('//generatedTest'):
+
             # REMIENDER: will need to add more cases for pex internal failures such as the above. We do not want to create feature from these values
             if test.get('status') == 'assumptionviolation' or test.get('status') == 'minimizationrequest':
                 continue
             if test.get('status') == 'pathboundsexceeded':
                 print("ideally, this test should be re-ran since path bounds exceeded")
                 continue
+            exceptionChain = test.xpath('./exceptionChain')
+            if len(exceptionChain) != 0:
+                exception = exceptionChain[0].xpath('./exception')
+                if len(exception)!= 0:
+                    nameException = exception[0].get('typeDisplayName')
+                    if nameException != "AssertionException": 
+                        continue                  
             singlePoint = ()
             #exceptionChain[0].xpath('./exception')[0].get('typeDisplayName')
             # name: AssertionException
