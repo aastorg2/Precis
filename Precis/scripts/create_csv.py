@@ -4,7 +4,7 @@ import os
 
 def main(inspections):
   
-  fieldnames = ['Contracts', 'Safe_MAN', 'Strength'] #TODO add SAFE_TG
+  fieldnames = ['Contracts', 'Safe_MAN', 'Strength_vs_daikon','Strength_vs_predicate_synthesis', 'Strength_vs_conjunc'] #TODO add SAFE_TG
   
   with open('results.csv', 'w') as csv_file:
     writer = csv.DictWriter(csv_file, fieldnames)
@@ -28,19 +28,20 @@ def get_row(lines):
     if "Problem" in line:
       info = get_info_from_line(line)
       info = info.replace("Test", "") # Just want the name of the subject
-      rows.append({'Contracts': info, 'Safe_MAN': '', 'Strength': ''})
+      rows.append({'Contracts': info, 'Safe_MAN': '', 'Strength_vs_daikon': '','Strength_vs_predicate_synthesis': '', 'Strength_vs_conjunc': ''})
       continue
     if '----' in line and row:
       rows.append(row)
       row = {}
     elif "Truly Safe" in line:
       info = get_info_from_line(line)
-      info = 'yes' if eval(info) else 'no'
+      if info != '':
+        info = 'yes' if eval(info) else 'no'
       row['Safe_MAN'] = info
     elif "smt check" in line:
       info = get_info_from_line(line)
       info = info if not info == "Daikon" else "Other"
-      row['Strength'] = info
+      # row['Strength'] = info
     elif "PUT" in line:
       info = line.strip()
       row['Contracts'] = info
