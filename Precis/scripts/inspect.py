@@ -39,7 +39,7 @@ def NewInspect(fileName, contracts, ovveride):
     resultSeen = False
     predicates = []
     rounds = ""
-    sysnthesis_time = ""
+    synthesis_time = ""
     unique_features = ""
     synthesized_features = []
     total_rounds = 0
