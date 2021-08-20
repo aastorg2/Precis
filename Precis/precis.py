@@ -787,13 +787,13 @@ if __name__ == '__main__':
 
     angello = True
     if angello:
-        subjects.append(pStack)        
-        subjects.append(pQueue)
-        subjects.append(pHashSet)
-        subjects.append(pDictionary)
-        subjects.append(pArrayList)
-        #subjects.append(pBinaryHeap)
-        #subjects.append(pUndirectedGraph)
+        #subjects.append(pStack)        
+        #subjects.append(pQueue)
+        #subjects.append(pHashSet)
+        #subjects.append(pDictionary)
+        #subjects.append(pArrayList)
+        subjects.append(pBinaryHeap)
+        subjects.append(pUndirectedGraph)
         
         #, 'PUT_ContainsContract'
         #pHashSet.puts = ['PUT_ContainsContract']
@@ -827,13 +827,13 @@ if __name__ == '__main__':
             print(prob.puts)
             # run all cases up to k
             #runLearnPost(prob, prob.puts, prob.projectName , outputFileType, 2)
-            try:
+            #try:
             #cProfile.run("runSynthTightDT(prob, prob.puts ,prob.projectName , outputFileType)",filename="profileUGraph")
-                runSynthTightDT(prob, prob.puts ,prob.projectName , outputFileType)
-            except:
-                logger1.info(f"Unexpected error: {sys.exc_info()[0]}") 
-                logger1.info(f"Unexpected error: {sys.exc_info()[1]}")
-                logger1.info(f"Unexpected error: {sys.exc_info()[2]}")
+            runSynthTightDT(prob, prob.puts ,prob.projectName , outputFileType)
+            #except:
+            #    logger1.info(f"Unexpected error: {sys.exc_info()[0]}") 
+            #    logger1.info(f"Unexpected error: {sys.exc_info()[1]}")
+            #    logger1.info(f"Unexpected error: {sys.exc_info()[2]}")
             #runLearnPostTest(prob, prob.puts, prob.projectName , outputFileType, 2)
             
             #Run one test and one case
