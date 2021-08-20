@@ -39,8 +39,8 @@ def NewInspect(fileName, contracts, ovveride):
     resultSeen = False
     predicates = []
     rounds = ""
-    synthesis_time = ""
-    unique_features = ""
+    total_synthesis_time = 0
+    total_unique_features = 0
     synthesized_features = []
     total_rounds = 0
     total_pextime = 0
@@ -108,16 +108,29 @@ rounds: {rounds}
             line = f"\n{lines[lineIndex]}"
             currentContract.cases += line
             contracts[currentContract.name] = currentContract
-        if "synthesis time" in lines[lineIndex]:
-            synthesis_time = f"{lines[lineIndex]}"
-            currentContract.cases += synthesis_time
-        if "unique features" in lines[lineIndex]:
-            unique_features = f"{lines[lineIndex]}"
-            currentContract.cases += unique_features
+        if "predicate synthesis time" in lines[lineIndex]:
+            line = lines[lineIndex]
+            splitIndex = line.index(":") + 1
+            synth_time = line[splitIndex:].strip()
+            total_synthesis_time += float(synth_time)
+            currentContract.cases += "\n" + line
+        if "unique features synthesized" in lines[lineIndex]:
+            line = lines[lineIndex]
+            splitIndex = line.index(":") + 1
+            unique_features = int(line[splitIndex:].strip())
+            total_unique_features += unique_features
+            currentContract.cases += "\n" + line
         if 'Synth Feature' in lines[lineIndex]:
-            colon = lines[lineIndex].index(":")
-            feature = lines[lineIndex][colon + 1:].strip()
-            synthesized_features.append(feature)
+            line = lines[lineIndex]
+            splitIndex = line.index(":") + 1
+            synth_feat = line[splitIndex:].strip() + " "
+            lineIndex += 1
+            while lineIndex < len(lines) and not lines[lineIndex].strip() == "":
+                temp = lines[lineIndex].strip() + " "
+                synth_feat += temp
+                lineIndex += 1
+            synthesized_features.append(synth_feat)
+            line = "\n" + line[:splitIndex + 1] + " " + synth_feat + "\n"
         if "Problem" in lines[lineIndex]:
             print("WARNING:\n\tRegression contains more than one problem")
             break
@@ -125,8 +138,6 @@ rounds: {rounds}
         if not ovveride: readyInspection.write(line)
     line = f"""
 ======================
-{synthesis_time}
-{unique_features}
 Synthesized Feautes:
     {synthesized_features}
 
@@ -135,6 +146,10 @@ Average Rounds: {total_rounds / (len(contracts) - 1)}
 Average Pex Time: {total_pextime / (len(contracts) - 1)}
 
 Average Learn Time: {total_learntime / (len(contracts) - 1)}
+
+Average Predicate Synthesis Time: {total_synthesis_time / (len(contracts) - 1)}
+
+Avereage Synthesized Features: {total_unique_features / (len(contracts) - 1)}
 """
     readyInspection.write(line)
     if not ovveride: readyInspection.close()
