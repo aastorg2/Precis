@@ -82,7 +82,7 @@ class FeatureSynthesis:
         intOldVarFeatures = list((map(lambda x:  x[0] , intOldVarAndIdxs))) # map applies function(x[0], accessor) to iterable(list, tuple,etc) inputs(intOldVarAndIdxs). 
         #print(sygusSynthesizer.formatGrammar(grammar))
         if len(intOldVarFeatures) == 0:
-            return ()
+            return (),0.0
         shell = Shell(True)
 
         ## wrap this code with a synthesize function
