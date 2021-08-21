@@ -47,32 +47,32 @@ class Problem:
             fwrite.write("    }\n}\n")
 
     # Use C# code to extract the observer methods and corresponding types to an output file
-    def ExtractObservers(self, PUTName, outputFile, mode):
+    def ExtractObservers(self, PUTName, outputFile, mode, oe_path):
         # assert PUTName in self.PUTs, 'PUTName not found or does not match PUTs given in constructor!!!'
         observerExtractor = os.path.abspath('../Precis/ObserverExtractor/ObserverExtractor/bin/Debug/ObserverExtractor.exe')
         cmd = observerExtractor + ' ' + self.sln + ' ' + self.projectName + ' ' + self.testFileName + ' ' + PUTName + ' ' + outputFile + ' ' +mode
         os.system(cmd)
     
     # Use C# code to extract the observer methods and corresponding types to an output file
-    def ExtractObserversInPUT(self, PUTName, outputFile, mode):
+    def ExtractObserversInPUT(self, PUTName, outputFile, mode, oe_path, temp_path):
         # assert PUTName in self.PUTs, 'PUTName not found or does not match PUTs given in constructor!!!'
-        observerExtractor = os.path.abspath('../Precis/ObserverExtractor/ObserverExtractor/bin/Debug/ObserverExtractor.exe')
+        observerExtractor = os.path.abspath(oe_path) # os.path.abspath('../Precis/ObserverExtractor/ObserverExtractor/bin/Debug/ObserverExtractor.exe')
         cmd = observerExtractor + ' ' + self.sln + ' ' + self.projectName + ' ' + self.testFileName + ' ' + PUTName + ' ' + outputFile + ' ' + mode
         ret = os.system(cmd)
-        tmp = open("./temp/command_observer_PUT.txt", 'w')
+        tmp = open(f'{temp_path}\\command_observer_Class.txt', 'w') # open("./temp/command_observer_PUT.txt", 'w')
         tmp.write(cmd)
         tmp.close()
         if ret == -532462766 or ret == 1:
             print("Error: Exception in oberserver extractor")
             sys.exit()
 
-    def ExtractObserversInClass(self, outputFile, mode):
+    def ExtractObserversInClass(self, outputFile, mode, oe_path, temp_path):
         # assert PUTName in self.PUTs, 'PUTName not found or does not match PUTs given in constructor!!!'
-        observerExtractor = os.path.abspath('../Precis/ObserverExtractor/ObserverExtractor/bin/Debug/ObserverExtractor.exe')
+        observerExtractor = os.path.abspath(oe_path) # os.path.abspath('../Precis/ObserverExtractor/ObserverExtractor/bin/Debug/ObserverExtractor.exe')
         PUTName = "Dummy"
         cmd = observerExtractor + ' ' + self.sln + ' ' + self.projectName + ' ' + self.testFileName + ' ' + PUTName + ' ' + outputFile + ' ' + mode
         ret = os.system(cmd)
-        tmp = open("./temp/command_observer_Class.txt", 'w')
+        tmp = open(f'{temp_path}\\command_observer_Class.txt', 'w') # open(".\\temp\\command_observer_Class.txt", 'w')
         tmp.write(cmd)
         tmp.close()
 
