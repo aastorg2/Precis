@@ -48,7 +48,7 @@ class Pex:
     def ParseReport(self, pexReportFolder, precisFeatureList):
         #This function should label the field testLabel for a feature vector object
         tree = etree.parse(self.reportLocation)
-        dataPoints = list()
+        dataPoints = []
         featureValues = None
         for test in tree.xpath('//generatedTest'):
             # REMIENDER: will need to add more cases for pex internal failures such as the above. We do not want to create feature from these values

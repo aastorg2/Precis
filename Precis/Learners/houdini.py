@@ -215,6 +215,8 @@ class Houdini:
                     negatedPrecisFeature = PrecisFeature(True, str(z3NegatedFeature), str(z3NegatedFeature.sort()), None, z3NegatedFeature)
                     negatedPrecisFeature.atom = "(not "+ validFeature.atom +")"
                     validFeature = negatedPrecisFeature
+                    #if validFeature in self.derivBoolFeats:
+                    #    continue
                 conjuncts.append(validFeature)
                 indexes.append(idx)
         # early return if no predicates are always true -> houdini should return true
@@ -308,8 +310,8 @@ class Houdini:
                 #precisConjunctionSynth = PrecisFormula(And(precisConjunction.formulaZ3, And([c.varZ3 for c in uniqueFeats])))
                 precisConjunctionSynth = PrecisFormula(And(uniqueFeats[0].varZ3,precisConjunction.formulaZ3  ))# assuming only one feature
                 #typically only one is synthesized
-                print(f"Adding Unique synthesized feature: {uniqueFeats[0].varZ3}\n" )
-                logger1.info(f"Adding Unique synthesized feature: {uniqueFeats[0].varZ3}\n" )
+                print(f"Adding Unique synthesized feature: {uniqueFeats[0].varName}\n" )
+                logger1.info(f"Adding Unique synthesized feature: {uniqueFeats[0].varName}\n" )
                 return commonSMTConjunctSynth, precisConjunctionSynth, uniqueFeats, timeSpent
 
             return commonSMTConjunct, precisConjunction, () ,  timeSpent
@@ -322,7 +324,7 @@ class Houdini:
             
             idx = condBoolFeats.index(tree.data) if tree.data in condBoolFeats else -1
             if idx == -1:
-                return commonSMTConjunct, precisConjunction, ()
+                return commonSMTConjunct, precisConjunction, (), 0.0
 
             splitPred = tree.data
             print(f"Predicate chosen at {call}: {splitPred}")
@@ -339,7 +341,7 @@ class Houdini:
             smtPost = "(and "+ commonSMTConjunct +" "+ "(ite "+ tree.data.atom + " " + rightSmt + " "+ leftSmt+" "+"))"
             #And(Or(Not(splitPred.varZ3), right ), Or(splitPred.varZ3, left )) )
             precisPost = PrecisFormula(And(precisConjunction.formulaZ3, And(Or(Not(splitPred.varZ3), rightPrecis.formulaZ3) , Or(splitPred.varZ3, leftPrecis.formulaZ3))))
-        return smtPost, precisPost, tuple(set(posFeatSynth).union(set(negFeatSynth))), rightPredSynthTimeSpent + leftPredSynthTimeSpent
+        return smtPost, precisPost, tuple(set(posFeatSynth).union(set(negFeatSynth))), (rightPredSynthTimeSpent + leftPredSynthTimeSpent)
     
     @staticmethod
     def removeCommonFvs(boolFvs, reversedIndexes):
@@ -426,7 +428,7 @@ class Houdini:
                 else:
                     earlyRet = PrecisFormula(BoolVal(True))
                 print("Predicate: "+ call + " : None")
-                logger.info("Predicate "+ call + " : None"+"\n")
+                logger1.info("Predicate "+ call + " : None"+"\n")
                 return earlyRet
             (pStrPos, pStrNeg) = Nd.split(idx,remainingAtomsStrBoolFv) 
             (pPos, pNeg) = Nd.split(idx,remainingBoolFvs)

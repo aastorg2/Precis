@@ -1,7 +1,7 @@
 from z3 import *
 from abc import ABC, abstractmethod
 import logging
-from _functools import reduce
+from functools import reduce
 
 from Data.precis_feature import PrecisFeature
 from Data.shell import Shell

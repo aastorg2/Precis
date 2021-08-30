@@ -34,10 +34,11 @@ class Nd:
         self.left = None
         self.right = None
         self.parent = None
-    
+
+
     def __str__(self):
         if not self.left and not self.right:
-            return "*"
+            return "*" 
             # if len(self.data) == 1:
             #     return self.data[0]
             # else: 
@@ -306,7 +307,7 @@ class SygusDisjunctive:
         self.dp_trees = {}
         self.all_trees = self.generate_all_trees(k)
         logger.info(f"trees at round: {rounds} for k = {k}\n")
-        logger.info(f"number of boolean variabes {len(pred_names)}\n")
+        logger.info(f"number of boolean variables {len(pred_names)}\n")
         logger.info(f"number of datapoints {len(pred_data)}\n")
         logger.info(f"number of trees generated for {len(self.all_trees)}\n")
         logger.info(f"trees\n")

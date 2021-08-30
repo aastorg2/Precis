@@ -29,7 +29,9 @@ class PrecisFeature:
         if isDerived:
             # Check variable type
             self.CheckVarType(varType)
-            self.varName = str(varZ3)
+            if "New_arrListLastIndexOfX ==" in varName:
+                print()
+            self.varName = varName
             self.isNew = isNew
             self.varZ3 = varZ3
             self.isDerived = True

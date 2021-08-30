@@ -75,77 +75,60 @@ class PrecisFormula:
         set_option(html_mode=False)
         set_fpa_pretty(flag=False)
 
-        #intVars = [ Int(var) for var in intVariables]
-        #boolVars = [ Bool(var) for var in boolVariables]
-
-        #declareInts = "\n".join([ "(declare-const " + var + " Int)" for var in intVariables ])
-        #declareBools = "\n".join([ "(declare-const " + var + " Bool)" for var in boolVariables ])
-        #stringToParse = "\n".join([declareInts,  declareBools, "( assert " + precondition + ")"])
-
-        #logger = logging.getLogger("Framework.z3Simplify")
-
-        # logger.info("############ z3 program")
-        # logger.info("############ " + stringToParse)
-
-        #expr = parse_smt2_string(strinagToParse)
-
         g = Goal()
         g.add(postcondition)
         
-        # works = Repeat(Then(
-        #     OrElse(Tactic('ctx-solver-simplify'), Tactic('skip')),
-        #     OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
-        #     # OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
-        #     # OrElse(Tactic('purify-arith'),Tactic('skip')),
-        #       OrElse(Tactic('ctx-simplify'),Tactic('skip')),
-        #       OrElse(Tactic('dom-simplify'),Tactic('skip')),
-        #     # OrElse(Tactic('propagate-values'),Tactic('skip')),
-        #     OrElse(Tactic('simplify'), Tactic('skip')),
-        #     #region
-        #     # OrElse(Tactic('aig'),Tactic('skip')),
-        #     # OrElse(Tactic('degree-shift'),Tactic('skip')),
-        #     # OrElse(Tactic('factor'),Tactic('skip')),
-        #     # OrElse(Tactic('lia2pb'),Tactic('skip')),
-        #     # OrElse(Tactic('recover-01'),Tactic('skip')),
-        #     #must to remove ite
-        #     # OrElse(Tactic('elim-term-ite'), Tactic('skip')),
-        #     # OrElse(Tactic('smt'), Tactic('skip')),
-        #     # OrElse(Tactic('injectivity'),Tactic('skip')),
-        #     # OrElse(Tactic('snf'),Tactic('skip')),
-        #     # OrElse(Tactic('reduce-args'),Tactic('skip')),
-        #     # OrElse(Tactic('elim-and'),Tactic('skip')),
-        #     # OrElse(Tactic('symmetry-reduce'),Tactic('skip')),
-        #     # OrElse(Tactic('macro-finder'),Tactic('skip')),
-        #     # OrElse(Tactic('quasi-macros'),Tactic('skip')),
-        #     #Repeat(OrElse(Tactic('cofactor-term-ite'), Tactic('skip'))),
-        #     Repeat(OrElse(Tactic('split-clause'), Tactic('skip'))),   
-        # ))
+        works = Repeat(Then(
+            OrElse(Tactic('ctx-solver-simplify'), Tactic('skip')),
+            OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
+            OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
+            # OrElse(Tactic('purify-arith'),Tactic('skip')),
+            OrElse(Tactic('ctx-simplify'),Tactic('skip')),
+            OrElse(Tactic('dom-simplify'),Tactic('skip')),
+            OrElse(Tactic('propagate-values'),Tactic('skip')),
+            OrElse(Tactic('simplify'), Tactic('skip')),
+            OrElse(Tactic('aig'),Tactic('skip')),
+            OrElse(Tactic('degree-shift'),Tactic('skip')),
+            OrElse(Tactic('factor'),Tactic('skip')),
+            OrElse(Tactic('lia2pb'),Tactic('skip')),
+            OrElse(Tactic('recover-01'),Tactic('skip')),
+            OrElse(Tactic('elim-term-ite'), Tactic('skip')), #must to remove ite
+            # OrElse(Tactic('smt'), Tactic('skip')),
+            OrElse(Tactic('injectivity'),Tactic('skip')),
+            OrElse(Tactic('snf'),Tactic('skip')),
+            OrElse(Tactic('reduce-args'),Tactic('skip')),
+            OrElse(Tactic('elim-and'),Tactic('skip')),
+            OrElse(Tactic('symmetry-reduce'),Tactic('skip')),
+            OrElse(Tactic('macro-finder'),Tactic('skip')),
+            OrElse(Tactic('quasi-macros'),Tactic('skip')),
+            #Repeat(OrElse(Tactic('cofactor-term-ite'), Tactic('skip'))),
+            Repeat(OrElse(Tactic('split-clause'), Tactic('skip'))),   
+        ))
         
-        works = Repeat(Then( 
-                #Repeat(OrElse(Tactic('split-clause'),Tactic('skip'))),
-                OrElse(Tactic('ctx-solver-simplify'),Tactic('skip')),
-                OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
-                OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
-                OrElse(Tactic('purify-arith'),Tactic('skip')),
-                OrElse(Tactic('ctx-simplify'),Tactic('skip')),
-                OrElse(Tactic('dom-simplify'),Tactic('skip')),
-                OrElse(Tactic('propagate-values'),Tactic('skip')),
-                OrElse(Tactic('simplify'),Tactic('skip')),
-                OrElse(Tactic('aig'),Tactic('skip')),
-                OrElse(Tactic('degree-shift'),Tactic('skip')),
-                OrElse(Tactic('factor'),Tactic('skip')),
-                OrElse(Tactic('lia2pb'),Tactic('skip')),
-                OrElse(Tactic('recover-01'),Tactic('skip')),
-                OrElse(Tactic('elim-term-ite'),Tactic('skip')), #must to remove ite
-                OrElse(Tactic('injectivity'),Tactic('skip')),
-                OrElse(Tactic('snf'),Tactic('skip')),
-                OrElse(Tactic('reduce-args'),Tactic('skip')),
-                OrElse(Tactic('elim-and'),Tactic('skip')),
-                OrElse(Tactic('symmetry-reduce'),Tactic('skip')),
-                OrElse(Tactic('macro-finder'),Tactic('skip')),
-                OrElse(Tactic('quasi-macros'),Tactic('skip')),
-                Repeat(OrElse(Tactic('split-clause'),Tactic('skip'))) 
-                ))
+        # works = Repeat(Then( 
+        # Repeat(OrElse(Tactic('split-clause'),Tactic('skip'))),
+        # OrElse(Tactic('ctx-solver-simplify'),Tactic('skip')),
+        # OrElse(Tactic('unit-subsume-simplify'),Tactic('skip')),
+        # OrElse(Tactic('propagate-ineqs'),Tactic('skip')),
+        # OrElse(Tactic('purify-arith'),Tactic('skip')),
+        # OrElse(Tactic('ctx-simplify'),Tactic('skip')),
+        # OrElse(Tactic('dom-simplify'),Tactic('skip')),
+        # OrElse(Tactic('propagate-values'),Tactic('skip')),
+        # OrElse(Tactic('simplify'),Tactic('skip')),
+        # OrElse(Tactic('aig'),Tactic('skip')),
+        # OrElse(Tactic('degree-shift'),Tactic('skip')),
+        # OrElse(Tactic('factor'),Tactic('skip')),
+        # OrElse(Tactic('lia2pb'),Tactic('skip')),
+        # OrElse(Tactic('recover-01'),Tactic('skip')),
+        # OrElse(Tactic('elim-term-ite'),Tactic('skip')), #must to remove ite
+        # OrElse(Tactic('injectivity'),Tactic('skip')),
+        # OrElse(Tactic('snf'),Tactic('skip')),
+        # OrElse(Tactic('reduce-args'),Tactic('skip')),
+        # OrElse(Tactic('elim-and'),Tactic('skip')),
+        # OrElse(Tactic('symmetry-reduce'),Tactic('skip')),
+        # OrElse(Tactic('macro-finder'),Tactic('skip')),
+        # OrElse(Tactic('quasi-macros'),Tactic('skip')),
+        # ))
         
         result = works(g)
         #result = works1(g)
@@ -173,7 +156,8 @@ class PrecisFormula:
                 completeDisjunct.append(literal)
 
             completeConjunct.append(simplify(And(completeDisjunct)))
-
+        if len(completeConjunct) == 1:
+            return completeConjunct[0]
         simplifiedPrecondition = Or(completeConjunct)
         return simplifiedPrecondition
 
@@ -196,3 +180,14 @@ class PrecisFormula:
         #simplifiedPrecondition = simplifiedPrecondition.replace("False", " false ")
         #simplifiedPrecondition = simplifiedPrecondition.replace("True", " true ")
         #simplifiedPrecondition = simplifiedPrecondition.replace("\n", "  ")
+
+# if __name__ == '__main__':
+#     x = Int('x')
+#     y = Int('y')
+#     #z3 BoolRef
+#     formula1 = x + IntVal(1) >= y + IntVal(1)
+#     precisForm = PrecisFormula(formula1)
+#     print(precisForm.formula)
+#     print(precisForm.formulaZ3)
+#     pass
+    

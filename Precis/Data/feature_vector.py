@@ -99,6 +99,7 @@ class FeatureVector:
         return len(self.valuesZ3)
 
     def __eq__(self, other):
+        
         return hasattr(other, 'valuesZ3') and hasattr(other, 'values') and self.testLabel == other.testLabel \
              and self.valuesZ3 == other.valuesZ3 # tuple equiality
 

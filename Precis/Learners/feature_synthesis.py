@@ -111,14 +111,15 @@ class FeatureSynthesis:
             declMap = { f.varName : f.varZ3 for f in intFeatures}
             synthesizedFeature = "(= "+ postFeaturesIdxs[0].varName +" " +synthizedExprStr +")" 
             sygusExpr = parse_smt2_string("(assert "+ synthesizedFeature+ " )",decls=declMap)
+            stringExpr = str(sygusExpr[0]).replace("\n", " ")
             msg2 = f"number of features synthesize: {len(sygusExpr)}"
             print(msg2)
             logger1.info(msg2)
-            msg3= f"======================================== synthesized feature: {sygusExpr[0]}"
+            msg3= f"======================================== synthesized feature: {stringExpr}"
             print(msg3)
             logger1.info(msg3)
             
-            synthesizedFeatures += (PrecisFeature(True, str(sygusExpr[0]), str(sygusExpr[0].sort()), None, sygusExpr[0]),)#assumes only return list of length == 1(sygusExpr) 
+            synthesizedFeatures += (PrecisFeature(True, stringExpr, str(sygusExpr[0].sort()), None, sygusExpr[0]),)#assumes only return list of length == 1(sygusExpr) 
             #print(sygusExpr.ctx)
             #print(postFeaturesIdxs[0].varZ3.ctx)
         #print(synthesizedFeatures)
